@@ -1,0 +1,23 @@
+{
+  "name": "y",
+  "version": "1.0.0",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Riccardo Cecchi",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "electron": "^37.2.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron-builder": "^26.0.12",
+    "vite": "^7.1.1",
+    "vite-plugin-electron": "^0.29.0"
+  }
+}
