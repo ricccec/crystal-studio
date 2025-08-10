@@ -1,7 +1,6 @@
 ### GIT
 - Avoid merging main into feature branches repeatedly — rebase instead.
 - Delete merged branches to keep the repo tidy.
-- Avoid merging main into feature branches repeatedly — rebase instead.
 - Add well-written PR descriptions — even if you’re the only reviewer.
 - Tag versions (v0.1.0, v1.0.0) when you hit milestones.
 - Use GitHub Releases with changelogs — employers see structured progress.
