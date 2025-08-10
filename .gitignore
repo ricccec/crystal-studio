@@ -19,6 +19,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+*.swo
 
 # Environment variables
 .env
