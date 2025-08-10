@@ -16,9 +16,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // │
 const APP_ROOT = path.join(__dirname, '..');
 const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
-const RENDERER_DIST = path.join(APP_ROOT, 'dist/renderer');
-const VITE_PUBLIC = path.join(APP_ROOT, VITE_DEV_SERVER_URL ? 'public' : 'dist/renderer');
+const IS_DEV = !!VITE_DEV_SERVER_URL;
 
+// Where the Vite dev server outputs assets from
+const DEV_PUBLIC = path.join(APP_ROOT, 'public');
+
+// Where the Vite dev server outputs assets from
+const PROD_PUBLIC = path.join(APP_ROOT, 'dist', 'renderer');
+
+// Pick the correct one based on mode
+const VITE_PUBLIC = IS_DEV ? DEV_PUBLIC : PROD_PUBLIC;
 
 let win: BrowserWindow | null;
 
@@ -31,11 +38,11 @@ const createWindow = () => {
         },
     });
 
-    if (VITE_DEV_SERVER_URL) {
+    if (IS_DEV) {
         win.loadURL(VITE_DEV_SERVER_URL);
         win.webContents.openDevTools();
     } else {
-        win.loadFile(path.join(RENDERER_DIST, 'index.html'));
+        win.loadFile(path.join(PROD_PUBLIC, 'index.html'));
     }
 };
 
