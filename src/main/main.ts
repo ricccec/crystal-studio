@@ -1,6 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path, { dirname } from 'path';
+import type { ProjectSettings } from './utils/settings';
+import { readSettings, writeSettings } from './utils/settings';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -28,6 +30,8 @@ const PROD_PUBLIC = path.join(APP_ROOT, 'dist', 'renderer');
 const VITE_PUBLIC = IS_DEV ? DEV_PUBLIC : PROD_PUBLIC;
 
 let win: BrowserWindow | null;
+let projectPath : string | null = null;
+const projectSettings : ProjectSettings = {};
 
 const createWindow = () => {
     win = new BrowserWindow({
@@ -49,4 +53,16 @@ const createWindow = () => {
 app.on('ready', createWindow);
 app.on('window-all-closed', () => {
     if (process.platform != 'darwin') app.quit();
+});
+
+ipcMain.handle('update-settings', (evt, newSettings : ProjectSettings) => {
+              Object.assign(projectSettings, newSettings); 
+    }
+);
+
+ipcMain.handle('save-project', async () => {
+    if (!projectPath) {
+        return { ok: false, error: 'Project path is missing' };
+    }
+    return writeSettings(projectSettings, projectPath);
 });
