@@ -101,74 +101,30 @@ const openSaveDialog = async (options?: Electron.SaveDialogOptions): Promise<Pro
 
 const saveProject = async (newPath?: string | null) : Promise<ProcessResult> => {
 
-    if (!win) return { status: 'canceled' };
-
-    // Cache prev name, path and tempName in case writing goes wrong
-    const oldName = projectSettings.projectName;
-    const oldPath = projectSettings.projectPath;
-    const oldTempName = projectSettings.tempName;
-    if (newPath) {
-        projectSettings.projectPath = newPath;
-        projectSettings.projectName = path.parse(newPath).name;
-    }
-    if (!projectSettings.projectPath) {
-        return { status: 'error', error: "Path not set"};
-    }
-
-    if (oldPath && (oldPath != projectSettings.projectPath)) {
-        // We are actually saving a copy
-        projectSettings.tempName = null;
-    }
+    const savePath = newPath ?? projectSettings.projectPath;
+    if (!savePath) return { status: 'error', error: "Path not set"};
 
     try {
-        const result = await writeSettings(projectSettings);
+        const result = await writeSettings(projectSettings, savePath);
         if (result.ok) {
             return { status: 'success', data: projectSettings.projectPath! }
         } else {
-            // Restore cached props
-            projectSettings.projectName = oldName;
-            projectSettings.projectPath = oldPath;
-            projectSettings.tempName = oldTempName;
-
             return { status: 'error', error: result.error };
         }
     } catch (e: any) {
-        // Restore cached props
-        projectSettings.projectName = oldName;
-        projectSettings.projectPath = oldPath;
-        projectSettings.tempName = oldTempName;
         return { status: 'error', error: e?.message ?? String(e) };
     }
 
 };
 
-const saveProjectForRecovery = async () : Promise<{ ok: boolean, error?: string }> => {
+const saveProjectForRecovery = async () : Promise<ActionResul> => {
 
     // Use the project temp name or generate one on the fly
     const filename = projectSettings.tempName ?? `proj_${Date.now()}`;
     projectSettings.tempName = filename;
-
     const targetPath = path.join(app.getPath('userData'), `${filename}.json`);
     
-    try {
-        // Read last saved settings, if any
-        const curr = await readSettings(targetPath);
-        
-        // Ensure the directory exists
-        await fs.mkdir(path.dirname(targetPath), { recursive: true });
-                
-        // Write project to file
-        await fs.writeFile(
-            targetPath,
-            JSON.stringify({...curr, ...projectSettings}, null, 2),
-            'utf-8'
-        );
-    
-        return { ok: true };
-    } catch (e: any) {
-        return { ok: false, error: e?.message ?? String(e) };
-    } 
-
+    return await writeSettings(projectSettings, targetPath);
 };
 
 const loadAppSettings = async () : Promise<ActionResul<Partial<AppSettings>>> => {
@@ -252,11 +208,49 @@ ipcMain.handle('save-project', async () : Promise<ProcessResult> => {
         if (result.status !== 'success') return result;
         savePath = result.data;
     }
+
     return await saveProject(savePath);
 });
 
 ipcMain.handle('save-project-as', async (_, savePath: string) : Promise<ProcessResult> => {
-    return await saveProject(savePath);
+
+    if (!win) return { status: 'canceled' };
+
+    // Just a regular save?
+    if (savePath === projectSettings.projectPath)
+        return await saveProject(savePath);
+
+    // Cache prev name, path and tempName in case writing goes wrong
+    const oldName = projectSettings.projectName;
+    const oldPath = projectSettings.projectPath;
+    const oldTempName = projectSettings.tempName;
+    
+    // Update project name and path
+    projectSettings.projectPath = savePath;
+    projectSettings.projectName = path.parse(savePath).name;
+
+    // Clear recovery file name
+    projectSettings.tempName = null;
+
+    try {
+        const result = await saveProject(savePath);
+
+        if (result.status != 'success') {
+            // Restore cached props
+            projectSettings.projectName = oldName;
+            projectSettings.projectPath = oldPath;
+            projectSettings.tempName = oldTempName;
+        }
+        
+        return result;
+        
+    } catch (e: any) {
+        // Restore cached props
+        projectSettings.projectName = oldName;
+        projectSettings.projectPath = oldPath;
+        projectSettings.tempName = oldTempName;
+        return { status: 'error', error: e?.message ?? String(e) };
+    }
 });
 
 ipcMain.handle('open-project', async () : Promise<ProcessResult<ProjectSettings>> => {
