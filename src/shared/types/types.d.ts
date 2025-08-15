@@ -11,8 +11,12 @@ export interface ProjectSettings {
     projectName?: string | null;
     projectPath?: string | null;
     repoPath?: string | null;
+    tempName?: string | null;
+}
+
+export interface AppSettings {
+    lastUsedPath?: string | null;
     makePath?: string | null;
     rgbdsPath?: string | null;
-    emulatorPath?: string | null;
-    tempName?: string | null;
+    emulatorPath?: string | null;   
 }
