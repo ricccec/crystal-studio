@@ -1,29 +1,23 @@
 import path from 'path';
 import fs from 'node:fs/promises';
 import {app} from 'electron';
+import { ActionResul, ProjectSettings } from '@shared/types/types';
 
-interface ProjectSettings {
-    projectName? : string | null;
-    projectPath? : string | null;
-    repoPath? : string | null;
-    makePath?: string | null;
-    rgbdsPath?: string | null;
-    emulatorPath? : string | null;
-    tempName? : string | null;
-}
-
-const readSettings = async (projectPath : string) :  Promise<ProjectSettings> => {
+const readSettings = async (
+    projectPath : string
+) :  Promise<ActionResul<ProjectSettings>> => {
     try {
-        const data = await fs.readFile(projectPath, 'utf8');
-        return JSON.parse(data);
-    } catch {
-        return {};
+        const rawData = await fs.readFile(projectPath, 'utf8');
+        const data = JSON.parse(rawData);
+        return { ok: true, data };
+    } catch (e: any) {
+        return { ok: false, error: e?.message ?? String(e)};
     }
 };
 
 const writeSettings = async (
     s : ProjectSettings
-) : Promise<{ ok : true } | { ok : false, error : string }> => {
+) : Promise<ActionResul> => {
     try {
         // Get the project name or generate one on the fly
         const filename = s.projectName ?? `temp_proj_${Date.now()}`; 
@@ -50,8 +44,10 @@ const writeSettings = async (
     } 
 };
 
-export {
+export type {
     ProjectSettings,
+};
+export {
     readSettings,
     writeSettings
 };

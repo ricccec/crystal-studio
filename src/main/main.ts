@@ -1,13 +1,16 @@
 import {
-        app, dialog,
-        BrowserWindow,
-        ipcMain
-    } from 'electron';
-import type { ProcessResult } from '@shared/types/types';
+    app, dialog,
+    BrowserWindow,
+    ipcMain
+} from 'electron';
+import type {
+    ActionResul,
+    ProcessResult,
+    ProjectSettings
+} from '@shared/types/types';
 import { fileURLToPath } from 'node:url';
 import fs from 'node:fs/promises';
 import path, { dirname } from 'path';
-import type { ProjectSettings } from './utils/settings';
 import { readSettings, writeSettings } from './utils/settings';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -60,6 +63,15 @@ app.on('window-all-closed', () => {
     if (process.platform != 'darwin') app.quit();
 });
 
+const openProject = async (loadPath: string) : Promise<ActionResul<ProjectSettings>> => {
+
+    const result : ActionResul<ProjectSettings> = await readSettings(loadPath);
+    if (result.ok) {
+        Object.assign(projectSettings, result.data);
+        return result;
+    }
+    return result;
+};
 
 const openSaveDialog = async (options?: Electron.SaveDialogOptions): Promise<ProcessResult> => {
     if (!win) return { status: 'canceled' };
@@ -182,6 +194,33 @@ ipcMain.handle('save-project', async () : Promise<ProcessResult> => {
     return await saveProject(savePath);
 });
 
-ipcMain.handle('save-project-as', async (_, path: string) : Promise<ProcessResult> => {
-    return await saveProject(path);
+ipcMain.handle('save-project-as', async (_, savePath: string) : Promise<ProcessResult> => {
+    return await saveProject(savePath);
+});
+
+ipcMain.handle('open-project', async () : Promise<ProcessResult<ProjectSettings>> => {
+    if (!win) return { status: 'canceled' };
+
+    let openPath = null;
+    try {
+        const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+            title: 'Open project',
+            defaultPath: app.getPath('documents'),
+            filters: [
+                { name: 'JSON files', extensions: ['json'] },
+                { name: 'All Files', extensions: ['*'] },
+            ],
+        });
+
+        if (canceled || !filePaths[0]) return { status: 'canceled' };
+        openPath = filePaths[0];
+    } catch (e: any) {
+        return { status: 'error', error: e?.message ?? String(e) };
+    }
+
+    const result = await openProject(openPath);
+    if (result.ok) {
+        return { status: 'success', data: projectSettings };
+    }
+    return { status: 'error', error: result.error };
 });
