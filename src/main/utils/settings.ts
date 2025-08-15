@@ -16,27 +16,21 @@ const readSettings = async (
 };
 
 const writeSettings = async (
-    s : ProjectSettings
+    s : Partial<ProjectSettings>,
+    projectPath : string
 ) : Promise<ActionResul> => {
     try {
-        // Get the project name or generate one on the fly
-        const filename = s.projectName ?? `temp_proj_${Date.now()}`; 
-
-        // Fallback to user data folder if no path provided
-        const targetPath = s.projectPath ?? path.join(app.getPath('userData'), `${filename}.json`);
-
-        // Read settings from fs, if any
-        // const curr = await readSettings(targetPath);
-
         // Ensure the directory exists
-        await fs.mkdir(path.dirname(targetPath), { recursive: true });
+        await fs.mkdir(path.dirname(projectPath), { recursive: true });
         
-        // Write project to file
+        // Atomic write
+        const tmp = `${projectPath}.tmp`
         await fs.writeFile(
-            targetPath,
+            tmp,
             JSON.stringify(s, null, 2),
             'utf-8'
         );
+        await fs.rename(tmp, projectPath);
 
         return { ok: true };
     } catch (e: any) {
