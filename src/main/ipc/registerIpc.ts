@@ -1,6 +1,6 @@
 import type { ProjectService } from "@main/services/projectServices";
 import type { ReadSettingsFn, WriteSettingsFn } from "@main/utils/settings";
-import type { OpenOpenDialogFn, OpenSaveDialogFn } from "@main/windows";
+import type { OpenOpenDialogFn, OpenSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from 'path';
