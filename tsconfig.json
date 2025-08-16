@@ -5,12 +5,12 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "baseUrl": "",
+    "baseUrl": ".",
     "paths": {
         "@/*": ["./src/renderer/*"],
         "@shared/*": ["./src/shared/*"],
         "@main/*": ["./src/main/*"],
-        "@preload/*": ["./src/preload/*"],
+        "@preload/*": ["./src/preload/*"]
     },
     "typeRoots": ["node_modules/@types"],
   },

@@ -7,6 +7,7 @@ declare global {
 
     interface Window {
         api: {
+            platform: NodeJS.Platform,
             saveProject: () => Promise<ProcessResult>;
             saveProjectAs: (savepath: string) => Promise<ProcessResult>;
             openProject : () => Promise<ProcessResult<ProjectSettings>>,

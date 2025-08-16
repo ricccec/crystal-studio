@@ -3,7 +3,7 @@ export type ProcessResult<T = string> =
     | { status: 'success'; data: T }
     | { status: 'error'; error: string };
 
-export type ActionResul<T = null> = 
+export type ActionResult<T = null> = 
     | { ok : true, data?: T }
     | { ok : false, error : string };
 

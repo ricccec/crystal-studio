@@ -1,11 +1,14 @@
 import path from 'path';
 import fs from 'node:fs/promises';
 import {app} from 'electron';
-import { ActionResul, ProjectSettings } from '@shared/types/types';
+import { ActionResult, ProjectSettings } from '@shared/types/types';
+
+type WriteSettingsFn = (s: ProjectSettings, filePath: string) => Promise<ActionResult>;
+type ReadSettingsFn = (filePath: string) => Promise<ActionResult<ProjectSettings>>;
 
 const readSettings = async (
     projectPath : string
-) :  Promise<ActionResul<ProjectSettings>> => {
+) :  Promise<ActionResult<ProjectSettings>> => {
     try {
         const rawData = await fs.readFile(projectPath, 'utf8');
         const data = JSON.parse(rawData);
@@ -18,7 +21,7 @@ const readSettings = async (
 const writeSettings = async (
     s : Partial<ProjectSettings>,
     projectPath : string
-) : Promise<ActionResul> => {
+) : Promise<ActionResult> => {
     try {
         // Ensure the directory exists
         await fs.mkdir(path.dirname(projectPath), { recursive: true });
@@ -40,6 +43,8 @@ const writeSettings = async (
 
 export type {
     ProjectSettings,
+    WriteSettingsFn,
+    ReadSettingsFn,
 };
 export {
     readSettings,
