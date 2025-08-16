@@ -1,4 +1,3 @@
-import { newProject } from '@main/services/projectServices';
 import type { ActionResult, ProcessResult, ProjectSettings} from '@shared/types/types';
 import { contextBridge, ipcRenderer } from 'electron';
 
