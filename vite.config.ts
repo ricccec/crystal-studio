@@ -9,11 +9,14 @@ export default defineConfig({
 	build: {
 		outDir: path.join(__dirname, 'dist/renderer'),
 		emptyOutDir: true, // Clear folder before build
+		sourcemap: true,
 	},
 	resolve: {
 		alias: {
 			'@': path.join(__dirname, 'src/renderer'),
 			'@shared': path.join(__dirname, 'src/shared'),
+			'@main': path.join(__dirname, 'src/main'),
+      		'@preload': path.join(__dirname, 'src/preload'),
 		},
 	},
 	plugins: [
