@@ -56,8 +56,6 @@ export const saveProject: SaveProjectFn = async (projectSettings, deps) => {
 
 export const saveProjectAs: SaveProjectAsFn = async (projectSettings, savePath, deps) =>  {
 
-    const { writeSettings: writeSettingsFn } = deps;
-
     // Cache prev name, path and tempName in case writing goes wrong
     const oldName = projectSettings.projectName;
     const oldPath = projectSettings.projectPath;
@@ -76,13 +74,14 @@ export const saveProjectAs: SaveProjectAsFn = async (projectSettings, savePath, 
         const result = await deps.writeSettings(projectSettings, savePath);
 
         if (result.ok) {
-            // Restore cached props
+            return { status: 'success', data: savePath };
+        } else {
+            // Restore cached props on write failure
             projectSettings.projectName = oldName;
             projectSettings.projectPath = oldPath;
             projectSettings.tempName = oldTempName;
+            return { status: 'error', error: result.error };
         }
-        
-        return { status: 'success', data: savePath };
         
     } catch (e: any) {
         // Restore cached props
@@ -100,6 +99,8 @@ export const saveProjectForRecovery: SaveProjectForRecoveryFn = async (projectSe
     projectSettings.tempName = filename;
     const targetPath = path.join(app.getPath('userData'), `${filename}.json`);
     
+    console.log(app.getPath('userData'));
+    console.log('TEST ' + targetPath);
     return await deps.writeSettings(projectSettings, targetPath);
 };
 
