@@ -3,6 +3,10 @@ import { ActionResult, ProcessResult, ProjectSettings } from "@shared/types/type
 import { app } from "electron";
 import path from 'path';
 
+export type NewProjectFn = (
+    projectSettings: ProjectSettings,
+) => void;
+
 export type OpenProjectFn = (
   loadPath: string,
   deps: { readSettings: ReadSettingsFn }
@@ -25,11 +29,17 @@ export type SaveProjectForRecoveryFn = (
 ) => Promise<ActionResult>;
 
 export type ProjectService = {
-  openProject: OpenProjectFn;
-  saveProject: SaveProjectFn;
-  saveProjectAs: SaveProjectAsFn;
-  saveProjectForRecovery: SaveProjectForRecoveryFn;
+    newProject: NewProjectFn;
+    openProject: OpenProjectFn;
+    saveProject: SaveProjectFn;
+    saveProjectAs: SaveProjectAsFn;
+    saveProjectForRecovery: SaveProjectForRecoveryFn;
 };
+
+export const newProject: NewProjectFn = (projectSettings) => {
+    (Object.keys(projectSettings) as Array<keyof ProjectSettings>)
+        .forEach((key) => projectSettings[key] = null);
+}
 
 export const openProject: OpenProjectFn = async (loadPath, deps) => {
     return await deps.readSettings(loadPath);
@@ -94,6 +104,7 @@ export const saveProjectForRecovery: SaveProjectForRecoveryFn = async (projectSe
 };
 
 export const projectService: ProjectService = {
+    newProject,
     openProject,
     saveProject,
     saveProjectAs,

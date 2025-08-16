@@ -48,6 +48,11 @@ export function registerIpc(
         return res;
     });
 
+    ipcMain.handle('new-project', async () : Promise<ActionResult> => {
+        projectService.newProject(projectSettings);
+        return { ok: true };
+    });
+
     ipcMain.handle('save-project', async () : Promise<ProcessResult> => {
         let savePath = projectSettings.projectPath;
         if (!savePath) {
