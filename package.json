@@ -7,7 +7,8 @@
     "build": "vite build",
     "start": "electron .",
     "clean": "npx rimraf dist dist-electron out release",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest",
+    "test:watch": "vitest --watch"
   },
   "author": "Riccardo Cecchi",
   "license": "ISC",
@@ -23,9 +24,15 @@
       "dist-electron/**",
       "package.json"
     ],
-    "win": { "target": "nsis" },
-    "mac": { "target": "dmg" },
-    "linux": { "target": "AppImage"}
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   },
   "dependencies": {
     "electron": "^37.2.6",
@@ -33,10 +40,14 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",
     "electron-builder": "^26.0.12",
     "rimraf": "^6.0.1",
     "vite": "^7.1.1",
-    "vite-plugin-electron": "^0.29.0"
+    "vite-plugin-electron": "^0.29.0",
+    "vitest": "^3.2.4"
   }
 }

@@ -1,16 +1,19 @@
 {
   "compilerOptions": {
+    "jsx": "react-jsx",
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "baseUrl": "",
+    "baseUrl": ".",
     "paths": {
         "@/*": ["./src/renderer/*"],
         "@shared/*": ["./src/shared/*"],
         "@main/*": ["./src/main/*"],
         "@preload/*": ["./src/preload/*"]
-    }
+    },
+    "typeRoots": ["node_modules/@types"],
+    "types": ["vitest/globals"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist*", "**/*.js"]
