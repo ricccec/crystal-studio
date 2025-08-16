@@ -1,25 +1,42 @@
-import { ProcessResult } from '@shared/types/types';import React from 'react';
+import { ActionResult, ProcessResult } from '@shared/types/types';import React from 'react';
 
 const App = () => {
 
     const [ consoleOutput, setConsoleState ] = React.useState<string>('');
 
+    const formatValue = (v: unknown): string => {
+        if (v === undefined) return '';
+        if (v === null) return 'null';
+        if (typeof v === 'object') {
+            try { return JSON.stringify(v, null, 2); } catch { return String(v); }
+        }
+        return String(v);
+    };
+
     const appendToConsoleOutput = (
         result : 
             | ProcessResult<any>
+            | ActionResult<any>
     ) => {
         const output = (() => {
-            switch(result.status) {
-                case 'canceled': return 'canceled';
-                case 'error': return result.error;
-                case 'success': 
-                    if (result.data === undefined) return '';
-                    if (typeof result.data === 'object') return JSON.stringify(result.data, null, 2);
-                    return String(result.data);
+            if ('status' in result) {
+                switch(result.status) {
+                    case 'canceled': return 'canceled';
+                    case 'error': return result.error;
+                    case 'success': return formatValue(result.data);
+                }
+            } else if('ok' in result) {
+                return result.ok ? formatValue(result.data) : result.error;
             }
+            return '';
         })();
         setConsoleState(prev => `${prev}${output}\n`);
     };
+
+    const onNewProject = async () => {
+        const res = await window.api.newProject();
+        appendToConsoleOutput(res);
+    }
 
     const onOpenProject = async () => {
         const result = await window.api.openProject();
@@ -36,12 +53,13 @@ const App = () => {
         if (result.status === 'success') {
             result = await window.api.saveProjectAs(result.data);
         }
-            appendToConsoleOutput(result);
+        appendToConsoleOutput(result);
     };
 
     return (
         <>
             <div>
+                <button onClick={onNewProject}>New Project</button>
                 <button onClick={onOpenProject}>Open Project</button>
                 <button onClick={onSaveProject}>Save Project</button>
                 <button onClick={onSaveProjectAs}>Save Project As</button>
