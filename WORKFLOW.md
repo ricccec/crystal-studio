@@ -33,10 +33,12 @@ Commit often, with meaningful messages:
 feat: add toolbar buttons for map editor
 fix: correct coordinate conversion bug
 chore: reorganize assets folder
+test: for adding/updating tests
+refactor: for code changes that alter structure but not behavior
 ```
 - feat → New feature
 - fix → Bug fix
-- chore → Maintenance, refactor, or non-functional change
+- chore → Maintenance, or non-functional change
 
 #### 3. Push your branch
 ```bash
