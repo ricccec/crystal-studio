@@ -21,7 +21,7 @@ vi.mock('path', async () => {
     const actual = await vi.importActual('path') as any;
     return {
         ...actual,
-        join: (...args: string[]) => { console.log('AAAAAAAAAAAAAAAAAAAAAAA'); return args.join('/'); },
+        join: (...args: string[]) => args.join('/'),
         parse: actual.parse
     };
 });

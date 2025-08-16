@@ -1,4 +1,5 @@
-import { ActionResult, ProcessResult } from '@shared/types/types';import React from 'react';
+import type { ActionResult, ProcessResult } from '@shared/types/types';
+import React from 'react';
 
 const App = () => {
 

@@ -99,8 +99,6 @@ export const saveProjectForRecovery: SaveProjectForRecoveryFn = async (projectSe
     projectSettings.tempName = filename;
     const targetPath = path.join(app.getPath('userData'), `${filename}.json`);
     
-    console.log(app.getPath('userData'));
-    console.log('TEST ' + targetPath);
     return await deps.writeSettings(projectSettings, targetPath);
 };
 
