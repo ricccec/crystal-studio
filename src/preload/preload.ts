@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('api', {
     // Dialog IPCs
     showSaveDialog : (options?: Electron.SaveDialogOptions): Promise<ProcessResult> => ipcRenderer.invoke('show-save-dialog', options),
     showSaveProjectDialog : (): Promise<ProcessResult> => ipcRenderer.invoke('show-save-project-dialog'),
+    showOpenDirDialog : (title: string): Promise<ProcessResult> => ipcRenderer.invoke('show-open-dir-dialog', title),
 
     // Git IPCs
     checkGit: (): Promise<ActionResult<string>> => ipcRenderer.invoke('git-check'),

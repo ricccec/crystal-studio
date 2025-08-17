@@ -1,4 +1,4 @@
-import { ActionResult, AppSettings, ProjectSettings } from "@shared/types/types";
+import type { ActionResult, AppSettings, ProjectSettings } from "@shared/types/types";
 import { app, BrowserWindow } from "electron";
 import path from 'path';
 import fs from 'node:fs/promises';
@@ -6,6 +6,9 @@ import { createWindow, showOpenDialog, showSaveDialog } from "./windows/windows"
 import { registerIpc } from "./ipc/registerIpc";
 import projectService from "./services/projectServices";
 import { readSettings, writeSettings } from "./utils/settings";
+import createGitService from "./services/gitServices";
+import execAsync from "./utils/execAsync";
+import { isDirectory } from "@shared/utils/utils";
 
 let win : BrowserWindow | null = null;
 
@@ -21,6 +24,13 @@ export async function start(publicFolder: string, viteUrl?: string) {
 
     win = createWindow(publicFolder, viteUrl);
 
+    // Load services
+    createGitService({
+        execAsync,
+        isDirectory,
+    });
+
+    // Register IPC handlers
     registerIpc(
         win!,
         appSettings,

@@ -1,6 +1,6 @@
 import type { ProjectService } from "@main/services/projectServices";
 import type { ReadSettingsFn, WriteSettingsFn } from "@main/utils/settings";
-import type { ShowOpenDialogFn, OpenSaveDialogFn } from "@main/windows/windows";
+import type { ShowOpenDialogFn, ShowSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from 'path';
@@ -11,8 +11,8 @@ export function registerIpc(
     appSettings: AppSettings,
     projectSettings: ProjectSettings,
     // Injected deps.
-    openSaveDialog: OpenSaveDialogFn,
-    openOpenDialog: ShowOpenDialogFn,
+    showSaveDialog: ShowSaveDialogFn,
+    showOpenDialog: ShowOpenDialogFn,
     saveAppSettings: () => Promise<ActionResult>,
     projectService: ProjectService,
     writeSettings: WriteSettingsFn,
@@ -25,17 +25,34 @@ export function registerIpc(
 
 
     ipcMain.handle('show-save-dialog', async (_, options?: Electron.SaveDialogOptions) : Promise<ProcessResult> => {
-        return await openSaveDialog(win, options);
+        return await showSaveDialog(win, options);
     });
 
     ipcMain.handle('show-save-project-dialog', async () : Promise<ProcessResult> => {
-        const res = await openSaveDialog(win, {
+        const res = await showSaveDialog(win, {
             title: 'Save project',
             defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
             filters: [
                 { name: 'JSON files', extensions: ['json'] },
                 { name: 'All Files', extensions: ['*'] },
             ],
+        });
+
+        if (res.status === 'success') {
+            // Update last used path and persist
+            const filePath = res.data;
+            appSettings.lastUsedPath = path.parse(filePath).dir;
+            await saveAppSettings();
+        }
+
+        return res;
+    });
+
+    ipcMain.handle('show-open-dir-dialog', async (_, title: string) : Promise<ProcessResult> => {
+        const res = await showOpenDialog(win, {
+            title: title,
+            defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+            properties: ['openDirectory'],
         });
 
         if (res.status === 'success') {
@@ -56,7 +73,7 @@ export function registerIpc(
     ipcMain.handle('save-project', async () : Promise<ProcessResult> => {
         let savePath = projectSettings.projectPath;
         if (!savePath) {
-            const result = await openSaveDialog(win, {
+            const result = await showSaveDialog(win, {
                 title: 'Save project',
                 defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
                 filters: [
@@ -84,7 +101,7 @@ export function registerIpc(
 
         let openPath = null;
         try {
-            const res = await openOpenDialog(win, {
+            const res = await showOpenDialog(win, {
                 title: 'Open project',
                 defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
                 filters: [
