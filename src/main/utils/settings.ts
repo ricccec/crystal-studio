@@ -41,8 +41,7 @@ const writeSettings = async (
     } 
 };
 
-export type {
-    ProjectSettings,
+export type { 
     WriteSettingsFn,
     ReadSettingsFn,
 };
