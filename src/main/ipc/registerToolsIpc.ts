@@ -1,19 +1,16 @@
 import { BrowserWindow, ipcMain } from "electron";
-import { isDirectory } from "@shared/utils/utils";
 import type { ActionResult, AppSettings, ProjectSettings, SpawnResult } from "@shared/types/types"; 
 import type { ProjectService } from "@main/services/projectServices";
 import type { WriteSettingsFn } from "@main/utils/settings";
 import type { GitService } from "@main/services/gitServices";
-import { ExecAsyncFn } from "@main/utils/execAsync";
 
 export function registerToolsIpc(
     win: BrowserWindow,
-    appSettings: AppSettings,
     projectSettings: ProjectSettings,
+    // Injected deps.
     projectService: ProjectService,
     gitService: GitService,
     writeSettings: WriteSettingsFn,
-    execAsync: ExecAsyncFn,
 ) {
 
     ipcMain.handle('git-check', async () => {

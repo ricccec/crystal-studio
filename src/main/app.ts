@@ -25,7 +25,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
     win = createWindow(publicFolder, viteUrl);
 
     // Load services
-    createGitService({
+    const gitService = createGitService({
         execAsync,
         isDirectory,
     });
@@ -39,6 +39,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         showOpenDialog,
         saveAppSettings,
         projectService,
+        gitService,
         writeSettings,
         readSettings,
     );
