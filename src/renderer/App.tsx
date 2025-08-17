@@ -57,6 +57,18 @@ const App = () => {
         appendToConsoleOutput(result);
     };
 
+    const onOpenGit = async() => {
+        const d = await window.api.showOpenDirDialog("Open pret repo");
+        if (d.status !== 'success') {
+            appendToConsoleOutput(d);
+            return;
+        }
+
+        const repoPath = d.data;
+        const res = await window.api.openGitRepo(repoPath);
+        appendToConsoleOutput(res);
+    }
+
     return (
         <>
             <div>
