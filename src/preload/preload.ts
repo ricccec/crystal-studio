@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
     showSaveProjectDialog : (): Promise<ProcessResult> => ipcRenderer.invoke('show-save-project-dialog'),
 
     // Git IPCs
+    checkGit: (): Promise<ActionResult<string>> => ipcRenderer.invoke('git-check'),
     openGitRepo: (repoPath: string):  Promise<ActionResult> => ipcRenderer.invoke('git-open-repo', repoPath),
     cloneGitRepo: (repoUrl: string, targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone', repoUrl, targetPath),
 });

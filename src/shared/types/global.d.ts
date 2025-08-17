@@ -24,6 +24,7 @@ declare global {
             showSaveDialog : (options?: Electron.SaveDialogOptions) => Promise<ProcessResult>,
 
             // Git IPCs
+            checkGit: () => Promise<ActionResult<string>>;
             openGitRepo: (repoPath: string) =>  Promise<ActionResult>;
             cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
         };
