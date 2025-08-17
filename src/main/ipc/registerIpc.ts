@@ -1,6 +1,6 @@
 import type { ProjectService } from "@main/services/projectServices";
 import type { ReadSettingsFn, WriteSettingsFn } from "@main/utils/settings";
-import type { OpenOpenDialogFn, OpenSaveDialogFn } from "@main/windows/windows";
+import type { ShowOpenDialogFn, OpenSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from 'path';
@@ -12,7 +12,7 @@ export function registerIpc(
     projectSettings: ProjectSettings,
     // Injected deps.
     openSaveDialog: OpenSaveDialogFn,
-    openOpenDialog: OpenOpenDialogFn,
+    openOpenDialog: ShowOpenDialogFn,
     saveAppSettings: () => Promise<ActionResult>,
     projectService: ProjectService,
     writeSettings: WriteSettingsFn,
@@ -24,11 +24,11 @@ export function registerIpc(
     });
 
 
-    ipcMain.handle('open-save-dialog', async (_, options?: Electron.SaveDialogOptions) : Promise<ProcessResult> => {
+    ipcMain.handle('show-save-dialog', async (_, options?: Electron.SaveDialogOptions) : Promise<ProcessResult> => {
         return await openSaveDialog(win, options);
     });
 
-    ipcMain.handle('open-save-project-dialog', async () : Promise<ProcessResult> => {
+    ipcMain.handle('show-save-project-dialog', async () : Promise<ProcessResult> => {
         const res = await openSaveDialog(win, {
             title: 'Save project',
             defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
