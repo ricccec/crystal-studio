@@ -2,7 +2,7 @@ import { ActionResult, AppSettings, ProjectSettings } from "@shared/types/types"
 import { app, BrowserWindow } from "electron";
 import path from 'path';
 import fs from 'node:fs/promises';
-import { createWindow, openOpenDialog, openSaveDialog } from "./windows/windows";
+import { createWindow, showOpenDialog, showSaveDialog } from "./windows/windows";
 import { registerIpc } from "./ipc/registerIpc";
 import projectService from "./services/projectServices";
 import { readSettings, writeSettings } from "./utils/settings";
@@ -25,8 +25,8 @@ export async function start(publicFolder: string, viteUrl?: string) {
         win!,
         appSettings,
         projectSettings,
-        openSaveDialog,
-        openOpenDialog,
+        showSaveDialog,
+        showOpenDialog,
         saveAppSettings,
         projectService,
         writeSettings,

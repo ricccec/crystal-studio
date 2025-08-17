@@ -50,7 +50,7 @@ const App = () => {
     };
 
     const onSaveProjectAs = async () => {
-        let result = await window.api.openSaveProjectDialog();
+        let result = await window.api.showSaveProjectDialog();
         if (result.status === 'success') {
             result = await window.api.saveProjectAs(result.data);
         }

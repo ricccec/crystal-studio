@@ -7,6 +7,11 @@ export type ActionResult<T = null> =
     | { ok : true, data?: T }
     | { ok : false, error : string };
 
+export type SpawnResult = 
+    | { status: 'success', stdout: string, stderr: string }
+    | { status: 'canceled', signal?: string, stderr?: string }
+    | { status: 'error', error: string, stderr?: string }
+
 export interface ProjectSettings {
     projectName?: string | null;
     projectPath?: string | null;
