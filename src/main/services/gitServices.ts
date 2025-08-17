@@ -79,6 +79,7 @@ const cloneGitRepo = async (
 
 export type {
     GitService,
+    GitRepoDeps,
 };
 
 export {
@@ -86,4 +87,3 @@ export {
 }
 
 export default createGitService;
-

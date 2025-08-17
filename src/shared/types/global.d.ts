@@ -22,6 +22,7 @@ declare global {
             // Dialog IPCs
             showSaveProjectDialog: () => Promise<ProcessResult>;
             showSaveDialog : (options?: Electron.SaveDialogOptions) => Promise<ProcessResult>,
+            showOpenDirDialog : (title: string) => Promise<ProcessResult>,
 
             // Git IPCs
             checkGit: () => Promise<ActionResult<string>>;
