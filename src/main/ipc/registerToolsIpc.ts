@@ -16,28 +16,27 @@ export function registerToolsIpc(
     execAsync: ExecAsyncFn,
 ) {
 
-    ipcMain.handle('git-open-repo', async (_, repoPath: string) : Promise<ActionResult> => {
-        // Check if it's a valid dir
-        try {
-            const isDir = await isDirectory(repoPath);
-            if (!isDir) return { ok: false, error: 'Not a directory' };
-        } catch (e: any) {
-            return { ok: false,  error: e?.message ?? String(e) };
-        }
+    ipcMain.handle('git-check', async () => {
+        return await gitService.checkGit();
+    });
 
-        // Update project settings and save a copy
-        projectSettings.repoPath = repoPath;
-        const res = await projectService.saveProjectForRecovery(projectSettings, { writeSettings });
-        if (!res.ok) {
+    ipcMain.handle('git-open-repo', async (_, repoPath: string) : Promise<ActionResult> => {
+        const res = await gitService.openGitRepo(projectSettings, repoPath);
+        if (!res.ok) return res;
+
+        // Backup project for rcovery
+        const bkupRes = await projectService.saveProjectForRecovery(projectSettings, { writeSettings });
+        if (!bkupRes.ok) {
             // Can't save project for recovery -> keep going, but notify the renderer
-            win.webContents.send('app:notification', { data: `Cannot backup project for recovery: ${res.error}` });
+            win.webContents.send('app:notification', { data: `Cannot backup project for recovery: ${bkupRes.error}` });
         }    
-        return { ok: true };
+
+        return res;
         
     });
 
     ipcMain.handle('git-clone', async (_, repoUrl: string, targetPath: string) : Promise<SpawnResult> => {
-        const res = await gitService.cloneGitRepo(repoUrl, targetPath, { execAsync });
+        const res = await gitService.cloneGitRepo(repoUrl, targetPath);
         return res;
     });
 }
