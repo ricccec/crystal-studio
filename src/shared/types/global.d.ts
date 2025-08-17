@@ -1,4 +1,8 @@
-import type { ActionResult, ProcessResult } from "./types";
+import type {
+    ActionResult,
+    ProcessResult,
+    SpawnResult
+} from "./types";
 import type { ProjectSettings } from './types';
 
 export {};
@@ -9,12 +13,19 @@ declare global {
         api: {
             platform: NodeJS.Platform,
 
+            // Project lifecycle IPCs
             newProject: () => Promise<ActionResult>;
             saveProject: () => Promise<ProcessResult>;
             saveProjectAs: (savepath: string) => Promise<ProcessResult>;
             openProject : () => Promise<ProcessResult<ProjectSettings>>,
-            openSaveProjectDialog: () => Promise<ProcessResult>;
-            openSaveDialog : (options?: Electron.SaveDialogOptions) => Promise<ProcessResult>,
+
+            // Dialog IPCs
+            showSaveProjectDialog: () => Promise<ProcessResult>;
+            showSaveDialog : (options?: Electron.SaveDialogOptions) => Promise<ProcessResult>,
+
+            // Git IPCs
+            openGitRepo: (repoPath: string) =>  Promise<ActionResult>;
+            cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
         };
     }
 }
