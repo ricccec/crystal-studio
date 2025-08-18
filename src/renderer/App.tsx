@@ -1,4 +1,4 @@
-import type { ActionResult, ProcessResult } from '@shared/types/types';
+import type { ActionResult, ProcessResult, SpawnResult } from '@shared/types/types';
 import React from 'react';
 
 const App = () => {
@@ -18,13 +18,17 @@ const App = () => {
         result : 
             | ProcessResult<any>
             | ActionResult<any>
+            | SpawnResult
     ) => {
         const output = (() => {
             if ('status' in result) {
                 switch(result.status) {
                     case 'canceled': return 'canceled';
                     case 'error': return result.error;
-                    case 'success': return formatValue(result.data);
+                    case 'success': 
+                        if ('data' in result) return formatValue(result.data);
+                        if ('stdout' in result) return formatValue(result.stdout);
+                        return '';
                 }
             } else if('ok' in result) {
                 return result.ok ? formatValue(result.data) : result.error;
@@ -69,6 +73,18 @@ const App = () => {
         appendToConsoleOutput(res);
     }
 
+    const onGitClone = async() => {
+        const d = await window.api.showOpenDirDialog("Select target directory");
+        if (d.status !== 'success') {
+            appendToConsoleOutput(d);
+            return;
+        }
+
+        const repoPath = d.data;
+        const res = await window.api.cloneDefaultGitRepo(repoPath);
+        appendToConsoleOutput(res);
+    }
+
     return (
         <>
             <div>
@@ -76,6 +92,10 @@ const App = () => {
                 <button onClick={onOpenProject}>Open Project</button>
                 <button onClick={onSaveProject}>Save Project</button>
                 <button onClick={onSaveProjectAs}>Save Project As</button>
+            </div>
+            <div>
+                <button onClick={onOpenGit}>Open pret repo</button>
+                <button onClick={onGitClone}>Clone pret repo</button>
             </div>
             <div>
                 <textarea

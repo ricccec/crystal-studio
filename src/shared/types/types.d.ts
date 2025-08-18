@@ -23,5 +23,6 @@ export interface AppSettings {
     lastUsedPath?: string | null;
     makePath?: string | null;
     rgbdsPath?: string | null;
-    emulatorPath?: string | null;   
+    emulatorPath?: string | null;
+    repoUrl: string;   
 }

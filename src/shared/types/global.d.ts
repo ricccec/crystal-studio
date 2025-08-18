@@ -28,6 +28,8 @@ declare global {
             checkGit: () => Promise<ActionResult<string>>;
             openGitRepo: (repoPath: string) =>  Promise<ActionResult>;
             cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
+            cloneDefaultGitRepo: (targetPath: string) => Promise<SpawnResult>;
+            
         };
     }
 }

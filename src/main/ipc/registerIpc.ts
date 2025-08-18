@@ -47,6 +47,7 @@ export function registerIpc(
     registerToolsIpc(
         win,
         projectSettings,
+        appSettings,
         projectService,
         gitService,
         writeSettings,

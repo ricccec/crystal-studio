@@ -9,11 +9,12 @@ import { readSettings, writeSettings } from "./utils/settings";
 import createGitService from "./services/gitServices";
 import execAsync from "./utils/execAsync";
 import { isDirectory } from "@shared/utils/utils";
+import { withDefaultAppSettings } from "@shared/default";
 
 let win : BrowserWindow | null = null;
 
 const projectSettings : ProjectSettings = {};
-const appSettings : AppSettings = {};
+const appSettings : AppSettings = withDefaultAppSettings();
 
 export async function start(publicFolder: string, viteUrl?: string) {
 

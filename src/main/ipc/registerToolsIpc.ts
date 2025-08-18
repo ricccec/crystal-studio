@@ -7,6 +7,7 @@ import type { GitService } from "@main/services/gitServices";
 export function registerToolsIpc(
     win: BrowserWindow,
     projectSettings: ProjectSettings,
+    appSettings: AppSettings,
     // Injected deps.
     projectService: ProjectService,
     gitService: GitService,
@@ -33,6 +34,12 @@ export function registerToolsIpc(
     });
 
     ipcMain.handle('git-clone', async (_, repoUrl: string, targetPath: string) : Promise<SpawnResult> => {
+        const res = await gitService.cloneGitRepo(repoUrl, targetPath);
+        return res;
+    });
+
+    ipcMain.handle('git-clone-default', async (_, targetPath: string) : Promise<SpawnResult> => {
+        const repoUrl = appSettings.repoUrl;
         const res = await gitService.cloneGitRepo(repoUrl, targetPath);
         return res;
     });
