@@ -1,9 +1,32 @@
+import { TaskStreamPayload } from '@shared/ipc';
 import type { ActionResult, ProcessResult, SpawnResult } from '@shared/types/types';
 import React from 'react';
 
 const App = () => {
 
     const [ consoleOutput, setConsoleState ] = React.useState<string>('');
+    const [ progressLine, setProgressLine ] = React.useState<string>('');
+
+    // Register callback for app notifications
+    React.useEffect(() => {
+        const unsub = window.api.on('task:stream', (payload) => {
+            if (!payload) return;
+
+            const p = payload as TaskStreamPayload;
+            const line = p.text;
+
+            if (line.endsWith('\r')) {
+                // progress update -> replace progress line
+                setProgressLine(line);
+            } else {
+                // Complete line -> clear progress and append
+                setProgressLine('');
+                appendToConsoleOutput(line);
+            }
+        })
+        // Return unmount callback for React StrictMode to prevent registering twice
+        return unsub;
+    }, []);
 
     const formatValue = (v: unknown): string => {
         if (v === undefined) return '';
@@ -15,23 +38,25 @@ const App = () => {
     };
 
     const appendToConsoleOutput = (
-        result : 
+        out : 
+            | string
             | ProcessResult<any>
             | ActionResult<any>
             | SpawnResult
     ) => {
         const output = (() => {
-            if ('status' in result) {
-                switch(result.status) {
+            if (typeof out === 'string') return out;
+            if ('status' in out) {
+                switch(out.status) {
                     case 'canceled': return 'canceled';
-                    case 'error': return result.error;
+                    case 'error': return out.error;
                     case 'success': 
-                        if ('data' in result) return formatValue(result.data);
-                        if ('stdout' in result) return formatValue(result.stdout);
+                        if ('data' in out) return formatValue(out.data);
+                        if ('stdout' in out) return formatValue(out.stdout);
                         return '';
                 }
-            } else if('ok' in result) {
-                return result.ok ? formatValue(result.data) : result.error;
+            } else if('ok' in out) {
+                return out.ok ? formatValue(out.data) : out.error;
             }
             return '';
         })();
@@ -82,7 +107,7 @@ const App = () => {
 
         const repoPath = d.data;
         const res = await window.api.cloneDefaultGitRepo(repoPath);
-        appendToConsoleOutput(res);
+        //appendToConsoleOutput(res);
     }
 
     return (
@@ -101,7 +126,7 @@ const App = () => {
                 <textarea
                     rows={25}
                     style={{ width: '100%' }}
-                    value={consoleOutput}
+                    value={`${consoleOutput}${progressLine}`}
                     readOnly
                 />
             </div>

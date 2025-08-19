@@ -3,6 +3,7 @@ import type { ActionResult, AppSettings, ProjectSettings, SpawnResult } from "@s
 import type { ProjectService } from "@main/services/projectServices";
 import type { WriteSettingsFn } from "@main/utils/settings";
 import type { GitService } from "@main/services/gitServices";
+import { TaskStreamPayload } from "@shared/ipc";
 
 export function registerToolsIpc(
     win: BrowserWindow,
@@ -33,14 +34,33 @@ export function registerToolsIpc(
         
     });
 
-    ipcMain.handle('git-clone', async (_, repoUrl: string, targetPath: string) : Promise<SpawnResult> => {
-        const res = await gitService.cloneGitRepo(repoUrl, targetPath);
+    ipcMain.handle('git-clone', async (
+        _,
+        repoUrl: string,
+        targetPath: string,
+    ) : Promise<SpawnResult> => {
+        const res = await gitService.cloneGitRepo(
+            repoUrl, targetPath,
+            (stream, text) => { 
+                const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
+                win.webContents.send('task:stream', payload);
+            },
+        );
         return res;
     });
 
-    ipcMain.handle('git-clone-default', async (_, targetPath: string) : Promise<SpawnResult> => {
+    ipcMain.handle('git-clone-default', async (
+        _,
+        targetPath: string,
+    ) : Promise<SpawnResult> => {
         const repoUrl = appSettings.repoUrl;
-        const res = await gitService.cloneGitRepo(repoUrl, targetPath);
+        const res = await gitService.cloneGitRepo(
+            repoUrl, targetPath,
+            (stream, text) => { 
+                const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
+                win.webContents.send('task:stream', payload);
+            },
+        );
         return res;
     });
 }

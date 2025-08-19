@@ -1,3 +1,4 @@
+import { Channel } from "@shared/ipc";
 import type {
     ActionResult,
     ProcessResult,
@@ -30,6 +31,9 @@ declare global {
             cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
             cloneDefaultGitRepo: (targetPath: string) => Promise<SpawnResult>;
             
+            // Event helpers
+            on: (channel: Channel, listener: (...args: any[]) => void) => (() => void);
+            off: (channel: Channel, listener: (...args: any[]) => void) => void;
         };
     }
 }
