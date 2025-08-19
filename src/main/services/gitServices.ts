@@ -22,6 +22,7 @@ type OpenGitRepoFn = (
 type CloneGitRepoFn = (
     repoUrl: string,
     targetDir: string,
+    onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
 function createGitService(deps: GitRepoDeps): GitService {
@@ -36,8 +37,9 @@ function createGitService(deps: GitRepoDeps): GitService {
 
         cloneGitRepo: (
             repoUrl: string,
-            targetDir: string
-        ) => cloneGitRepo(repoUrl, targetDir, deps),
+            targetDir: string,
+            onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
+        ) => cloneGitRepo(repoUrl, targetDir, deps, onOutput),
     }
 }
 
@@ -72,9 +74,10 @@ const openGitRepo = async (
 const cloneGitRepo = async (
     repoUrl: string,
     targetDir: string,
-    dev: GitRepoDeps
+    dev: GitRepoDeps,
+    onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
-    return await dev.execAsync('git', ['clone', repoUrl, targetDir]);
+    return await dev.execAsync('git', ['clone', repoUrl, targetDir], onOutput);
 };
 
 export type {

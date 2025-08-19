@@ -4,9 +4,10 @@ import { spawn } from "node:child_process";
 export type ExecAsyncFn = (
     cmd: string,
     args?: string[],
+    onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
-const execAsync:ExecAsyncFn = (cmd, args) => {
+const execAsync:ExecAsyncFn = (cmd, args, onOutput) => {
     
     return new Promise<SpawnResult>((resolve) => {
         // child events can fire miltiple times -> ensure single resolve
@@ -25,14 +26,45 @@ const execAsync:ExecAsyncFn = (cmd, args) => {
         // Update stdout and stderr
         const stdoutChunks: Buffer[] = [];
         const stderrChunks: Buffer[] = [];
-        child.stdout.on('data', (d: Buffer | any) => 
-            stdoutChunks.push(Buffer.isBuffer(d) ? d : Buffer.from(String(d)))
-        );
-        child.stderr.on('data', (d: Buffer | any) => 
-            stderrChunks.push(Buffer.isBuffer(d) ? d : Buffer.from(String(d)))
-        );
+
+        // Incomplete chunk tails
+        let stdoutPending = '';
+        let stderrPending = '';
+
+        child.stdout.on('data', (d: Buffer | any) => { 
+            const buf = Buffer.isBuffer(d) ? d : Buffer.from(String(d));
+            stdoutChunks.push(buf);
+
+            // Split chunk into lines and send them to the listener (if any)
+            const { lines, prevPending } = handleChunk(stdoutPending, buf);
+            stdoutPending = prevPending;
+            for (const l of lines) {
+                try { onOutput?.('stdout', l); } catch { /* swallow */ }
+            }
+        });
+        child.stderr.on('data', (d: Buffer | any) => {
+            const buf = Buffer.isBuffer(d) ? d : Buffer.from(String(d));
+            stderrChunks.push(buf);
+
+             // Split chunk into lines and send them to the listener (if any)
+            const { lines, prevPending } = handleChunk(stderrPending, buf);
+            stderrPending = prevPending;
+            for (const l of lines) {
+                try { onOutput?.('stderr', l); } catch { /* swallow */ }
+            }
+        });
 
         child.on('close', (code, signal) => {
+            // flush pending tails as final partial lines (ending === null)
+            if (stdoutPending) {
+                try { onOutput?.('stdout', stdoutPending); } catch { /* swallow */ }
+                stdoutPending = '';
+            }
+            if (stderrPending) {
+                try { onOutput?.('stderr', stderrPending); } catch { /* swallow */ }
+                stderrPending = '';
+            }
+
             const stdout = Buffer.concat(stdoutChunks).toString('utf-8');
             const stderr = Buffer.concat(stderrChunks).toString('utf-8');
             if (code === 0) done({ status: 'success', stdout, stderr });
@@ -43,6 +75,39 @@ const execAsync:ExecAsyncFn = (cmd, args) => {
 
     });
 
+}
+
+function handleChunk(pendingTail: string, newChunk: Buffer) {
+    
+    const raw = newChunk.toString('utf-8');
+    const combined = pendingTail + raw;
+    
+
+    const lines: string[] = [];
+
+    let cur = ''; // The line being build
+    for (let i = 0; i < combined.length; i++) {
+        const ch = combined[i];
+        if (ch === '\r') {
+            // Check for CRLF -> treat as \n
+            if ((i + 1) < combined.length && combined[i + 1] === '\n') {
+                lines.push(`${cur}\n`);
+                i++; // Skip '\n'
+                cur = '';
+            } else {
+                lines.push(`${cur}\r`);
+                cur = '';
+            }
+        } else if (ch === '\n') {
+            lines.push(`${cur}\n`);
+            cur = '';
+        } else {
+            cur += ch;
+        }
+    }
+
+    // cur is the incomplete tail (no ending yet)
+    return { lines, prevPending: pendingTail };
 }
 
 export default execAsync;
