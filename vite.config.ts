@@ -25,6 +25,14 @@ export default defineConfig({
 			main: { 
 				entry: path.join(__dirname, 'src/main/main.ts'),
 				vite: {
+					resolve: {
+						alias: {
+							'@': path.join(__dirname, 'src/renderer'),
+							'@shared': path.join(__dirname, 'src/shared'),
+							'@main': path.join(__dirname, 'src/main'),
+							'@preload': path.join(__dirname, 'src/preload'),
+						},
+					},
 					build: {
 						outDir: path.join(__dirname, 'dist-electron')
 					}
@@ -33,6 +41,14 @@ export default defineConfig({
 			preload: {
 				input: path.join(__dirname, 'src/preload/preload.ts'),
 				vite: {
+					resolve: {
+						alias: {
+							'@': path.join(__dirname, 'src/renderer'),
+							'@shared': path.join(__dirname, 'src/shared'),
+							'@main': path.join(__dirname, 'src/main'),
+							'@preload': path.join(__dirname, 'src/preload'),
+						},
+					},
 					build: {
 						outDir: path.join(__dirname, 'dist-electron')
 					}

@@ -2,8 +2,8 @@ import { ProcessResult } from "@shared/types/types";
 import { BrowserWindow, dialog } from "electron";
 import path from 'path';
 
-export type OpenSaveDialogFn = (win: BrowserWindow, options?: Electron.SaveDialogOptions) => Promise<ProcessResult>;
-export type OpenOpenDialogFn = (win: BrowserWindow, options?: Electron.OpenDialogOptions) => Promise<ProcessResult>;
+export type ShowSaveDialogFn = (win: BrowserWindow, options?: Electron.SaveDialogOptions) => Promise<ProcessResult>;
+export type ShowOpenDialogFn = (win: BrowserWindow, options?: Electron.OpenDialogOptions) => Promise<ProcessResult>;
 
 export const createWindow = (publicFolder: string, viteUrl?: string) : BrowserWindow => {
     const win = new BrowserWindow({
@@ -25,7 +25,7 @@ export const createWindow = (publicFolder: string, viteUrl?: string) : BrowserWi
     return win;
 };
 
-export const openSaveDialog: OpenSaveDialogFn = async (win, options) => {
+export const showSaveDialog: ShowSaveDialogFn = async (win, options) => {
     try {
         const { canceled, filePath } = await dialog.showSaveDialog(win, options ?? {});
         if (canceled || !filePath) return { status: 'canceled' };
@@ -35,7 +35,7 @@ export const openSaveDialog: OpenSaveDialogFn = async (win, options) => {
     }
 };
 
-export const openOpenDialog: OpenOpenDialogFn = async (win, options) => {
+export const showOpenDialog: ShowOpenDialogFn = async (win, options) => {
     try {
         const { canceled, filePaths } = await dialog.showOpenDialog(win, options ?? {});
         if (canceled || !filePaths[0]) return { status: 'canceled' };
