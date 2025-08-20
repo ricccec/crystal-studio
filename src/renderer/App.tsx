@@ -60,7 +60,7 @@ const App = () => {
             }
             return '';
         })();
-        setConsoleState(prev => `${prev}${output}\n`);
+        setConsoleState(prev => `${prev}${output}`);
     };
 
     const onNewProject = async () => {
