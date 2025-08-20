@@ -107,7 +107,7 @@ function handleChunk(pendingTail: string, newChunk: Buffer) {
     }
 
     // cur is the incomplete tail (no ending yet)
-    return { lines, prevPending: pendingTail };
+    return { lines, prevPending: cur };
 }
 
 export default execAsync;

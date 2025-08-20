@@ -107,7 +107,6 @@ const App = () => {
 
         const repoPath = d.data;
         const res = await window.api.cloneDefaultGitRepo(repoPath);
-        //appendToConsoleOutput(res);
     }
 
     return (
