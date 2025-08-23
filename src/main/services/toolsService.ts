@@ -1,7 +1,9 @@
 import { ExecAsyncFn } from "@main/utils/execAsync";
+import { FindToolCandidateFn } from "@main/utils/findToolCandidate";
 
 type ToolsServiceDeps = {
     execAsync: ExecAsyncFn;
+    findToolCandidate: FindToolCandidateFn;
 };
 
 type ToolsService = {
@@ -13,26 +15,46 @@ type CheckToolsResult =
     | { ok: true, version: string}
     | { ok: false, error: string };
 
-type CheckToolsFn = () => Promise<{
-    git: CheckToolsResult,
-    make: CheckToolsResult,
-}>;
+type CheckToolsFn = (
+    tools: { name: string, path?: string | null, aliases?: string[] | null }[],
+) => Promise<{
+    tool: string,
+    status: CheckToolsResult,
+}[]>;
 
 type CheckToolFn = (cmd: string) => Promise<CheckToolsResult>;
 
 function createToolsService(deps: ToolsServiceDeps): ToolsService {
     return {
-        checkTools: async () => await checkTools(deps),
+        checkTools: async (tools) => await checkTools(tools, deps),
         checkTool: async (cmd: string) => await checkTool(cmd, deps),
     };
 }
-const checkTools = async (deps: ToolsServiceDeps) => {
-    const git = await checkTool('git', deps);
-    const make = await checkTool('make', deps);
-    return {
-        git,
-        make,
+
+const checkTools = async (
+    tools: { name: string, path?: string | null, aliases?: string[] | null }[],
+    deps: ToolsServiceDeps
+) => {
+    
+    const res: { tool: string, status: CheckToolsResult }[] = [];
+    for (const t of tools) {
+        // Find executable/command for this tool
+        const r = await deps.findToolCandidate(
+            t.name,
+            process.platform === 'win32',
+            t.path,
+            t.aliases
+        )
+
+        if (r.ok) {
+            res.push({ tool: t.name, status: await checkTool(r.cmd, deps) });
+        }
+        else {
+            res.push({ tool: t.name, status: { ok: false, error: `Command ${t.name} not found`} });
+        }
     }
+
+    return res;
 }
 
 const checkTool = async (cmd: string, deps: ToolsServiceDeps) => {

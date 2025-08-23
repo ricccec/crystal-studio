@@ -10,8 +10,6 @@ type MakeService = {
     runMake: RunMakeFn;
 }
 
-type CheckMakeFn = () => Promise<ActionResult<string>>;
-
 type RunMakeFn = (
     targetDir: string,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
@@ -23,23 +21,19 @@ function createMakeService(deps: MakeServiceDeps): MakeService {
         runMake: (
             targetDir: string,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => runMake(targetDir, deps, onOutput),
+        ) => runMake(targetDir, deps, null, null, onOutput),
     }
 }
 
 const runMake = async (
     targetDir: string,
     deps: MakeServiceDeps,
+    makePath?: string | null,
+    makeAliases?: string[] | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
 
-    // Check if it's a valid dir
-    try {
-        const isDir = await deps.isDirectory(targetDir);
-        if (!isDir) return { status:'error', error:'Not a directory' };
-    } catch (e: any) {
-        return { status:'error',  error: e?.message ?? String(e) };
-    }
+
 
     return await deps.execAsync('make', [targetDir], onOutput);
 };

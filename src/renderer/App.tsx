@@ -88,16 +88,15 @@ const App = () => {
 
     const onCheckTools = async () => {
         appendToConsoleOutput('Checking tools...');
-        const res = await window.api.checkTools();
+        const res = await window.api.checkTools() as { tool: string, status: any }[];
 
+        console.log(res);
         function formatToolLine(toolName: string, res: { ok: boolean, version?: string, error?: string}) {
             return `${toolName}: ${res.ok ? (res.version ?? 'OK') : `ERROR: ${res.error}`}`;
         }
-
-        const lines = [
-            formatToolLine('git', res.git),
-            formatToolLine('make', res.make),
-        ]
+        
+        const lines = res.map((item) => formatToolLine(item.tool, item.status));
+        console.log(lines);
         appendToConsoleOutput(lines.join('\n'));
 
     };
@@ -151,6 +150,13 @@ const App = () => {
         }
     }
 
+    const onSelectMakeDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status == 'success') {
+            window.api.setMakeFolder(r.data);
+        }
+    }
+
     return (
         <>
             <div>
@@ -160,10 +166,13 @@ const App = () => {
                 <button onClick={onSaveProjectAs}>Save Project As</button>
             </div>
             <div>
-                <button onClick={onCheckTools}>Check tools</button>
                 <button onClick={onOpenGit}>Open pret repo</button>
                 <button onClick={onGitClone}>Clone pret repo</button>
                 <button onClick={onRunMake}>Build project</button>
+            </div>
+            <div>
+                <button onClick={onCheckTools}>Check tools</button>
+                <button onClick={onSelectMakeDir}>Select make folder</button>
             </div>
             <div>
                 <textarea

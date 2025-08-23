@@ -1,14 +1,16 @@
 import { AppSettings } from "./types/types";
 
-const makeAliases = {
-    windows: ["make.exe", "mingw32-make.exe", "gmake.exe", "nmake.exe", "jom.exe"],
-    macos: ["make", "gmake"],
-    linux: ["make", "gmake"],
+const toolAliases = {
+    make: {
+        win32: ["make", "mingw32-make", "gmake", "nmake", "jom"],
+        darwin: ["make", "gmake"],
+        linux: ["make", "gmake"],
+    }
 };
 
 export const defaultAppSettings: AppSettings = {
     repoUrl: "https://github.com/pret/pokecrystal.git",
-    makeAliases,
+    toolAliases,
 
 }
 

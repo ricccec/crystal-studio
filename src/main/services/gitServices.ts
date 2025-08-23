@@ -1,7 +1,7 @@
 import { ExecAsyncFn } from "@main/utils/execAsync";
 import { ActionResult, ProjectSettings, SpawnResult } from "@shared/types/types";
 
-type GitRepoDeps = {
+type GitServiceDeps = {
     execAsync: ExecAsyncFn;
     isDirectory: (path: string) => Promise<boolean>; 
 };
@@ -24,7 +24,7 @@ type CloneGitRepoFn = (
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
-function createGitService(deps: GitRepoDeps): GitService {
+function createGitService(deps: GitServiceDeps): GitService {
 
     return {
 
@@ -44,7 +44,7 @@ function createGitService(deps: GitRepoDeps): GitService {
 const openGitRepo = async (
     projectSettings: ProjectSettings,
     repoPath: string,
-    deps: GitRepoDeps
+    deps: GitServiceDeps
 ) : Promise<ActionResult> => {
     // Check if it's a valid dir
     try {
@@ -62,7 +62,7 @@ const openGitRepo = async (
 const cloneGitRepo = async (
     repoUrl: string,
     targetDir: string,
-    dev: GitRepoDeps,
+    dev: GitServiceDeps,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
     return await dev.execAsync('git', ['clone', repoUrl, targetDir], onOutput);
@@ -70,7 +70,7 @@ const cloneGitRepo = async (
 
 export type {
     GitService,
-    GitRepoDeps,
+    GitServiceDeps as GitRepoDeps,
 };
 
 export {
