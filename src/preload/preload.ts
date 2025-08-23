@@ -15,6 +15,9 @@ const listenerMap = new Map<
 contextBridge.exposeInMainWorld('api', {
     platform: process.platform,
 
+    // Application IPCs
+    setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder'),
+    
     // Project lifecycle IPCs
     newProject : (): Promise<ActionResult> => ipcRenderer.invoke('new-project'),
     saveProject : (): Promise<ProcessResult> => ipcRenderer.invoke('save-project'),

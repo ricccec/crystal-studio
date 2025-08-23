@@ -14,6 +14,9 @@ declare global {
         api: {
             platform: NodeJS.Platform,
 
+            // Application IPCs
+            setMakeFolder : (makePath: string) =>  Promise<ActionResult>;    
+
             // Project lifecycle IPCs
             newProject: () => Promise<ActionResult>;
             saveProject: () => Promise<ProcessResult>;

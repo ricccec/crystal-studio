@@ -1,7 +1,17 @@
 import path from "path";
 import execAsync from "./execAsync";
 
-const findToolCandidate = async (cmd: string, isWindows: boolean = false, execPath?: string, execAliases?: string[]) => {
+type FindToolCandidateFn = (
+    cmd: string, isWindows?: boolean,
+    execPath?: string | null,
+    execAliases?: string[] | null
+) => Promise<{ ok: true, cmd: string} | { ok: false }>;
+
+const findToolCandidate: FindToolCandidateFn = async (
+    cmd, isWindows = false,
+    execPath,
+    execAliases
+) => {
 
     // Build a list of make executable candidates
     const candidates: string[] = [];
@@ -26,5 +36,9 @@ const findToolCandidate = async (cmd: string, isWindows: boolean = false, execPa
     return { ok: false };
 
 };
+
+export type {
+    FindToolCandidateFn,
+}
 
 export default findToolCandidate;

@@ -6,6 +6,7 @@ import type { GitService } from "@main/services/gitServices";
 import { TaskStreamPayload } from "@shared/ipc";
 import { MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
+import findToolCandidate from "@main/utils/findToolCandidate";
 
 export function registerToolsIpc(
     win: BrowserWindow,
@@ -19,9 +20,21 @@ export function registerToolsIpc(
     writeSettings: WriteSettingsFn,
 ) {
 
-
     ipcMain.handle('check-tools', async () => {
-        return await toolsService.checkTools();
+
+        function getAliases(tool: string) {
+            if (!appSettings.toolAliases[tool])
+                return [];
+            const toolAliases = appSettings.toolAliases[tool];
+            return toolAliases[process.platform] ?? [];
+        }
+
+        const tools = [
+            { name: 'git', path: null, aliases: null },
+            { name: 'make', path: appSettings.makePath, aliases: getAliases('make')},
+        ]
+        
+        return await toolsService.checkTools(tools);
     });
 
     ipcMain.handle('git-open-repo', async (_, repoPath: string) : Promise<ActionResult> => {
