@@ -1,6 +1,6 @@
 import { ExecAsyncFn } from "@main/utils/execAsync";
 
-type ToolsServicesDeps = {
+type ToolsServiceDeps = {
     execAsync: ExecAsyncFn;
 };
 
@@ -20,13 +20,13 @@ type CheckToolsFn = () => Promise<{
 
 type CheckToolFn = (cmd: string) => Promise<CheckToolsResult>;
 
-function createToolsService(deps: ToolsServicesDeps): ToolsService {
+function createToolsService(deps: ToolsServiceDeps): ToolsService {
     return {
         checkTools: async () => await checkTools(deps),
         checkTool: async (cmd: string) => await checkTool(cmd, deps),
     };
 }
-const checkTools = async (deps: ToolsServicesDeps) => {
+const checkTools = async (deps: ToolsServiceDeps) => {
     const git = await checkTool('git', deps);
     const make = await checkTool('make', deps);
     return {
@@ -35,8 +35,8 @@ const checkTools = async (deps: ToolsServicesDeps) => {
     }
 }
 
-const checkTool = async (cmd: string, deps: ToolsServicesDeps) => {
-    const res = await deps.execAsync(cmd, ["--version"]);
+const checkTool = async (cmd: string, deps: ToolsServiceDeps) => {
+    const res = await deps.execAsync(cmd, ['--version']);
     switch(res.status) {
         case 'success': return { ok: true, version: res.stdout.trim() } as CheckToolsResult;
         case 'error': return { ok: false, error: res.error } as CheckToolsResult;
@@ -47,7 +47,7 @@ const checkTool = async (cmd: string, deps: ToolsServicesDeps) => {
 
 export type {
     ToolsService,
-    ToolsServicesDeps,
+    ToolsServiceDeps as ToolsServicesDeps,
 };
 
 export {

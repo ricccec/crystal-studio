@@ -34,7 +34,9 @@ export default defineConfig({
 						},
 					},
 					build: {
-						outDir: path.join(__dirname, 'dist-electron')
+						outDir: path.join(__dirname, 'dist-electron'),
+						sourcemap: true,
+						minify: false
 					}
 				}
 			},
@@ -50,7 +52,9 @@ export default defineConfig({
 						},
 					},
 					build: {
-						outDir: path.join(__dirname, 'dist-electron')
+						outDir: path.join(__dirname, 'dist-electron'),
+						sourcemap: true,
+						minify: false
 					}
 				}
 			},

@@ -5,6 +5,7 @@ import type { WriteSettingsFn } from "@main/utils/settings";
 import type { GitService } from "@main/services/gitServices";
 import { TaskStreamPayload } from "@shared/ipc";
 import { MakeService } from "@main/services/makeService";
+import { ToolsService } from "@main/services/toolsService";
 
 export function registerToolsIpc(
     win: BrowserWindow,
@@ -12,13 +13,15 @@ export function registerToolsIpc(
     appSettings: AppSettings,
     // Injected deps.
     projectService: ProjectService,
+    toolsService: ToolsService,
     gitService: GitService,
     makeService: MakeService,
     writeSettings: WriteSettingsFn,
 ) {
 
-    ipcMain.handle('git-check', async () => {
-        return await gitService.checkGit();
+
+    ipcMain.handle('check-tools', async () => {
+        return await toolsService.checkTools();
     });
 
     ipcMain.handle('git-open-repo', async (_, repoPath: string) : Promise<ActionResult> => {
@@ -64,10 +67,6 @@ export function registerToolsIpc(
             },
         );
         return res;
-    });
-
-    ipcMain.handle('make-check', async () => {
-        return await makeService.checkMake();
     });
 
     ipcMain.handle('run-make', async (

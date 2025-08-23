@@ -60,7 +60,7 @@ const App = () => {
             }
             return '';
         })();
-        setConsoleState(prev => `${prev}${output}`);
+        setConsoleState(prev => `${prev}${output.trim()}\n`);
     };
 
     const onNewProject = async () => {
@@ -86,6 +86,22 @@ const App = () => {
         appendToConsoleOutput(result);
     };
 
+    const onCheckTools = async () => {
+        appendToConsoleOutput('Checking tools...');
+        const res = await window.api.checkTools();
+
+        function formatToolLine(toolName: string, res: { ok: boolean, version?: string, error?: string}) {
+            return `${toolName}: ${res.ok ? (res.version ?? 'OK') : `ERROR: ${res.error}`}`;
+        }
+
+        const lines = [
+            formatToolLine('git', res.git),
+            formatToolLine('make', res.make),
+        ]
+        appendToConsoleOutput(lines.join('\n'));
+
+    };
+
     const onOpenGit = async() => {
         const d = await window.api.showOpenDirDialog("Open pret repo");
         if (d.status !== 'success') {
@@ -106,7 +122,33 @@ const App = () => {
         }
 
         const repoPath = d.data;
-        const res = await window.api.cloneDefaultGitRepo(repoPath);
+        const runRes = await window.api.cloneDefaultGitRepo(repoPath);
+        if (runRes.status === 'error') {
+            appendToConsoleOutput(runRes.error);
+        } else if (runRes.status === 'canceled') {
+            appendToConsoleOutput(runRes.signal ?? 'Canceled');
+        }
+    }
+
+    const onRunMake = async () => {
+        const res = await window.api.getProjectSettings();
+        if (!res.ok) {
+            appendToConsoleOutput('Unable to retrieve repo folder: cannot access project settings');
+            return;
+        }        
+        // Check repo 
+        const dir = res.data?.repoPath;
+        if (!dir) {
+            appendToConsoleOutput('Unable to retrieve repo folder: try opening a repo first');
+            return;
+        }
+        
+        const runRes = await window.api.runMake(dir);
+        if (runRes.status === 'error') {
+            appendToConsoleOutput(runRes.error);
+        } else if (runRes.status === 'canceled') {
+            appendToConsoleOutput(runRes.signal ?? 'Canceled');
+        }
     }
 
     return (
@@ -118,8 +160,10 @@ const App = () => {
                 <button onClick={onSaveProjectAs}>Save Project As</button>
             </div>
             <div>
+                <button onClick={onCheckTools}>Check tools</button>
                 <button onClick={onOpenGit}>Open pret repo</button>
                 <button onClick={onGitClone}>Clone pret repo</button>
+                <button onClick={onRunMake}>Build project</button>
             </div>
             <div>
                 <textarea

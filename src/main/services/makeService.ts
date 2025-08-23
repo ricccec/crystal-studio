@@ -7,7 +7,6 @@ type MakeServiceDeps = {
 };
 
 type MakeService = {
-    checkMake: CheckMakeFn,
     runMake: RunMakeFn;
 }
 
@@ -21,22 +20,10 @@ type RunMakeFn = (
 function createMakeService(deps: MakeServiceDeps): MakeService {
 
     return {
-        checkMake: async () => await checkMake(deps),
-
         runMake: (
             targetDir: string,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
         ) => runMake(targetDir, deps, onOutput),
-    }
-}
-
-const checkMake = async (deps: MakeServiceDeps) : Promise<ActionResult<string>> => {
-    const rs = await deps.execAsync('make', ['--version']);;
-    switch(rs.status) {
-        case 'success': return { ok: true, data: rs.stdout };
-        case 'error': return { ok: false, error: rs.error };
-        case 'canceled': return { ok: false, error: rs.signal ?? '' };
-        default: return { ok: false, error: 'Unknown error' };
     }
 }
 

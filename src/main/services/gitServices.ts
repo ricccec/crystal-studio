@@ -7,7 +7,6 @@ type GitRepoDeps = {
 };
 
 type GitService = {
-    checkGit: CheckGitFn,
     openGitRepo: OpenGitRepoFn;
     cloneGitRepo: CloneGitRepoFn;
 }
@@ -28,7 +27,6 @@ type CloneGitRepoFn = (
 function createGitService(deps: GitRepoDeps): GitService {
 
     return {
-        checkGit: async () => await checkGit(deps),
 
         openGitRepo: async (
             projectSettings: ProjectSettings,
@@ -40,16 +38,6 @@ function createGitService(deps: GitRepoDeps): GitService {
             targetDir: string,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
         ) => cloneGitRepo(repoUrl, targetDir, deps, onOutput),
-    }
-}
-
-const checkGit = async (deps: GitRepoDeps) : Promise<ActionResult<string>> => {
-    const rs = await deps.execAsync('git', ['--version']);;
-    switch(rs.status) {
-        case 'success': return { ok: true, data: rs.stdout };
-        case 'error': return { ok: false, error: rs.error };
-        case 'canceled': return { ok: false, error: rs.signal ?? '' };
-        default: return { ok: false, error: 'Unknown error' };
     }
 }
 
