@@ -19,7 +19,11 @@ export function registerProjectLifecycleIpc(
     readSettings: ReadSettingsFn,
 ) {
 
-    ipcMain.handle('update-settings', (_, newSettings : ProjectSettings) => {
+    ipcMain.handle('get-project-settings', async (): Promise<ActionResult<ProjectSettings>> => { 
+        return { ok: true, data: projectSettings };
+    });
+
+    ipcMain.handle('update-settings', async (_, newSettings : Partial<ProjectSettings>) => {
         Object.assign(projectSettings, newSettings); 
     });
 
