@@ -27,14 +27,15 @@ contextBridge.exposeInMainWorld('api', {
     showSaveProjectDialog : (): Promise<ProcessResult> => ipcRenderer.invoke('show-save-project-dialog'),
     showOpenDirDialog : (title: string): Promise<ProcessResult> => ipcRenderer.invoke('show-open-dir-dialog', title),
 
+    // Shared tools IPCs
+    checkTools: () => ipcRenderer.invoke('check-tools'),
+
     // Git IPCs
-    checkGit: (): Promise<ActionResult<string>> => ipcRenderer.invoke('git-check'),
     openGitRepo: (repoPath: string):  Promise<ActionResult> => ipcRenderer.invoke('git-open-repo', repoPath),
     cloneGitRepo: (repoUrl: string, targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone', repoUrl, targetPath),
     cloneDefaultGitRepo: (targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone-default', targetPath),
 
     // Make IPCs
-    checkMake: (): Promise<ActionResult<string>> => ipcRenderer.invoke('make-check'),
     runMake: (targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('run-make', targetPath),
 
     // Subscribe to a whitelisted renderer event channel

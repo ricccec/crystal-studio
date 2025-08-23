@@ -26,14 +26,15 @@ declare global {
             showSaveDialog : (options?: Electron.SaveDialogOptions) => Promise<ProcessResult>,
             showOpenDirDialog : (title: string) => Promise<ProcessResult>,
 
+            // Shared tools IPCs
+            checkTools: () => any;
+
             // Git IPCs
-            checkGit: () => Promise<ActionResult<string>>;
             openGitRepo: (repoPath: string) =>  Promise<ActionResult>;
             cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
             cloneDefaultGitRepo: (targetPath: string) => Promise<SpawnResult>;
  
             // Make IPCs
-            checkMake: () => Promise<ActionResult<string>>;
             runMake: (targetPath: string) => Promise<SpawnResult>;
             
 

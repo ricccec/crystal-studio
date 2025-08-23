@@ -9,6 +9,7 @@ import { registerDialogIpc } from "./registerDialogIpc";
 import { registerToolsIpc } from "./registerToolsIpc";
 import { GitService } from "@main/services/gitServices";
 import { MakeService } from "@main/services/makeService";
+import { ToolsService } from "@main/services/toolsService";
 
 
 export function registerIpc(
@@ -20,6 +21,7 @@ export function registerIpc(
     showOpenDialog: ShowOpenDialogFn,
     saveAppSettings: () => Promise<ActionResult>,
     projectService: ProjectService,
+    toolsService: ToolsService,
     gitService: GitService,
     makeService: MakeService,
     writeSettings: WriteSettingsFn,
@@ -51,6 +53,7 @@ export function registerIpc(
         projectSettings,
         appSettings,
         projectService,
+        toolsService,
         gitService,
         makeService,
         writeSettings,
