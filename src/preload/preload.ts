@@ -16,7 +16,7 @@ contextBridge.exposeInMainWorld('api', {
     platform: process.platform,
 
     // Application IPCs
-    setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder'),
+    setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder', makePath),
     
     // Project lifecycle IPCs
     newProject : (): Promise<ActionResult> => ipcRenderer.invoke('new-project'),

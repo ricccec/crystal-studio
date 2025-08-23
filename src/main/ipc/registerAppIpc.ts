@@ -10,6 +10,6 @@ export function registerAppIpc(
     ipcMain.handle('set-make-folder', async (_, makePath: string) => {
         appSettings.makePath = makePath;
         await saveAppSettings();
-        return { ok: true};
+        return { ok: true, data: appSettings.makePath };
     });
 }
