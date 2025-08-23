@@ -1,0 +1,30 @@
+import path from "path";
+import execAsync from "./execAsync";
+
+const findToolCandidate = async (cmd: string, isWindows: boolean = false, execPath?: string, execAliases?: string[]) => {
+
+    // Build a list of make executable candidates
+    const candidates: string[] = [];
+    candidates.push(execPath
+        ? path.join(execPath, `${cmd}${isWindows ? '.exe' : ''}`)
+        : cmd);
+    if (execAliases && execAliases.length > 0) {
+        for (const alias of execAliases) {
+            candidates.push(execPath
+                ? path.join(execPath, `${alias}${isWindows ? '.exe' : ''}`)
+                : alias);
+        }
+    }
+
+    // Check executables
+    for (const c of candidates) {
+        const res = await execAsync(c, ['--version']);
+        if (res.status === 'success') {
+            return { ok: true, cmd: c };
+        }
+    }
+    return { ok: false };
+
+};
+
+export default findToolCandidate;
