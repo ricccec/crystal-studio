@@ -10,6 +10,7 @@ import createGitService from "./services/gitServices";
 import execAsync from "./utils/execAsync";
 import { isDirectory } from "@shared/utils/utils";
 import { withDefaultAppSettings } from "@shared/default";
+import createMakeService from "./services/makeService";
 
 let win : BrowserWindow | null = null;
 
@@ -30,6 +31,10 @@ export async function start(publicFolder: string, viteUrl?: string) {
         execAsync,
         isDirectory,
     });
+    const makeService = createMakeService({
+        execAsync,
+        isDirectory,
+    });
 
     // Register IPC handlers
     registerIpc(
@@ -41,6 +46,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         saveAppSettings,
         projectService,
         gitService,
+        makeService,
         writeSettings,
         readSettings,
     );

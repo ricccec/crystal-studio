@@ -30,7 +30,12 @@ declare global {
             openGitRepo: (repoPath: string) =>  Promise<ActionResult>;
             cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
             cloneDefaultGitRepo: (targetPath: string) => Promise<SpawnResult>;
+ 
+            // Make IPCs
+            checkMake: () => Promise<ActionResult<string>>;
+            runMake: (targetPath: string) => Promise<SpawnResult>;
             
+
             // Event helpers
             on: (channel: Channel, listener: (...args: any[]) => void) => (() => void);
             off: (channel: Channel, listener: (...args: any[]) => void) => void;

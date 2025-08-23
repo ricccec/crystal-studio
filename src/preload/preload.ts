@@ -32,6 +32,10 @@ contextBridge.exposeInMainWorld('api', {
     cloneGitRepo: (repoUrl: string, targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone', repoUrl, targetPath),
     cloneDefaultGitRepo: (targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone-default', targetPath),
 
+    // Make IPCs
+    checkMake: (): Promise<ActionResult<string>> => ipcRenderer.invoke('make-check'),
+    runMake: (targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('run-make', targetPath),
+
     // Subscribe to a whitelisted renderer event channel
     on: (channel: Channel, listener: (...args: any[]) => void) => {
         if (!allowedChannels.includes(channel)) throw new Error('Channel not allowed');
