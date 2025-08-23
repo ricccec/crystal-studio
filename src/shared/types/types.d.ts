@@ -24,5 +24,6 @@ export interface AppSettings {
     makePath?: string | null;
     rgbdsPath?: string | null;
     emulatorPath?: string | null;
-    repoUrl: string;   
+    repoUrl: string;
+    makeAliases: { windows: string[], macos: string[], linux: string[] };
 }
