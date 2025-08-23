@@ -19,6 +19,7 @@ declare global {
             saveProject: () => Promise<ProcessResult>;
             saveProjectAs: (savepath: string) => Promise<ProcessResult>;
             openProject : () => Promise<ProcessResult<ProjectSettings>>,
+            getProjectSettings: () =>  Promise<ActionResult<ProjectSettings>>,
 
             // Dialog IPCs
             showSaveProjectDialog: () => Promise<ProcessResult>;

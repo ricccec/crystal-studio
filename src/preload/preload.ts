@@ -20,7 +20,8 @@ contextBridge.exposeInMainWorld('api', {
     saveProject : (): Promise<ProcessResult> => ipcRenderer.invoke('save-project'),
     saveProjectAs : (savePath: string): Promise<ProcessResult> => ipcRenderer.invoke('save-project-as', savePath),
     openProject : (): Promise<ProcessResult<ProjectSettings>> => ipcRenderer.invoke('open-project'),
-    
+    getProjectSettings: (): Promise<ActionResult<ProjectSettings>> => ipcRenderer.invoke('get-project-settings'),
+
     // Dialog IPCs
     showSaveDialog : (options?: Electron.SaveDialogOptions): Promise<ProcessResult> => ipcRenderer.invoke('show-save-dialog', options),
     showSaveProjectDialog : (): Promise<ProcessResult> => ipcRenderer.invoke('show-save-project-dialog'),
