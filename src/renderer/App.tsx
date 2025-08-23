@@ -87,7 +87,6 @@ const App = () => {
     };
 
     const onCheckTools = async () => {
-        appendToConsoleOutput('Checking tools...');
         const res = await window.api.checkTools() as { tool: string, status: any }[];
 
         console.log(res);
@@ -96,7 +95,6 @@ const App = () => {
         }
         
         const lines = res.map((item) => formatToolLine(item.tool, item.status));
-        console.log(lines);
         appendToConsoleOutput(lines.join('\n'));
 
     };
@@ -152,8 +150,11 @@ const App = () => {
 
     const onSelectMakeDir = async () => {
         const r = await window.api.showOpenDirDialog("Select folder");
-        if (r.status == 'success') {
-            window.api.setMakeFolder(r.data);
+        if (r.status === 'success') {
+            const setRes = await window.api.setMakeFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
         }
     }
 
