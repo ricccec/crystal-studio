@@ -4,6 +4,7 @@ import type { ProjectService } from "@main/services/projectServices";
 import type { WriteSettingsFn } from "@main/utils/settings";
 import type { GitService } from "@main/services/gitServices";
 import { TaskStreamPayload } from "@shared/ipc";
+import { MakeService } from "@main/services/makeService";
 
 export function registerToolsIpc(
     win: BrowserWindow,
@@ -12,6 +13,7 @@ export function registerToolsIpc(
     // Injected deps.
     projectService: ProjectService,
     gitService: GitService,
+    makeService: MakeService,
     writeSettings: WriteSettingsFn,
 ) {
 
@@ -58,6 +60,24 @@ export function registerToolsIpc(
             repoUrl, targetPath,
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
+                win.webContents.send('task:stream', payload);
+            },
+        );
+        return res;
+    });
+
+    ipcMain.handle('make-check', async () => {
+        return await makeService.checkMake();
+    });
+
+    ipcMain.handle('run-make', async (
+        _,
+        targetPath: string,
+    ) : Promise<SpawnResult> => {
+        const res = await makeService.runMake(
+            targetPath,
+            (stream, text) => { 
+                const payload: TaskStreamPayload = { task: 'make', stream, text };
                 win.webContents.send('task:stream', payload);
             },
         );
