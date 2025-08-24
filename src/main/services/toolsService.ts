@@ -86,7 +86,7 @@ const checkTool = async (
 
 export type {
     ToolsService,
-    ToolsServiceDeps as ToolsServicesDeps,
+    ToolsServiceDeps,
 };
 
 export {

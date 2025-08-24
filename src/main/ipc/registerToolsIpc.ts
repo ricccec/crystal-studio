@@ -99,9 +99,6 @@ export function registerToolsIpc(
         }
 
         const makeExec = checkRes.exec;
-        makeService.runMake(makeCwd, makeExec)
-
-
         const res = await makeService.runMake(
             makeCwd,
             makeExec,

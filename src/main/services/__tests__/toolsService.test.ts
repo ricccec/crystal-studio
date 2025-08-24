@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import createToolsService from '../toolsService';
-import type { ToolsServicesDeps } from '../toolsService';
+import type { ToolsServiceDeps } from '../toolsService';
 import path from 'node:path';
 
 // Mock the dependencies
@@ -9,7 +9,7 @@ const mockFindToolCandidate = vi.fn();
 
 describe('toolsService', () => {
     let toolsService: ReturnType<typeof createToolsService>;
-    let deps: ToolsServicesDeps;
+    let deps: ToolsServiceDeps;
 
     beforeEach(() => {
         vi.clearAllMocks();
