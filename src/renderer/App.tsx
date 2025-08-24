@@ -146,6 +146,35 @@ const App = () => {
         }
     }
 
+    const onSelectRgbdsDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setRgbdsFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    }
+
+    const onSelectEmulator = async () => {
+        let filters = null;
+        if (window.api.platform === 'win32') {
+            filters = [
+                { name: 'Executables', extensions: ['exe'] },
+                { name: 'All Files', extensions: ['*'] },
+            ];
+        }
+
+        const r = await window.api.showOpenFileDialog("Select emulator", filters ?? []);
+        if (r.status !== 'success') return;
+
+        const setRes = await window.api.setEmulator(r.data);
+        if (setRes.ok) {
+            appendToConsoleOutput(setRes.data!);
+        }
+        
+    }
+
     return (
         <>
             <div>
@@ -162,6 +191,8 @@ const App = () => {
             <div>
                 <button onClick={onCheckTools}>Check tools</button>
                 <button onClick={onSelectMakeDir}>Select make folder</button>
+                <button onClick={onSelectRgbdsDir}>Select rgbds folder</button>
+                <button onClick={onSelectEmulator}>Select emulator</button>
             </div>
             <div>
                 <textarea

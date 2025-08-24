@@ -37,7 +37,7 @@ export function registerDialogIpc(
         return res;
     });
 
-    ipcMain.handle('show-open-file-folder', async (_, title: string, fileFilters?: Electron.FileFilter[]) : Promise<ProcessResult> => {
+    ipcMain.handle('show-open-file-dialog', async (_, title: string, fileFilters?: Electron.FileFilter[]) : Promise<ProcessResult> => {
 
         const res = await showOpenDialog(win, {
             title: title,

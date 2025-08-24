@@ -23,13 +23,14 @@ declare global {
             newProject: () => Promise<ActionResult>;
             saveProject: () => Promise<ProcessResult>;
             saveProjectAs: (savepath: string) => Promise<ProcessResult>;
-            openProject : () => Promise<ProcessResult<ProjectSettings>>,
-            getProjectSettings: () =>  Promise<ActionResult<ProjectSettings>>,
+            openProject : () => Promise<ProcessResult<ProjectSettings>>;
+            getProjectSettings: () =>  Promise<ActionResult<ProjectSettings>>;
 
             // Dialog IPCs
             showSaveProjectDialog: () => Promise<ProcessResult>;
-            showSaveDialog : (options?: Electron.SaveDialogOptions) => Promise<ProcessResult>,
-            showOpenDirDialog : (title: string) => Promise<ProcessResult>,
+            showSaveDialog : (options?: Electron.SaveDialogOptions) => Promise<ProcessResult>;
+            showOpenDirDialog : (title: string) => Promise<ProcessResult>;
+            showOpenFileDialog : (title: string, fileFilters?: Electron.FileFilter[]) => Promise<ProcessResult>;
 
             // Shared tools IPCs
             checkTools: () => any;
