@@ -89,7 +89,6 @@ const App = () => {
     const onCheckTools = async () => {
         const res = await window.api.checkTools() as { tool: string, status: any }[];
 
-        console.log(res);
         function formatToolLine(toolName: string, res: { ok: boolean, version?: string, error?: string}) {
             return `${toolName}: ${res.ok ? (res.version ?? 'OK') : `ERROR: ${res.error}`}`;
         }
@@ -128,19 +127,8 @@ const App = () => {
     }
 
     const onRunMake = async () => {
-        const res = await window.api.getProjectSettings();
-        if (!res.ok) {
-            appendToConsoleOutput('Unable to retrieve repo folder: cannot access project settings');
-            return;
-        }        
-        // Check repo 
-        const dir = res.data?.repoPath;
-        if (!dir) {
-            appendToConsoleOutput('Unable to retrieve repo folder: try opening a repo first');
-            return;
-        }
-        
-        const runRes = await window.api.runMake(dir);
+
+        const runRes = await window.api.runMake();
         if (runRes.status === 'error') {
             appendToConsoleOutput(runRes.error);
         } else if (runRes.status === 'canceled') {
