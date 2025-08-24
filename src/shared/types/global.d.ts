@@ -36,9 +36,9 @@ declare global {
             openGitRepo: (repoPath: string) =>  Promise<ActionResult>;
             cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
             cloneDefaultGitRepo: (targetPath: string) => Promise<SpawnResult>;
- 
+            
             // Make IPCs
-            runMake: (targetPath: string) => Promise<SpawnResult>;
+            runMake: () => Promise<SpawnResult>;
             
 
             // Event helpers
