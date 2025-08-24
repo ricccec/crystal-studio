@@ -7,6 +7,15 @@ const App = () => {
     const [ consoleOutput, setConsoleState ] = React.useState<string>('');
     const [ progressLine, setProgressLine ] = React.useState<string>('');
 
+    const taRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+    // keep textarea scrolled to the bottom
+    React.useLayoutEffect(() => {
+        const el = taRef.current;
+        if (!el) return;
+        el.scrollTop = el.scrollHeight;
+    }, [consoleOutput, progressLine]);
+
     // Register callback for app notifications
     React.useEffect(() => {
         const unsub = window.api.on('task:stream', (payload) => {
@@ -213,6 +222,7 @@ const App = () => {
                     rows={25}
                     style={{ width: '100%' }}
                     value={`${consoleOutput}${progressLine}`}
+                    ref={taRef}
                     readOnly
                 />
             </div>
