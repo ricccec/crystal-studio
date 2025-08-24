@@ -26,25 +26,26 @@ type CheckToolFn = (
     name: string, path?: string | null, aliases?: string[] | null
 ) => Promise<CheckToolsResult>;
 
-function createToolsService(deps: ToolsServiceDeps): ToolsService {
+function createToolsService(platform: string, deps: ToolsServiceDeps): ToolsService {
     return {
-        checkTools: async (tools) => await checkTools(tools, deps),
+        checkTools: async (tools) => await checkTools(tools, platform, deps),
         checkTool: async (
             name: string,
             path?: string | null,
             aliases?: string[] | null
-        ) => await checkTool(name, deps, path, aliases),
+        ) => await checkTool(name, platform, deps, path, aliases),
     };
 }
 
 const checkTools = async (
     tools: { name: string, path?: string | null, aliases?: string[] | null }[],
+    platform: string,
     deps: ToolsServiceDeps
 ) => {
 
     const res: { tool: string, status: CheckToolsResult }[] = [];
     for (const t of tools) {
-      const r = await checkTool(t.name, deps, t.path, t.aliases);
+      const r = await checkTool(t.name, platform, deps, t.path, t.aliases);
 
       res.push({ tool: t.name, status: r });
     }
@@ -54,6 +55,7 @@ const checkTools = async (
 
 const checkTool = async (
     name: string,
+    platform: string,
     deps: ToolsServiceDeps,
     path?: string | null,
     aliases?: string[] | null
@@ -62,7 +64,7 @@ const checkTool = async (
     // Find executable/command for this tool
     const r = await deps.findToolCandidate(
         name,
-        process.platform === 'win32',
+        platform === 'win32',
         path,
         aliases
     )
