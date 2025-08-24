@@ -180,9 +180,15 @@ const App = () => {
         appendToConsoleOutput(JSON.stringify(s, null, 2));
     };
 
+    const onResetAppSettings = async () => {
+        const r = await window.api.resetAppSetting();
+        if (!r.ok) appendToConsoleOutput(r.error);
+    }
+    
     return (
         <>
             <div>
+                <button onClick={onResetAppSettings}>Reset App Settings</button>
                 <button onClick={onShowAppSettings}>Show App Settings</button>
             </div>
             <div>

@@ -1,16 +1,21 @@
+import { defaultAppSettings, withDefaultAppSettings } from "@shared/default";
 import { ActionResult, AppSettings } from "@shared/types/types";
 import { isExecutable } from "@shared/utils/utils";
-import { error } from "console";
 import { ipcMain } from "electron";
 
 export function registerAppIpc(
     appSettings: AppSettings,
     // Injected deps.
     saveAppSettings: () => Promise<ActionResult>,
+    resetAppSettings: () => Promise<ActionResult>,
 ) {
 
     ipcMain.handle('get-app-settings', async () => {
         return appSettings;
+    });
+
+    ipcMain.handle('reset-app-settings', async () => {
+        return await resetAppSettings();
     });
 
     ipcMain.handle('set-make-folder', async (_, makePath: string) => {

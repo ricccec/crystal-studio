@@ -17,7 +17,7 @@ import findToolCandidate from "./utils/findToolCandidate";
 let win : BrowserWindow | null = null;
 
 const projectSettings : ProjectSettings = {};
-const appSettings : AppSettings = withDefaultAppSettings();
+let appSettings : AppSettings = withDefaultAppSettings();
 
 export async function start(publicFolder: string, viteUrl?: string) {
 
@@ -50,6 +50,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         showSaveDialog,
         showOpenDialog,
         saveAppSettings,
+        resetAppSettings,
         projectService,
         toolsService,
         gitService,
@@ -80,20 +81,27 @@ async function loadAppSettings() : Promise<ActionResult<Partial<AppSettings>>> {
     }
 };
 
-async function saveAppSettings() : Promise<ActionResult> {
+async function resetAppSettings() {
+    appSettings = withDefaultAppSettings();
+    return await saveAppSettings(false);
+}
+
+async function saveAppSettings(preserveExisting = true) : Promise<ActionResult> {
     const settingPath = path.join(app.getPath('userData'), 'app-settings.json');
 
     try {
         // Ensure folder exists
         await fs.mkdir(path.dirname(settingPath), { recursive: true });
 
-        // Read existing settings file (if any) so we can preserve older keys
         let prevSettings : Partial<AppSettings> = {};
-        try {
-            const result  = await loadAppSettings();
-            if (result.ok) prevSettings = result.data ?? {};
-        } catch (e: any) {};
-
+        if (preserveExisting) {
+            // Read existing settings file (if any) so we can preserve older keys
+            try {
+                const result  = await loadAppSettings();
+                if (result.ok) prevSettings = result.data ?? {};
+            } catch (e: any) {};
+        }
+        
         // Merge existing with current (current overwrites existing)
         const merged = { ...prevSettings, ...appSettings};
 
