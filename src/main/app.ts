@@ -10,6 +10,9 @@ import createGitService from "./services/gitServices";
 import execAsync from "./utils/execAsync";
 import { isDirectory } from "@shared/utils/utils";
 import { withDefaultAppSettings } from "@shared/default";
+import createMakeService from "./services/makeService";
+import createToolsService from "./services/toolsService";
+import findToolCandidate from "./utils/findToolCandidate";
 
 let win : BrowserWindow | null = null;
 
@@ -30,6 +33,14 @@ export async function start(publicFolder: string, viteUrl?: string) {
         execAsync,
         isDirectory,
     });
+    const makeService = createMakeService({
+        execAsync,
+        isDirectory,
+    });
+    const toolsService = createToolsService(process.platform, {
+        execAsync,
+        findToolCandidate,
+    })
 
     // Register IPC handlers
     registerIpc(
@@ -40,7 +51,9 @@ export async function start(publicFolder: string, viteUrl?: string) {
         showOpenDialog,
         saveAppSettings,
         projectService,
+        toolsService,
         gitService,
+        makeService,
         writeSettings,
         readSettings,
     );

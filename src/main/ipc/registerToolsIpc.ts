@@ -4,6 +4,9 @@ import type { ProjectService } from "@main/services/projectServices";
 import type { WriteSettingsFn } from "@main/utils/settings";
 import type { GitService } from "@main/services/gitServices";
 import { TaskStreamPayload } from "@shared/ipc";
+import { MakeService } from "@main/services/makeService";
+import { ToolsService } from "@main/services/toolsService";
+import findToolCandidate from "@main/utils/findToolCandidate";
 
 export function registerToolsIpc(
     win: BrowserWindow,
@@ -11,12 +14,21 @@ export function registerToolsIpc(
     appSettings: AppSettings,
     // Injected deps.
     projectService: ProjectService,
+    toolsService: ToolsService,
     gitService: GitService,
+    makeService: MakeService,
     writeSettings: WriteSettingsFn,
 ) {
 
-    ipcMain.handle('git-check', async () => {
-        return await gitService.checkGit();
+    
+    ipcMain.handle('check-tools', async () => {
+
+        const tools = [
+            { name: 'git', path: null, aliases: null },
+            { name: 'make', path: appSettings.makePath, aliases: getToolAliases('make')},
+        ]
+        
+        return await toolsService.checkTools(tools);
     });
 
     ipcMain.handle('git-open-repo', async (_, repoPath: string) : Promise<ActionResult> => {
@@ -63,4 +75,45 @@ export function registerToolsIpc(
         );
         return res;
     });
+
+    ipcMain.handle('run-make', async (
+        _,
+    ) : Promise<SpawnResult> => {
+        
+        if (!projectSettings.repoPath) {
+            return { status:'error', error:'Repo not set'};
+        }
+
+        const makeCwd = projectSettings.repoPath;
+        const makePath = appSettings.makePath;
+        const makeAliases = getToolAliases('make');
+        
+        // Check make is available
+        const checkRes = (await toolsService.checkTool(
+            'make',
+            makePath,
+            makeAliases
+        ));
+        if (!checkRes.ok) {
+            return { status:'error', error: `Cannot run make: ${checkRes.error}`};
+        }
+
+        const makeExec = checkRes.exec;
+        const res = await makeService.runMake(
+            makeCwd,
+            makeExec,
+            (stream, text) => { 
+                const payload: TaskStreamPayload = { task: 'make', stream, text };
+                win.webContents.send('task:stream', payload);
+            },
+        );
+        return res;
+    });
+
+    function getToolAliases(tool: string): string[] {
+        if (!appSettings.toolAliases[tool])
+            return [];
+        const toolAliases = appSettings.toolAliases[tool];
+        return toolAliases[process.platform] ?? [];
+    }
 }

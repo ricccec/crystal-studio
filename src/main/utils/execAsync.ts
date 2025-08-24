@@ -1,13 +1,14 @@
 import type { SpawnResult } from "@shared/types/types";
-import { spawn } from "node:child_process";
+import { spawn, SpawnOptions, SpawnOptionsWithStdioTuple } from "node:child_process";
 
 export type ExecAsyncFn = (
     cmd: string,
-    args?: string[],
+    args?: string[] | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
+    opts?: SpawnOptions,
 ) => Promise<SpawnResult>;
 
-const execAsync:ExecAsyncFn = (cmd, args, onOutput) => {
+const execAsync:ExecAsyncFn = (cmd, args, onOutput, opts) => {
     
     return new Promise<SpawnResult>((resolve) => {
         // child events can fire miltiple times -> ensure single resolve
@@ -20,6 +21,7 @@ const execAsync:ExecAsyncFn = (cmd, args, onOutput) => {
 
         // Spawn child process with no stdin attached
         const child = spawn(cmd, args ?? [], {
+            ...opts,
             stdio: ['ignore', 'pipe', 'pipe'],
         });
 

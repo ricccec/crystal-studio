@@ -4,6 +4,7 @@
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
+    "dev:debug": "electron --remote-debugging-port=9222 .",
     "build": "vite build",
     "start": "electron .",
     "clean": "npx rimraf dist dist-electron out release",

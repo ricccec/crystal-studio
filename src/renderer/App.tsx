@@ -60,7 +60,7 @@ const App = () => {
             }
             return '';
         })();
-        setConsoleState(prev => `${prev}${output}`);
+        setConsoleState(prev => `${prev}${output.trim()}\n`);
     };
 
     const onNewProject = async () => {
@@ -86,6 +86,18 @@ const App = () => {
         appendToConsoleOutput(result);
     };
 
+    const onCheckTools = async () => {
+        const res = await window.api.checkTools() as { tool: string, status: any }[];
+
+        function formatToolLine(toolName: string, res: { ok: boolean, version?: string, error?: string}) {
+            return `${toolName}: ${res.ok ? (res.version ?? 'OK') : `ERROR: ${res.error}`}`;
+        }
+        
+        const lines = res.map((item) => formatToolLine(item.tool, item.status));
+        appendToConsoleOutput(lines.join('\n'));
+
+    };
+
     const onOpenGit = async() => {
         const d = await window.api.showOpenDirDialog("Open pret repo");
         if (d.status !== 'success') {
@@ -106,7 +118,32 @@ const App = () => {
         }
 
         const repoPath = d.data;
-        const res = await window.api.cloneDefaultGitRepo(repoPath);
+        const runRes = await window.api.cloneDefaultGitRepo(repoPath);
+        if (runRes.status === 'error') {
+            appendToConsoleOutput(runRes.error);
+        } else if (runRes.status === 'canceled') {
+            appendToConsoleOutput(runRes.signal ?? 'Canceled');
+        }
+    }
+
+    const onRunMake = async () => {
+
+        const runRes = await window.api.runMake();
+        if (runRes.status === 'error') {
+            appendToConsoleOutput(runRes.error);
+        } else if (runRes.status === 'canceled') {
+            appendToConsoleOutput(runRes.signal ?? 'Canceled');
+        }
+    }
+
+    const onSelectMakeDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setMakeFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
     }
 
     return (
@@ -120,6 +157,11 @@ const App = () => {
             <div>
                 <button onClick={onOpenGit}>Open pret repo</button>
                 <button onClick={onGitClone}>Clone pret repo</button>
+                <button onClick={onRunMake}>Build project</button>
+            </div>
+            <div>
+                <button onClick={onCheckTools}>Check tools</button>
+                <button onClick={onSelectMakeDir}>Select make folder</button>
             </div>
             <div>
                 <textarea
