@@ -1,6 +1,7 @@
 import { allowedChannels, Channel } from '@shared/ipc';
 import type {
     ActionResult,
+    AppSettings,
     ProcessResult,
     ProjectSettings,
     SpawnResult
@@ -16,10 +17,10 @@ contextBridge.exposeInMainWorld('api', {
     platform: process.platform,
 
     // Application IPCs
+    getAppSettings : (): Promise<AppSettings> => ipcRenderer.invoke('get-app-settings'),
     setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder', makePath),
     setRgbdsFolder : (rgbdsDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-rgbds-folder', rgbdsDir),
     setEmulator : (emulatorExec: string): Promise<ActionResult> => ipcRenderer.invoke('set-emulator', emulatorExec),
-    
 
     // Project lifecycle IPCs
     newProject : (): Promise<ActionResult> => ipcRenderer.invoke('new-project'),

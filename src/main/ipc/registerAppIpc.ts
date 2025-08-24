@@ -9,6 +9,10 @@ export function registerAppIpc(
     saveAppSettings: () => Promise<ActionResult>,
 ) {
 
+    ipcMain.handle('get-app-settings', async () => {
+        return appSettings;
+    });
+
     ipcMain.handle('set-make-folder', async (_, makePath: string) => {
         appSettings.makeDir = makePath;
         await saveAppSettings();
