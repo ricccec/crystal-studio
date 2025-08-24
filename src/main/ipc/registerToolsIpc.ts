@@ -25,7 +25,7 @@ export function registerToolsIpc(
 
         const tools = [
             { name: 'git', path: null, aliases: null },
-            { name: 'make', path: appSettings.makePath, aliases: getToolAliases('make')},
+            { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
         ]
         
         return await toolsService.checkTools(tools);
@@ -85,7 +85,7 @@ export function registerToolsIpc(
         }
 
         const makeCwd = projectSettings.repoPath;
-        const makePath = appSettings.makePath;
+        const makePath = appSettings.makeDir;
         const makeAliases = getToolAliases('make');
         
         // Check make is available

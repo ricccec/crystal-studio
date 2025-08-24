@@ -21,9 +21,9 @@ export interface ProjectSettings {
 
 export interface AppSettings {
     lastUsedPath?: string | null;
-    makePath?: string | null;
-    rgbdsPath?: string | null;
-    emulatorPath?: string | null;
+    makeDir?: string | null;
+    rgbdsDir?: string | null;
+    emulator?: string | null;
     repoUrl: string;
     toolAliases: Record<string,  Record<string, string[]>>;
 }
