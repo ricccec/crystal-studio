@@ -20,18 +20,12 @@ export function registerToolsIpc(
     writeSettings: WriteSettingsFn,
 ) {
 
+    
     ipcMain.handle('check-tools', async () => {
-
-        function getAliases(tool: string) {
-            if (!appSettings.toolAliases[tool])
-                return [];
-            const toolAliases = appSettings.toolAliases[tool];
-            return toolAliases[process.platform] ?? [];
-        }
 
         const tools = [
             { name: 'git', path: null, aliases: null },
-            { name: 'make', path: appSettings.makePath, aliases: getAliases('make')},
+            { name: 'make', path: appSettings.makePath, aliases: getToolAliases('make')},
         ]
         
         return await toolsService.checkTools(tools);
@@ -84,10 +78,33 @@ export function registerToolsIpc(
 
     ipcMain.handle('run-make', async (
         _,
-        targetPath: string,
     ) : Promise<SpawnResult> => {
+        
+        if (!projectSettings.repoPath) {
+            return { status:'error', error:'Repo not set'};
+        }
+
+        const makeCwd = projectSettings.repoPath;
+        const makePath = appSettings.makePath;
+        const makeAliases = getToolAliases('make');
+        
+        // Check make is available
+        const checkRes = (await toolsService.checkTool(
+            'make',
+            makePath,
+            makeAliases
+        ));
+        if (!checkRes.ok) {
+            return { status:'error', error: `Cannot run make: ${checkRes.error}`};
+        }
+
+        const makeExec = checkRes.exec;
+        makeService.runMake(makeCwd, makeExec)
+
+
         const res = await makeService.runMake(
-            targetPath,
+            makeCwd,
+            makeExec,
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
                 win.webContents.send('task:stream', payload);
@@ -95,4 +112,11 @@ export function registerToolsIpc(
         );
         return res;
     });
+
+    function getToolAliases(tool: string): string[] {
+        if (!appSettings.toolAliases[tool])
+            return [];
+        const toolAliases = appSettings.toolAliases[tool];
+        return toolAliases[process.platform] ?? [];
+    }
 }
