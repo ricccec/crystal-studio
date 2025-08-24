@@ -23,9 +23,14 @@ export function registerToolsIpc(
     
     ipcMain.handle('check-tools', async () => {
 
+        console.log(appSettings);
         const tools = [
             { name: 'git', path: null, aliases: null },
             { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
+            { name: 'rgbasm', path: appSettings.rgbdsDir },
+            { name: 'rgbfix', path: appSettings.rgbdsDir },
+            { name: 'rgbgfx', path: appSettings.rgbdsDir },
+            { name: 'rgbfix', path: appSettings.rgbdsDir },
         ]
         
         return await toolsService.checkTools(tools);

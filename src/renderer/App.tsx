@@ -175,8 +175,16 @@ const App = () => {
         
     }
 
+    const onShowAppSettings = async () => {
+        const s = await window.api.getAppSettings();
+        appendToConsoleOutput(JSON.stringify(s, null, 2));
+    };
+
     return (
         <>
+            <div>
+                <button onClick={onShowAppSettings}>Show App Settings</button>
+            </div>
             <div>
                 <button onClick={onNewProject}>New Project</button>
                 <button onClick={onOpenProject}>Open Project</button>

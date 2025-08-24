@@ -1,6 +1,7 @@
 import { Channel } from "@shared/ipc";
 import type {
     ActionResult,
+    AppSettings,
     ProcessResult,
     SpawnResult
 } from "./types";
@@ -15,6 +16,7 @@ declare global {
             platform: NodeJS.Platform,
 
             // Application IPCs
+            getAppSettings : () => Promise<AppSettings>;
             setMakeFolder : (makePath: string) =>  Promise<ActionResult>;    
             setRgbdsFolder : (rgbdsDir: string) =>  Promise<ActionResult>;
             setEmulator : (emulatorExec: string) =>  Promise<ActionResult>;
