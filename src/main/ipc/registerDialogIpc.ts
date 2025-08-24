@@ -37,6 +37,27 @@ export function registerDialogIpc(
         return res;
     });
 
+    ipcMain.handle('show-open-file-folder', async (_, title: string, fileFilters?: Electron.FileFilter[]) : Promise<ProcessResult> => {
+
+        const res = await showOpenDialog(win, {
+            title: title,
+            defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+            properties: ['openFile'],
+            filters: fileFilters,
+        });
+
+        if (res.status === 'success') {
+            // Update last used path and persist
+            const filePath = res.data;
+            appSettings.lastUsedPath = path.normalize(filePath);
+
+            await saveAppSettings();
+        }
+
+        return res;
+        
+    });
+
     ipcMain.handle('show-open-dir-dialog', async (_, title: string) : Promise<ProcessResult> => {
         const res = await showOpenDialog(win, {
             title: title,
