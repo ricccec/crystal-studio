@@ -26,4 +26,8 @@ export interface AppSettings {
     emulator?: string | null;
     repoUrl: string;
     toolAliases: Record<string,  Record<string, string[]>>;
+    make: {
+        numJobs: number;
+        target: string;
+    };
 }

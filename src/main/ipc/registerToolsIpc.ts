@@ -91,6 +91,8 @@ export function registerToolsIpc(
         const makeCwd = projectSettings.repoPath;
         const makePath = appSettings.makeDir;
         const makeAliases = getToolAliases('make');
+        const makeNumJobs = appSettings.make.numJobs;
+        const makeTarget = appSettings.make.target;
         
         // Check make is available
         const checkRes = (await toolsService.checkTool(
@@ -106,6 +108,8 @@ export function registerToolsIpc(
         const res = await makeService.runMake(
             makeCwd,
             makeExec,
+            makeNumJobs,
+            makeTarget,
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
                 win.webContents.send('task:stream', payload);

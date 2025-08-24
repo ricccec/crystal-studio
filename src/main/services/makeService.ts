@@ -11,28 +11,38 @@ type MakeService = {
 }
 
 type RunMakeFn = (
-    targetDir: string,
+    cwd: string,
     makeExec?: string | null,
+    numJobs?: number,
+    target?: string,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
 function createMakeService(deps: MakeServiceDeps): MakeService {
     return {
         runMake: (
-            targetDir,
+            cwd,
             makeExec,
+            numJobs,
+            target,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => runMake(targetDir, deps, makeExec, onOutput),
+        ) => runMake(cwd, deps, makeExec, numJobs, target, onOutput),
     }
 }
 
 const runMake = async (
-    targetDir: string,
+    cwd: string,
     deps: MakeServiceDeps,
     makeExec?: string | null,
+    numJobs?: number,
+    target?: string,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
-    return await deps.execAsync(makeExec ?? 'make', null, onOutput, { cwd: targetDir });
+    // Build args list
+    const args = [];
+    if(numJobs) args.push(`-j${numJobs}`);
+    if(target) args.push(target);
+    return await deps.execAsync(makeExec ?? 'make', args, onOutput, { cwd });
 };
 
 export type {
