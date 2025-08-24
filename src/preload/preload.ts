@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('api', {
     showSaveDialog : (options?: Electron.SaveDialogOptions): Promise<ProcessResult> => ipcRenderer.invoke('show-save-dialog', options),
     showSaveProjectDialog : (): Promise<ProcessResult> => ipcRenderer.invoke('show-save-project-dialog'),
     showOpenDirDialog : (title: string): Promise<ProcessResult> => ipcRenderer.invoke('show-open-dir-dialog', title),
+    showOpenFileDialog : (title: string, fileFilters?: Electron.FileFilter[]): Promise<ProcessResult> => ipcRenderer.invoke('show-open-file-dialog', title, fileFilters),
 
     // Shared tools IPCs
     checkTools: () => ipcRenderer.invoke('check-tools'),
