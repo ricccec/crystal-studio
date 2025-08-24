@@ -15,22 +15,31 @@ const listenerMap = new Map<
 contextBridge.exposeInMainWorld('api', {
     platform: process.platform,
 
+    // Application IPCs
+    setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder', makePath),
+    
     // Project lifecycle IPCs
     newProject : (): Promise<ActionResult> => ipcRenderer.invoke('new-project'),
     saveProject : (): Promise<ProcessResult> => ipcRenderer.invoke('save-project'),
     saveProjectAs : (savePath: string): Promise<ProcessResult> => ipcRenderer.invoke('save-project-as', savePath),
     openProject : (): Promise<ProcessResult<ProjectSettings>> => ipcRenderer.invoke('open-project'),
-    
+    getProjectSettings: (): Promise<ActionResult<ProjectSettings>> => ipcRenderer.invoke('get-project-settings'),
+
     // Dialog IPCs
     showSaveDialog : (options?: Electron.SaveDialogOptions): Promise<ProcessResult> => ipcRenderer.invoke('show-save-dialog', options),
     showSaveProjectDialog : (): Promise<ProcessResult> => ipcRenderer.invoke('show-save-project-dialog'),
     showOpenDirDialog : (title: string): Promise<ProcessResult> => ipcRenderer.invoke('show-open-dir-dialog', title),
 
+    // Shared tools IPCs
+    checkTools: () => ipcRenderer.invoke('check-tools'),
+
     // Git IPCs
-    checkGit: (): Promise<ActionResult<string>> => ipcRenderer.invoke('git-check'),
     openGitRepo: (repoPath: string):  Promise<ActionResult> => ipcRenderer.invoke('git-open-repo', repoPath),
     cloneGitRepo: (repoUrl: string, targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone', repoUrl, targetPath),
     cloneDefaultGitRepo: (targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone-default', targetPath),
+
+    // Make IPCs
+    runMake: (): Promise<SpawnResult> => ipcRenderer.invoke('run-make'),
 
     // Subscribe to a whitelisted renderer event channel
     on: (channel: Channel, listener: (...args: any[]) => void) => {
