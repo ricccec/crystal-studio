@@ -16,6 +16,8 @@ declare global {
 
             // Application IPCs
             setMakeFolder : (makePath: string) =>  Promise<ActionResult>;    
+            setRgbdsFolder : (rgbdsDir: string) =>  Promise<ActionResult>;
+            setEmulator : (emulatorExec: string) =>  Promise<ActionResult>;
 
             // Project lifecycle IPCs
             newProject: () => Promise<ActionResult>;
