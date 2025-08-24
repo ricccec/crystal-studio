@@ -12,7 +12,7 @@ type ToolsService = {
 }
 
 type CheckToolsResult =
-    | { ok: true, version: string}
+    | { ok: true, exec: string, version: string}
     | { ok: false, error: string };
 
 type CheckToolsFn = (
@@ -22,12 +22,18 @@ type CheckToolsFn = (
     status: CheckToolsResult,
 }[]>;
 
-type CheckToolFn = (cmd: string) => Promise<CheckToolsResult>;
+type CheckToolFn = (
+    name: string, path?: string | null, aliases?: string[] | null
+) => Promise<CheckToolsResult>;
 
 function createToolsService(deps: ToolsServiceDeps): ToolsService {
     return {
         checkTools: async (tools) => await checkTools(tools, deps),
-        checkTool: async (cmd: string) => await checkTool(cmd, deps),
+        checkTool: async (
+            name: string,
+            path?: string | null,
+            aliases?: string[] | null
+        ) => await checkTool(name, deps, path, aliases),
     };
 }
 
@@ -35,36 +41,45 @@ const checkTools = async (
     tools: { name: string, path?: string | null, aliases?: string[] | null }[],
     deps: ToolsServiceDeps
 ) => {
-    
+
     const res: { tool: string, status: CheckToolsResult }[] = [];
     for (const t of tools) {
-        // Find executable/command for this tool
-        const r = await deps.findToolCandidate(
-            t.name,
-            process.platform === 'win32',
-            t.path,
-            t.aliases
-        )
+      const r = await checkTool(t.name, deps, t.path, t.aliases);
 
-        if (r.ok) {
-            res.push({ tool: t.name, status: await checkTool(r.cmd, deps) });
-        }
-        else {
-            res.push({ tool: t.name, status: { ok: false, error: `Command ${t.name} not found`} });
-        }
+      res.push({ tool: t.name, status: r });
     }
 
     return res;
 }
 
-const checkTool = async (cmd: string, deps: ToolsServiceDeps) => {
-    const res = await deps.execAsync(cmd, ['--version']);
+const checkTool = async (
+    name: string,
+    deps: ToolsServiceDeps,
+    path?: string | null,
+    aliases?: string[] | null
+): Promise<CheckToolsResult> => {
+    
+    // Find executable/command for this tool
+    const r = await deps.findToolCandidate(
+        name,
+        process.platform === 'win32',
+        path,
+        aliases
+    )
+
+    if (!r.ok) {
+        return { ok: false, error: `Command ${name} not found`};
+    }
+
+    // Get tool version
+    const res = await deps.execAsync(r.cmd, ['--version']);
     switch(res.status) {
-        case 'success': return { ok: true, version: res.stdout.trim() } as CheckToolsResult;
+        case 'success': return { ok: true, exec: r.cmd, version: res.stdout.trim() } as CheckToolsResult;
         case 'error': return { ok: false, error: res.error } as CheckToolsResult;
         case 'canceled': return { ok: false, error: res.signal } as CheckToolsResult;
         default: return  { ok: false, error: 'Unknown error' } as CheckToolsResult;
     }
+
 }
 
 export type {
