@@ -11,7 +11,6 @@ const toolAliases = {
 export const defaultAppSettings: AppSettings = {
     repoUrl: "https://github.com/pret/pokecrystal.git",
     toolAliases,
-
 }
 
 /** Merge a partial/persisted settings object with defaults (typed) */

@@ -20,6 +20,7 @@ export function registerIpc(
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
     saveAppSettings: () => Promise<ActionResult>,
+    resetAppSettings: () => Promise<ActionResult>,
     projectService: ProjectService,
     toolsService: ToolsService,
     gitService: GitService,
@@ -31,6 +32,7 @@ export function registerIpc(
     registerAppIpc(
         appSettings,
         saveAppSettings,
+        resetAppSettings,
     );
 
     registerProjectLifecycleIpc(
