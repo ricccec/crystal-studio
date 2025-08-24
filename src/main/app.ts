@@ -37,7 +37,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         execAsync,
         isDirectory,
     });
-    const toolsService = createToolsService({
+    const toolsService = createToolsService(process.platform, {
         execAsync,
         findToolCandidate,
     })
