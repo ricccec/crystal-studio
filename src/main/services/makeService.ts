@@ -13,6 +13,8 @@ type MakeService = {
 type RunMakeFn = (
     targetDir: string,
     makeExec?: string | null,
+    rgbdsDir?: string | null,
+    env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
@@ -21,18 +23,26 @@ function createMakeService(deps: MakeServiceDeps): MakeService {
         runMake: (
             targetDir,
             makeExec,
+            rgbdsDir,
+            env,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => runMake(targetDir, deps, makeExec, onOutput),
+        ) => runMake(targetDir, deps, makeExec, rgbdsDir, env, onOutput),
     }
 }
 
 const runMake = async (
-    targetDir: string,
+    cwd: string,
     deps: MakeServiceDeps,
     makeExec?: string | null,
+    rgbdsDir?: string | null,
+    env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
-    return await deps.execAsync(makeExec ?? 'make', null, onOutput, { cwd: targetDir });
+    
+    const opts: string[] = [];
+    if (rgbdsDir) opts.push(`RGBDS=${rgbdsDir}`);
+    
+    return await deps.execAsync(makeExec ?? 'make', opts, onOutput, { cwd, env: env ?? undefined });
 };
 
 export type {

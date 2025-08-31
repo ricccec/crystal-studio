@@ -23,7 +23,6 @@ export function registerToolsIpc(
     
     ipcMain.handle('check-tools', async () => {
 
-        console.log(appSettings);
         const tools = [
             { name: 'git', path: null, aliases: null },
             { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
@@ -102,11 +101,18 @@ export function registerToolsIpc(
         if (!checkRes.ok) {
             return { status:'error', error: `Cannot run make: ${checkRes.error}`};
         }
-
         const makeExec = checkRes.exec;
+        
+        // Prepare PATH for make so it can find its deps.
+        const envForMake = buildPathForMake(
+            appSettings.rgbdsDir,
+        );
+
         const res = await makeService.runMake(
             makeCwd,
             makeExec,
+            appSettings.rgbdsDir,
+            envForMake,
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
                 win.webContents.send('task:stream', payload);
@@ -120,5 +126,28 @@ export function registerToolsIpc(
             return [];
         const toolAliases = appSettings.toolAliases[tool];
         return toolAliases[process.platform] ?? [];
+    }
+
+    function buildPathForMake(
+        rgbdsDir ?: string | null,
+    ): NodeJS.ProcessEnv {
+
+        const pathEntries : string[] = [];
+        if (rgbdsDir) pathEntries.push(rgbdsDir);
+
+        // Use platform-specific path separator
+        const pathSeparator = (process.platform === 'win32') ? ';' : ':';
+
+        // Build an augmented PATH
+        const env = { ...process.env };
+        const oldPath = env.PATH || env.Path || '';
+        const newPath = [oldPath, ...pathEntries].filter(Boolean).join(pathSeparator);
+
+        env.PATH = newPath;
+        if (process.platform === 'win32') {
+            env.Path = newPath; // Windows sometimes uses Path instead of PATH
+        }
+
+        return env;
     }
 }
