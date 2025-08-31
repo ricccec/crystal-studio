@@ -24,26 +24,32 @@ export function registerAppIpc(
         return { ok: true, data: appSettings.makeDir };
     });
 
-    ipcMain.handle('set-emulator', async (_, emulatorExec: string) => {
-        try {
-            const ok = await isExecutable(emulatorExec);
-            if (!ok) {
-                return { ok: false, error: 'Selected file is not an executable' };
-            }
-        } catch (e: any) {
-            return { ok: false, error: `Failed to validate executable: ${e.message ?? String(e)}`};
-        }
-
-        appSettings.emulator = emulatorExec;
-        await saveAppSettings();
-        return { ok: true, data: appSettings.emulator };
-    });
-
     ipcMain.handle('set-rgbds-folder', async (_, rgbdsDir: string) => {
         appSettings.rgbdsDir = rgbdsDir;
         await saveAppSettings();
         return { ok: true, data: appSettings.rgbdsDir };
     });
+
+    ipcMain.handle('set-gcc-folder', async (_, gccDir: string) => {
+        appSettings.gccDir = gccDir;
+        await saveAppSettings();
+        return { ok: true, data: appSettings.gccDir };
+    });
+
+    ipcMain.handle('set-emulator', async (_, emulatorExec: string) => {
+        try {
+            const ok = await isExecutable(emulatorExec);
+            if (!ok) {
+                return { ok: false, error: 'Selected file is not an executable' };
+            }    
+        } catch (e: any) {
+            return { ok: false, error: `Failed to validate executable: ${e.message ?? String(e)}`};
+        }    
+
+        appSettings.emulator = emulatorExec;
+        await saveAppSettings();
+        return { ok: true, data: appSettings.emulator };
+    });    
 
 
 }

@@ -20,6 +20,7 @@ declare global {
             resetAppSetting : ()=> Promise<ActionResult>;
             setMakeFolder : (makePath: string) =>  Promise<ActionResult>;    
             setRgbdsFolder : (rgbdsDir: string) =>  Promise<ActionResult>;
+            setGccFolder : (rgbdsDir: string) =>  Promise<ActionResult>;
             setEmulator : (emulatorExec: string) =>  Promise<ActionResult>;
 
             // Project lifecycle IPCs

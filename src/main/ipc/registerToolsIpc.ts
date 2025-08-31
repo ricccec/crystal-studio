@@ -25,6 +25,7 @@ export function registerToolsIpc(
 
         const tools = [
             { name: 'git', path: null, aliases: null },
+            { name: 'gcc', path: appSettings.gccDir },
             { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
             { name: 'rgbasm', path: appSettings.rgbdsDir },
             { name: 'rgbfix', path: appSettings.rgbdsDir },
@@ -106,6 +107,7 @@ export function registerToolsIpc(
         // Prepare PATH for make so it can find its deps.
         const envForMake = buildPathForMake(
             appSettings.rgbdsDir,
+            appSettings.gccDir,
         );
 
         const res = await makeService.runMake(
@@ -129,11 +131,13 @@ export function registerToolsIpc(
     }
 
     function buildPathForMake(
-        rgbdsDir ?: string | null,
+        rgbdsDir?: string | null,
+        gccDir?: string | null,
     ): NodeJS.ProcessEnv {
 
         const pathEntries : string[] = [];
         if (rgbdsDir) pathEntries.push(rgbdsDir);
+        if (gccDir) pathEntries.push(gccDir);
 
         // Use platform-specific path separator
         const pathSeparator = (process.platform === 'win32') ? ';' : ':';

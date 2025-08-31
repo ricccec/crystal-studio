@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('api', {
     resetAppSetting : (): Promise<ActionResult> => ipcRenderer.invoke('reset-app-settings'),
     setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder', makePath),
     setRgbdsFolder : (rgbdsDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-rgbds-folder', rgbdsDir),
+    setGccFolder : (rgbdsDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-gcc-folder', rgbdsDir),
     setEmulator : (emulatorExec: string): Promise<ActionResult> => ipcRenderer.invoke('set-emulator', emulatorExec),
 
     // Project lifecycle IPCs
