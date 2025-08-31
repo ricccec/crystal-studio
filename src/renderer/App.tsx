@@ -156,6 +156,16 @@ const App = () => {
         }
     }
 
+    const onSelectGccDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setGccFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    };
+
     const onSelectEmulator = async () => {
         let filters = null;
         if (window.api.platform === 'win32') {
@@ -205,6 +215,7 @@ const App = () => {
             <div>
                 <button onClick={onCheckTools}>Check tools</button>
                 <button onClick={onSelectMakeDir}>Select make folder</button>
+                <button onClick={onSelectGccDir}>Select GCC folder</button>
                 <button onClick={onSelectRgbdsDir}>Select rgbds folder</button>
                 <button onClick={onSelectEmulator}>Select emulator</button>
             </div>

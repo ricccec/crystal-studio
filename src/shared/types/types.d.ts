@@ -23,6 +23,7 @@ export interface AppSettings {
     lastUsedPath?: string | null;
     makeDir?: string | null;
     rgbdsDir?: string | null;
+    gccDir?: string | null;
     emulator?: string | null;
     repoUrl: string;
     toolAliases: Record<string,  Record<string, string[]>>;
