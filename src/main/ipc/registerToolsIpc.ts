@@ -26,11 +26,13 @@ export function registerToolsIpc(
         const tools = [
             { name: 'git', path: null, aliases: null },
             { name: 'gcc', path: appSettings.gccDir },
-            { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
+            { name: 'bash', path: appSettings.bashDir, aliases: getToolAliases('bash')},
             { name: 'rgbasm', path: appSettings.rgbdsDir },
             { name: 'rgbfix', path: appSettings.rgbdsDir },
             { name: 'rgbgfx', path: appSettings.rgbdsDir },
             { name: 'rgbfix', path: appSettings.rgbdsDir },
+            { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
+          
         ]
         
         return await toolsService.checkTools(tools);
@@ -113,7 +115,6 @@ export function registerToolsIpc(
         const res = await makeService.runMake(
             makeCwd,
             makeExec,
-            appSettings.rgbdsDir,
             envForMake,
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
