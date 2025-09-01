@@ -166,6 +166,16 @@ const App = () => {
         }
     };
 
+    const onSelectBashDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setBashFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    };
+
     const onSelectEmulator = async () => {
         let filters = null;
         if (window.api.platform === 'win32') {
@@ -198,22 +208,27 @@ const App = () => {
     return (
         <>
             <div>
+                <h5>App Settings</h5>
                 <button onClick={onResetAppSettings}>Reset App Settings</button>
                 <button onClick={onShowAppSettings}>Show App Settings</button>
             </div>
             <div>
+                <h5>Project lifecycle</h5>
                 <button onClick={onNewProject}>New Project</button>
                 <button onClick={onOpenProject}>Open Project</button>
                 <button onClick={onSaveProject}>Save Project</button>
                 <button onClick={onSaveProjectAs}>Save Project As</button>
             </div>
             <div>
+                <h5>ROM building</h5>
                 <button onClick={onOpenGit}>Open pret repo</button>
                 <button onClick={onGitClone}>Clone pret repo</button>
                 <button onClick={onRunMake}>Build project</button>
             </div>
             <div>
+                <h5>Tools</h5>
                 <button onClick={onCheckTools}>Check tools</button>
+                <button onClick={onSelectBashDir}>Select bash folder</button>
                 <button onClick={onSelectMakeDir}>Select make folder</button>
                 <button onClick={onSelectGccDir}>Select GCC folder</button>
                 <button onClick={onSelectRgbdsDir}>Select rgbds folder</button>
