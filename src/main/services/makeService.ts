@@ -1,5 +1,6 @@
 import { ExecAsyncFn } from "@main/utils/execAsync";
 import { ActionResult, ProjectSettings, SpawnResult } from "@shared/types/types";
+import path from "node:path";
 
 type MakeServiceDeps = {
     execAsync: ExecAsyncFn;
@@ -15,6 +16,8 @@ type RunMakeFn = (
     makeExec?: string | null,
     numJobs?: number,
     target?: string,
+    shell?: string | null,
+    env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
@@ -25,8 +28,10 @@ function createMakeService(deps: MakeServiceDeps): MakeService {
             makeExec,
             numJobs,
             target,
+            shell,
+            env,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => runMake(cwd, deps, makeExec, numJobs, target, onOutput),
+        ) => runMake(cwd, deps, makeExec, numJobs, target, shell, env, onOutput),
     }
 }
 
@@ -36,13 +41,22 @@ const runMake = async (
     makeExec?: string | null,
     numJobs?: number,
     target?: string,
+    shell?: string | null,
+    env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
+
     // Build args list
     const args = [];
     if(numJobs) args.push(`-j${numJobs}`);
     if(target) args.push(target);
-    return await deps.execAsync(makeExec ?? 'make', args, onOutput, { cwd });
+
+    return await deps.execAsync(
+        makeExec ?? 'make',
+        args,
+        shell,
+        onOutput,
+        { cwd, env: env ?? undefined });
 };
 
 export type {
