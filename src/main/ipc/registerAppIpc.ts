@@ -36,6 +36,13 @@ export function registerAppIpc(
         return { ok: true, data: appSettings.gccDir };
     });
 
+    
+    ipcMain.handle('set-bash-folder', async (_, bashDir: string) => {
+        appSettings.bashDir = bashDir;
+        await saveAppSettings();
+        return { ok: true, data: appSettings.bashDir };
+    });
+
     ipcMain.handle('set-emulator', async (_, emulatorExec: string) => {
         try {
             const ok = await isExecutable(emulatorExec);
