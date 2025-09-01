@@ -12,8 +12,9 @@ type MakeService = {
 }
 
 type RunMakeFn = (
-    targetDir: string,
+    cwd: string,
     makeExec?: string | null,
+    shell?: string | null,
     env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
@@ -21,11 +22,12 @@ type RunMakeFn = (
 function createMakeService(deps: MakeServiceDeps): MakeService {
     return {
         runMake: (
-            targetDir,
+            cwd,
             makeExec,
+            shell,
             env,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => runMake(targetDir, deps, makeExec, env, onOutput),
+        ) => runMake(cwd, deps, makeExec, shell, env, onOutput),
     }
 }
 
@@ -33,11 +35,12 @@ const runMake = async (
     cwd: string,
     deps: MakeServiceDeps,
     makeExec?: string | null,
+    shell?: string | null,
     env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
     
-    return await deps.execAsync(makeExec ?? 'make', null, 'bash', onOutput, { cwd, env: env ?? undefined });
+    return await deps.execAsync(makeExec ?? 'make', null, shell, onOutput, { cwd, env: env ?? undefined });
 };
 
 export type {
