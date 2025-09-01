@@ -11,8 +11,6 @@ type GitService = {
     cloneGitRepo: CloneGitRepoFn;
 }
 
-type CheckGitFn = () => Promise<ActionResult<string>>;
-
 type OpenGitRepoFn = (
     projectSettings: ProjectSettings,
     repoPath: string,
@@ -21,6 +19,7 @@ type OpenGitRepoFn = (
 type CloneGitRepoFn = (
     repoUrl: string,
     targetDir: string,
+    shell?: string | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
@@ -36,8 +35,9 @@ function createGitService(deps: GitServiceDeps): GitService {
         cloneGitRepo: (
             repoUrl: string,
             targetDir: string,
+            shell,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => cloneGitRepo(repoUrl, targetDir, deps, onOutput),
+        ) => cloneGitRepo(repoUrl, targetDir, deps, shell, onOutput),
     }
 }
 
@@ -62,10 +62,11 @@ const openGitRepo = async (
 const cloneGitRepo = async (
     repoUrl: string,
     targetDir: string,
-    dev: GitServiceDeps,
+    deps: GitServiceDeps,
+    shell?: string | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
-    return await dev.execAsync('git', ['clone', repoUrl, targetDir], onOutput);
+    return await deps.execAsync('git', ['clone', repoUrl, targetDir], shell, onOutput);
 };
 
 export type {

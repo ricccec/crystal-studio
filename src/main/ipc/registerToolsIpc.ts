@@ -25,11 +25,14 @@ export function registerToolsIpc(
 
         const tools = [
             { name: 'git', path: null, aliases: null },
-            { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
+            { name: 'gcc', path: appSettings.gccDir },
+            { name: 'bash', path: appSettings.bashDir, aliases: getToolAliases('bash')},
             { name: 'rgbasm', path: appSettings.rgbdsDir },
             { name: 'rgbfix', path: appSettings.rgbdsDir },
             { name: 'rgbgfx', path: appSettings.rgbdsDir },
             { name: 'rgbfix', path: appSettings.rgbdsDir },
+            { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
+          
         ]
         
         return await toolsService.checkTools(tools);
@@ -57,6 +60,7 @@ export function registerToolsIpc(
     ) : Promise<SpawnResult> => {
         const res = await gitService.cloneGitRepo(
             repoUrl, targetPath,
+            null, // No need for custom bash for git 
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
                 win.webContents.send('task:stream', payload);
@@ -72,6 +76,7 @@ export function registerToolsIpc(
         const repoUrl = appSettings.repoUrl;
         const res = await gitService.cloneGitRepo(
             repoUrl, targetPath,
+            null, // No need for custom bash for git
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
                 win.webContents.send('task:stream', payload);
@@ -103,13 +108,29 @@ export function registerToolsIpc(
         if (!checkRes.ok) {
             return { status:'error', error: `Cannot run make: ${checkRes.error}`};
         }
-
         const makeExec = checkRes.exec;
+        
+        // Check custom bash is available
+        const bashRes = (await toolsService.checkTool(
+            'bash',
+            appSettings.bashDir,
+            getToolAliases('bash')
+        ));
+        const bash = bashRes.ok ? bashRes.exec : null;
+
+        // Prepare PATH for make so it can find its deps.
+        const envForMake = buildPathForMake(
+            appSettings.rgbdsDir,
+            appSettings.gccDir,
+        );
+
         const res = await makeService.runMake(
             makeCwd,
             makeExec,
             makeNumJobs,
             makeTarget,
+            bash,
+            envForMake,
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
                 win.webContents.send('task:stream', payload);
@@ -123,5 +144,30 @@ export function registerToolsIpc(
             return [];
         const toolAliases = appSettings.toolAliases[tool];
         return toolAliases[process.platform] ?? [];
+    }
+
+    function buildPathForMake(
+        rgbdsDir?: string | null,
+        gccDir?: string | null,
+    ): NodeJS.ProcessEnv {
+
+        const pathEntries : string[] = [];
+        if (rgbdsDir) pathEntries.push(rgbdsDir);
+        if (gccDir) pathEntries.push(gccDir);
+
+        // Use platform-specific path separator
+        const pathSeparator = (process.platform === 'win32') ? ';' : ':';
+
+        // Build an augmented PATH
+        const env = { ...process.env };
+        const oldPath = env.PATH || env.Path || '';
+        const newPath = [oldPath, ...pathEntries].filter(Boolean).join(pathSeparator);
+
+        env.PATH = newPath;
+        if (process.platform === 'win32') {
+            env.Path = newPath; // Windows sometimes uses Path instead of PATH
+        }
+
+        return env;
     }
 }
