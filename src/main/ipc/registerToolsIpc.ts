@@ -60,6 +60,7 @@ export function registerToolsIpc(
     ) : Promise<SpawnResult> => {
         const res = await gitService.cloneGitRepo(
             repoUrl, targetPath,
+            null, // No need for custom bash for git 
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
                 win.webContents.send('task:stream', payload);
@@ -75,6 +76,7 @@ export function registerToolsIpc(
         const repoUrl = appSettings.repoUrl;
         const res = await gitService.cloneGitRepo(
             repoUrl, targetPath,
+            null, // No need for custom bash for git
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
                 win.webContents.send('task:stream', payload);
@@ -106,6 +108,14 @@ export function registerToolsIpc(
         }
         const makeExec = checkRes.exec;
         
+        // Check custom bash is available
+        const bashRes = (await toolsService.checkTool(
+            'bash',
+            appSettings.bashDir,
+            getToolAliases('bash')
+        ));
+        const bash = bashRes.ok ? bashRes.exec : null;
+
         // Prepare PATH for make so it can find its deps.
         const envForMake = buildPathForMake(
             appSettings.rgbdsDir,
@@ -115,6 +125,7 @@ export function registerToolsIpc(
         const res = await makeService.runMake(
             makeCwd,
             makeExec,
+            bash,
             envForMake,
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
