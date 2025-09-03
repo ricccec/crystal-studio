@@ -111,12 +111,15 @@ export function registerToolsIpc(
         const makeExec = checkRes.exec;
         
         // Check custom bash is available
-        const bashRes = (await toolsService.checkTool(
-            'bash',
-            appSettings.bashDir,
-            getToolAliases('bash')
-        ));
-        const bash = bashRes.ok ? bashRes.exec : null;
+        let bash = null;
+        if (appSettings.bashDir) {
+            const bashRes = (await toolsService.checkTool(
+                'bash',
+                appSettings.bashDir,
+                getToolAliases('bash')
+            ));
+            if (bashRes.ok) bash = bashRes.exec;
+        }
 
         // Prepare PATH for make so it can find its deps.
         const envForMake = buildPathForMake(
