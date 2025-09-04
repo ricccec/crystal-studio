@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('api', {
     openAppSetting : (): Promise<ActionResult> => ipcRenderer.invoke('open-app-settings'),
     setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder', makePath),
     setRgbdsFolder : (rgbdsDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-rgbds-folder', rgbdsDir),
+    setCygwinFolder : (cygWinDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-cygwin-folder', cygWinDir),
     setGccFolder : (gccDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-gcc-folder', gccDir),
     setBashFolder : (bashDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-bash-folder', bashDir),
     setEmulator : (emulatorExec: string): Promise<ActionResult> => ipcRenderer.invoke('set-emulator', emulatorExec),
