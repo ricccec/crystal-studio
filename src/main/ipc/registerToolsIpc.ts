@@ -4,7 +4,7 @@ import type { ProjectService } from "@main/services/projectServices";
 import type { WriteSettingsFn } from "@main/utils/settings";
 import type { GitService } from "@main/services/gitServices";
 import { TaskStreamPayload } from "@shared/ipc";
-import { MakeService } from "@main/services/makeService";
+import { MakeOptions, MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
 import findToolCandidate from "@main/utils/findToolCandidate";
 
@@ -20,7 +20,6 @@ export function registerToolsIpc(
     writeSettings: WriteSettingsFn,
 ) {
 
-    
     ipcMain.handle('check-tools', async () => {
 
         const tools = [
@@ -130,11 +129,14 @@ export function registerToolsIpc(
 
         const res = await makeService.runMake(
             makeCwd,
-            makeExec,
             makeNumJobs,
             makeTarget,
-            bash,
-            envForMake,
+            {
+                env: envForMake,
+                makeExec,
+                rgbdsDir: appSettings.rgbdsDir,
+                shell: bash,
+            },
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
                 win.webContents.send('task:stream', payload);

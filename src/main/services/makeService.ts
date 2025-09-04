@@ -11,13 +11,18 @@ type MakeService = {
     runMake: RunMakeFn;
 }
 
+type MakeOptions = {
+    makeExec?: string | null,
+    shell?: string | null,
+    rgbdsDir?: string | null,
+    env?: NodeJS.ProcessEnv | null,
+};
+
 type RunMakeFn = (
     cwd: string,
-    makeExec?: string | null,
-    numJobs?: number,
-    target?: string,
-    shell?: string | null,
-    env?: NodeJS.ProcessEnv | null,
+    numJobs?: number | null,
+    target?: string | null,
+    options?: MakeOptions | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
@@ -25,13 +30,18 @@ function createMakeService(deps: MakeServiceDeps): MakeService {
     return {
         runMake: (
             cwd,
-            makeExec,
             numJobs,
             target,
-            shell,
-            env,
+            options,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => runMake(cwd, deps, makeExec, numJobs, target, shell, env, onOutput),
+        ) => runMake(cwd, deps,
+            options?.makeExec ?? null,
+            numJobs,
+            target,
+            options?.shell ?? null,
+            options?.rgbdsDir ?? null,
+            options?.env ?? null,
+            onOutput),
     }
 }
 
@@ -39,17 +49,19 @@ const runMake = async (
     cwd: string,
     deps: MakeServiceDeps,
     makeExec?: string | null,
-    numJobs?: number,
-    target?: string,
+    numJobs?: number | null,
+    target?: string | null,
     shell?: string | null,
+    rgbdsDir?: string | null,
     env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
 
     // Build args list
-    const args = [];
+    const args: string[] = [];
     if(numJobs) args.push(`-j${numJobs}`);
     if(target) args.push(target);
+    if ((process.platform !== 'win32') && rgbdsDir) args.push(`RGBDS=${rgbdsDir}`);
 
     return await deps.execAsync(
         makeExec ?? 'make',
@@ -60,6 +72,7 @@ const runMake = async (
 };
 
 export type {
+    MakeOptions,
     MakeService,
     MakeServiceDeps,
 };
