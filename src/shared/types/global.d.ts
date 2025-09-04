@@ -16,8 +16,10 @@ declare global {
             platform: NodeJS.Platform,
 
             // Application IPCs
+            restartApp : () => Promise<ActionResult>;
             getAppSettings : () => Promise<AppSettings>;
             resetAppSetting : ()=> Promise<ActionResult>;
+            openAppSetting : () => Promise<ActionResult>;
             setMakeFolder : (makePath: string) =>  Promise<ActionResult>;    
             setRgbdsFolder : (rgbdsDir: string) =>  Promise<ActionResult>;
             setGccFolder : (rgbdsDir: string) =>  Promise<ActionResult>;

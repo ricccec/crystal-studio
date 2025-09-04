@@ -17,8 +17,10 @@ contextBridge.exposeInMainWorld('api', {
     platform: process.platform,
 
     // Application IPCs
+    restartApp : (): Promise<ActionResult> => ipcRenderer.invoke('restart-app'), 
     getAppSettings : (): Promise<AppSettings> => ipcRenderer.invoke('get-app-settings'),
     resetAppSetting : (): Promise<ActionResult> => ipcRenderer.invoke('reset-app-settings'),
+    openAppSetting : (): Promise<ActionResult> => ipcRenderer.invoke('open-app-settings'),
     setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder', makePath),
     setRgbdsFolder : (rgbdsDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-rgbds-folder', rgbdsDir),
     setGccFolder : (gccDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-gcc-folder', gccDir),

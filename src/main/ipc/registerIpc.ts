@@ -19,6 +19,7 @@ export function registerIpc(
     // Injected deps.
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
+    restartApp: () => Promise<ActionResult>,
     saveAppSettings: () => Promise<ActionResult>,
     resetAppSettings: () => Promise<ActionResult>,
     projectService: ProjectService,
@@ -31,6 +32,7 @@ export function registerIpc(
 
     registerAppIpc(
         appSettings,
+        restartApp,
         saveAppSettings,
         resetAppSettings,
     );
