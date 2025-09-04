@@ -100,8 +100,18 @@ const App = () => {
     const onCheckTools = async () => {
         const res = await window.api.checkTools() as { tool: string, status: any }[];
 
-        function formatToolLine(toolName: string, res: { ok: boolean, version?: string, error?: string}) {
-            return `${toolName}: ${res.ok ? (res.version ?? 'OK') : `ERROR: ${res.error}`}`;
+        function formatToolLine(toolName: string, res: {
+             ok: boolean,
+             exec?: string,
+             version?:
+             string,
+             error?: string
+        }) {
+            if (res.ok) {
+                return `${toolName}: ${res.exec  ?? ''} ${res.version}`;
+            } else {
+                return `${toolName}: ERROR: ${res.error}`;
+            }
         }
         
         const lines = res.map((item) => formatToolLine(item.tool, item.status));
