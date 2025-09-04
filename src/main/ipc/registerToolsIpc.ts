@@ -125,6 +125,7 @@ export function registerToolsIpc(
         const envForMake = buildPathForMake(
             appSettings.rgbdsDir,
             appSettings.gccDir,
+            appSettings.cygwinDir,
         );
 
         const res = await makeService.runMake(
@@ -152,19 +153,21 @@ export function registerToolsIpc(
     function buildPathForMake(
         rgbdsDir?: string | null,
         gccDir?: string | null,
+        cygwinDir?: string | null,
     ): NodeJS.ProcessEnv {
 
         const pathEntries : string[] = [];
         if (rgbdsDir) pathEntries.push(rgbdsDir);
         if (gccDir) pathEntries.push(gccDir);
+        if (cygwinDir) pathEntries.push(cygwinDir);
 
         // Use platform-specific path separator
         const pathSeparator = (process.platform === 'win32') ? ';' : ':';
 
-        // Build an augmented PATH
+        // Build an augmented PATH (custom entries have precedence)
         const env = { ...process.env };
         const oldPath = env.PATH || env.Path || '';
-        const newPath = [oldPath, ...pathEntries].filter(Boolean).join(pathSeparator);
+        const newPath = [...pathEntries, oldPath].filter(Boolean).join(pathSeparator);
 
         env.PATH = newPath;
         if (process.platform === 'win32') {

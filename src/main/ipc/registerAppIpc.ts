@@ -71,7 +71,12 @@ export function registerAppIpc(
         appSettings.emulator = emulatorExec;
         await saveAppSettings();
         return { ok: true, data: appSettings.emulator };
-    });    
+    });
 
+    ipcMain.handle('set-cygwin-folder', async (_, cygwinDir: string) => {
+        appSettings.cygwinDir = cygwinDir;
+        await saveAppSettings();
+        return { ok: true, data: appSettings.bashDir };    
+    });
 
 }

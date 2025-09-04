@@ -177,6 +177,16 @@ const App = () => {
         }
     };
 
+    const onSelectCygWinDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setCygwinFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    };
+
     const onSelectBashDir = async () => {
         const r = await window.api.showOpenDirDialog("Select folder");
         if (r.status === 'success') {
@@ -251,6 +261,7 @@ const App = () => {
             <div>
                 <h5>Tools</h5>
                 <button onClick={onCheckTools}>Check tools</button>
+                <button onClick={onSelectCygWinDir}>Select CygWin folder</button>
                 <button onClick={onSelectBashDir}>Select bash folder</button>
                 <button onClick={onSelectMakeDir}>Select make folder</button>
                 <button onClick={onSelectGccDir}>Select GCC folder</button>
