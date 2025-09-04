@@ -61,8 +61,17 @@ const runMake = async (
     const args: string[] = [];
     if(numJobs) args.push(`-j${numJobs}`);
     if(target) args.push(target);
-    if ((process.platform !== 'win32') && rgbdsDir) args.push(`RGBDS=${rgbdsDir}`);
-
+    if (rgbdsDir) {
+        let rgbdsArg = rgbdsDir;
+        // if running on Windows, convert to posix style
+        if (process.platform === 'win32') {
+            rgbdsArg = rgbdsArg.replace(/\\/g, '/');
+        }
+        // ensure trailing slash if your Makefile expects it
+        if (!rgbdsArg.endsWith('/')) rgbdsArg = rgbdsArg + '/';
+        args.push(`RGBDS=${rgbdsArg}`);
+    }
+    
     return await deps.execAsync(
         makeExec ?? 'make',
         args,
