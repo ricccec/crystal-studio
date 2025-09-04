@@ -1,0 +1,1 @@
+export const APP_SETTINGS_FILENAME = 'app-settings.json';

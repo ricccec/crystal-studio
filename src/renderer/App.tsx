@@ -1,5 +1,7 @@
 import { TaskStreamPayload } from '@shared/ipc';
 import type { ActionResult, ProcessResult, SpawnResult } from '@shared/types/types';
+import { app } from 'electron';
+import path from 'node:path';
 import React from 'react';
 
 const App = () => {
@@ -204,6 +206,11 @@ const App = () => {
         
     }
 
+    const onRestartApp = async () => {
+        const r = await window.api.restartApp();
+        if (!r.ok) appendToConsoleOutput(r.error);
+    };
+
     const onShowAppSettings = async () => {
         const s = await window.api.getAppSettings();
         appendToConsoleOutput(JSON.stringify(s, null, 2));
@@ -212,14 +219,21 @@ const App = () => {
     const onResetAppSettings = async () => {
         const r = await window.api.resetAppSetting();
         if (!r.ok) appendToConsoleOutput(r.error);
-    }
+    };
+
+    const onOpenAppSettings = async () => {
+        const r = await window.api.openAppSetting();
+        if (!r.ok) appendToConsoleOutput(r.error);
+    };
     
     return (
         <>
             <div>
                 <h5>App Settings</h5>
+                <button onClick={onRestartApp}>Restart App</button>
                 <button onClick={onResetAppSettings}>Reset App Settings</button>
                 <button onClick={onShowAppSettings}>Show App Settings</button>
+                <button onClick={onOpenAppSettings}>Open App Settings</button>
             </div>
             <div>
                 <h5>Project lifecycle</h5>

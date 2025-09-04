@@ -13,18 +13,21 @@ import { withDefaultAppSettings } from "@shared/default";
 import createMakeService from "./services/makeService";
 import createToolsService from "./services/toolsService";
 import findToolCandidate from "./utils/findToolCandidate";
+import { APP_SETTINGS_FILENAME } from "@shared/constants";
 
 let win : BrowserWindow | null = null;
 
 const projectSettings : ProjectSettings = {};
-let appSettings : AppSettings = withDefaultAppSettings();
+let appSettings : AppSettings;
+
+let isDev : boolean;
 
 export async function start(publicFolder: string, viteUrl?: string) {
 
+    isDev = !!viteUrl;
+    
     // Load app settings before creating the window    
-    const result = await loadAppSettings();
-    if (result.ok) Object.assign(appSettings, result.data);
-    else console.error('Failed to load settings:', result.error);
+    await initAppSettings();
 
     win = createWindow(publicFolder, viteUrl);
 
@@ -49,6 +52,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         projectSettings,
         showSaveDialog,
         showOpenDialog,
+        restartApp,
         saveAppSettings,
         resetAppSettings,
         projectService,
@@ -65,8 +69,42 @@ export async function start(publicFolder: string, viteUrl?: string) {
 
 }
 
+async function restartApp() : Promise<ActionResult> {
+    try {
+        if (isDev) {
+            // In dev mode, process lifecycle is handled by Vite. To prevent Vite from loosing
+            // track of the project, we just reinitialize the app without launching a new process
+            await initAppSettings()
+            if (win && !win.isDestroyed) {
+                win.reload();
+            }
+            return { ok: true };
+        } else {
+            // In production, use the normal relaunch + quit pattern
+            app.relaunch();
+            setTimeout(() => {
+                try { app.quit(); } catch { app.exit(0); }
+            }, 500);
+            return { ok: true };
+        }
+    } catch (e: any) {
+        return { ok: false, error: e?.message ?? String(e) };
+    }
+}
+
+async function initAppSettings() {
+
+    appSettings = withDefaultAppSettings();
+
+    // Load app settings
+    const result = await loadAppSettings();
+    if (result.ok) Object.assign(appSettings, result.data);
+    else console.error('Failed to load settings:', result.error);
+
+}
+
 async function loadAppSettings() : Promise<ActionResult<Partial<AppSettings>>> {
-    const settingPath = path.join(app.getPath('userData'), 'app-settings.json');
+    const settingPath = path.join(app.getPath('userData'), APP_SETTINGS_FILENAME);
     
     try {
         const data = await fs.readFile(settingPath, 'utf-8');
@@ -87,7 +125,7 @@ async function resetAppSettings() {
 }
 
 async function saveAppSettings(preserveExisting = true) : Promise<ActionResult> {
-    const settingPath = path.join(app.getPath('userData'), 'app-settings.json');
+    const settingPath = path.join(app.getPath('userData'), APP_SETTINGS_FILENAME);
 
     try {
         // Ensure folder exists
