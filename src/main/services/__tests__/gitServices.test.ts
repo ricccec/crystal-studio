@@ -90,7 +90,8 @@ describe('gitServices', () => {
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'git',
                 ['clone', 'https://github.com/user/repo.git', '/target/path'],
-                undefined
+                undefined, // shell parameter (when not provided)
+                undefined // onOutput parameter
             );
         });
 
@@ -138,13 +139,15 @@ describe('gitServices', () => {
             await gitService.cloneGitRepo(
                 'https://github.com/user/repo.git',
                 '/target/path',
-                mockOnOutput
+                null, // shell parameter
+                mockOnOutput // onOutput parameter
             );
 
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'git',
                 ['clone', 'https://github.com/user/repo.git', '/target/path'],
-                mockOnOutput
+                null, // shell parameter
+                mockOnOutput // onOutput parameter
             );
         });
     });
