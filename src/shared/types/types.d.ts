@@ -27,6 +27,7 @@ export interface AppSettings {
     gccDir?: string | null;
     bashDir?: string | null;
     emulator?: string | null;
+    rom?: string | null;
     repoUrl: string;
     toolAliases: Record<string,  Record<string, string[]>>;
     make: {
