@@ -16,6 +16,7 @@ const toolAliases = {
 export const defaultAppSettings: AppSettings = {
     repoUrl: "https://github.com/pret/pokecrystal.git",
     toolAliases,
+    rom: 'pokecrystal11.gbc',
     make: {
         numJobs: 4,
         target: 'crystal11',

@@ -49,8 +49,9 @@ contextBridge.exposeInMainWorld('api', {
     cloneGitRepo: (repoUrl: string, targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone', repoUrl, targetPath),
     cloneDefaultGitRepo: (targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone-default', targetPath),
 
-    // Make IPCs
+    // ROM building IPCs
     runMake: (): Promise<SpawnResult> => ipcRenderer.invoke('run-make'),
+    runEmulator: (): Promise<SpawnResult> => ipcRenderer.invoke('run-emulator'),
 
     // Subscribe to a whitelisted renderer event channel
     on: (channel: Channel, listener: (...args: any[]) => void) => {
