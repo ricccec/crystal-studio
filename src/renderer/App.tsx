@@ -145,7 +145,7 @@ const App = () => {
         } else if (runRes.status === 'canceled') {
             appendToConsoleOutput(runRes.signal ?? 'Canceled');
         }
-    }
+    };
 
     const onRunMake = async () => {
 
@@ -155,7 +155,16 @@ const App = () => {
         } else if (runRes.status === 'canceled') {
             appendToConsoleOutput(runRes.signal ?? 'Canceled');
         }
-    }
+    };
+
+    const onRunRom = async () => {
+        const r = await window.api.runEmulator();
+        if (r.status === 'error') {
+            appendToConsoleOutput(r.error);
+        } else if (r.status === 'canceled') {
+            appendToConsoleOutput(r.signal ?? 'Canceled');
+        }
+    };
 
     const onSelectMakeDir = async () => {
         const r = await window.api.showOpenDirDialog("Select folder");
@@ -165,7 +174,7 @@ const App = () => {
                 appendToConsoleOutput(setRes.data!);
             }
         }
-    }
+    };
 
     const onSelectRgbdsDir = async () => {
         const r = await window.api.showOpenDirDialog("Select folder");
@@ -175,7 +184,7 @@ const App = () => {
                 appendToConsoleOutput(setRes.data!);
             }
         }
-    }
+    };
 
     const onSelectGccDir = async () => {
         const r = await window.api.showOpenDirDialog("Select folder");
@@ -267,6 +276,7 @@ const App = () => {
                 <button onClick={onOpenGit}>Open pret repo</button>
                 <button onClick={onGitClone}>Clone pret repo</button>
                 <button onClick={onRunMake}>Build project</button>
+                <button onClick={onRunRom}>Run ROM</button>
             </div>
             <div>
                 <h5>Tools</h5>
