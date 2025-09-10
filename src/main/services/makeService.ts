@@ -59,8 +59,11 @@ const runMake = async (
 
     // Build args list
     const args: string[] = [];
-    if(numJobs) args.push(`-j${numJobs}`);
     if(target) args.push(target);
+    if((numJobs !== null) && (numJobs !== undefined)) {
+        // Note that 0 is a valid value for make jobs (infinite parallelism)
+        args.push(`-j${numJobs}`);
+    }
     if (rgbdsDir) {
         let rgbdsArg = rgbdsDir;
         // if running on Windows, convert to posix style

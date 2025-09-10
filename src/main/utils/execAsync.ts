@@ -9,7 +9,7 @@ export type ExecAsyncFn = (
     opts?: SpawnOptions,
 ) => Promise<SpawnResult>;
 
-const execAsync:ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
+const execAsync: ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
     
     return new Promise<SpawnResult>((resolve) => {
         // child events can fire miltiple times -> ensure single resolve

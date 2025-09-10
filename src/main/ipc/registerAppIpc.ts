@@ -76,7 +76,7 @@ export function registerAppIpc(
     ipcMain.handle('set-cygwin-folder', async (_, cygwinDir: string) => {
         appSettings.cygwinDir = cygwinDir;
         await saveAppSettings();
-        return { ok: true, data: appSettings.bashDir };    
+        return { ok: true, data: appSettings.cygwinDir };    
     });
 
 }

@@ -270,7 +270,7 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'mingw32-make',
-                ['-j8', 'crystal11', 'RGBDS=D:/tools/rgbds/'],
+                ['crystal11', '-j8', 'RGBDS=D:/tools/rgbds/'],
                 'bash',
                 mockCallback,
                 { cwd: '/path/to/project', env: customEnv }
@@ -332,7 +332,7 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
-                ['-j2', 'all'],
+                ['all', '-j2'],
                 null,
                 undefined,
                 { cwd: '/path/to/project', env: undefined }
@@ -482,7 +482,7 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
-                [],
+                [ '-j0' ],
                 null,
                 undefined,
                 { cwd: '/path/to/project', env: undefined }
