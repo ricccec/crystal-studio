@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import createMakeService from '../makeService';
-import type { MakeServiceDeps } from '../makeService';
+import type { MakeServiceDeps, MakeOptions } from '../makeService';
 import type { SpawnResult } from '@shared/types/types';
 
 // Mock the dependencies
@@ -36,9 +36,10 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
+                [],
                 null,
                 undefined,
-                { cwd: '/path/to/project' }
+                { cwd: '/path/to/project', env: undefined }
             );
         });
 
@@ -50,21 +51,238 @@ describe('makeService', () => {
             };
             mockExecAsync.mockResolvedValue(mockResult);
 
-            const result = await makeService.runMake('/path/to/project', 'gmake');
+            const options: MakeOptions = {
+                makeExec: 'gmake'
+            };
+
+            const result = await makeService.runMake('/path/to/project', null, null, options);
 
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'gmake',
+                [],
                 null,
                 undefined,
-                { cwd: '/path/to/project' }
+                { cwd: '/path/to/project', env: undefined }
             );
         });
 
-        it('should handle null makeExec by using default make command', async () => {
+        it('should run make with parallel jobs', async () => {
             const mockResult: SpawnResult = {
                 status: 'success',
-                stdout: 'make: Nothing to be done for `all`.',
+                stdout: 'Building with 4 jobs...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const result = await makeService.runMake('/path/to/project', 4);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                ['-j4'],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+        });
+
+        it('should run make with specific target', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building crystal11 target...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const result = await makeService.runMake('/path/to/project', null, 'crystal11');
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                ['crystal11'],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+        });
+
+        it('should run make with RGBDS directory on Windows', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', { value: 'win32' });
+
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with RGBDS...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const options: MakeOptions = {
+                rgbdsDir: 'C:\\tools\\rgbds'
+            };
+
+            const result = await makeService.runMake('/path/to/project', null, null, options);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                ['RGBDS=C:/tools/rgbds/'],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+
+            Object.defineProperty(process, 'platform', { value: originalPlatform });
+        });
+
+        it('should run make with RGBDS directory on Unix', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', { value: 'linux' });
+
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with RGBDS...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const options: MakeOptions = {
+                rgbdsDir: '/usr/local/bin/rgbds'
+            };
+
+            const result = await makeService.runMake('/path/to/project', null, null, options);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                ['RGBDS=/usr/local/bin/rgbds/'],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+
+            Object.defineProperty(process, 'platform', { value: originalPlatform });
+        });
+
+        it('should handle RGBDS directory that already has trailing slash', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with RGBDS...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const options: MakeOptions = {
+                rgbdsDir: '/usr/local/bin/rgbds/'
+            };
+
+            const result = await makeService.runMake('/path/to/project', null, null, options);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                ['RGBDS=/usr/local/bin/rgbds/'],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+        });
+
+        it('should run make with custom shell', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with bash...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const options: MakeOptions = {
+                shell: 'bash'
+            };
+
+            const result = await makeService.runMake('/path/to/project', null, null, options);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                [],
+                'bash',
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+        });
+
+        it('should run make with custom environment', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with custom env...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const customEnv = { PATH: '/custom/path', CUSTOM_VAR: 'value' };
+            const options: MakeOptions = {
+                env: customEnv
+            };
+
+            const result = await makeService.runMake('/path/to/project', null, null, options);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                [],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: customEnv }
+            );
+        });
+
+        it('should run make with all options combined', async () => {
+            const originalPlatform = process.platform;
+            Object.defineProperty(process, 'platform', { value: 'win32' });
+
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with all options...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const customEnv = { PATH: '/custom/path' };
+            const options: MakeOptions = {
+                makeExec: 'mingw32-make',
+                shell: 'bash',
+                rgbdsDir: 'D:\\tools\\rgbds',
+                env: customEnv
+            };
+
+            const mockCallback = vi.fn();
+
+            const result = await makeService.runMake(
+                '/path/to/project',
+                8,
+                'crystal11',
+                options,
+                mockCallback
+            );
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'mingw32-make',
+                ['crystal11', '-j8', 'RGBDS=D:/tools/rgbds/'],
+                'bash',
+                mockCallback,
+                { cwd: '/path/to/project', env: customEnv }
+            );
+
+            Object.defineProperty(process, 'platform', { value: originalPlatform });
+        });
+
+        it('should handle null numJobs parameter', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building without parallel jobs...',
                 stderr: ''
             };
             mockExecAsync.mockResolvedValue(mockResult);
@@ -74,9 +292,50 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
+                [],
                 null,
                 undefined,
-                { cwd: '/path/to/project' }
+                { cwd: '/path/to/project', env: undefined }
+            );
+        });
+
+        it('should handle null target parameter', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building default target...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const result = await makeService.runMake('/path/to/project', 4, null);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                ['-j4'],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+        });
+
+        it('should handle null options parameter', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with default options...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const result = await makeService.runMake('/path/to/project', 2, 'all', null);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                ['all', '-j2'],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
             );
         });
 
@@ -89,14 +348,15 @@ describe('makeService', () => {
             mockExecAsync.mockResolvedValue(mockResult);
             const mockCallback = vi.fn();
 
-            const result = await makeService.runMake('/path/to/project', 'make', mockCallback);
+            const result = await makeService.runMake('/path/to/project', null, null, null, mockCallback);
 
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
+                [],
                 null,
                 mockCallback,
-                { cwd: '/path/to/project' }
+                { cwd: '/path/to/project', env: undefined }
             );
         });
 
@@ -112,9 +372,10 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
+                [],
                 null,
                 undefined,
-                { cwd: '/path/to/invalid' }
+                { cwd: '/path/to/invalid', env: undefined }
             );
         });
 
@@ -157,70 +418,10 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
+                [],
                 null,
                 undefined,
-                { cwd: customDir }
-            );
-        });
-
-        it('should work with Windows-style make executables', async () => {
-            const mockResult: SpawnResult = {
-                status: 'success',
-                stdout: 'Microsoft (R) Program Maintenance Utility Version',
-                stderr: ''
-            };
-            mockExecAsync.mockResolvedValue(mockResult);
-
-            const result = await makeService.runMake('/path/to/project', 'nmake.exe');
-
-            expect(result).toEqual(mockResult);
-            expect(mockExecAsync).toHaveBeenCalledWith(
-                'nmake.exe',
-                null,
-                undefined,
-                { cwd: '/path/to/project' }
-            );
-        });
-
-        it('should handle output callback with stderr data', async () => {
-            const mockResult: SpawnResult = {
-                status: 'success',
-                stdout: 'Build completed',
-                stderr: 'Warning: deprecated function used'
-            };
-            mockExecAsync.mockResolvedValue(mockResult);
-            const mockCallback = vi.fn();
-
-            const result = await makeService.runMake('/path/to/project', 'make', mockCallback);
-
-            expect(result).toEqual(mockResult);
-            expect(mockExecAsync).toHaveBeenCalledWith(
-                'make',
-                null,
-                mockCallback,
-                { cwd: '/path/to/project' }
-            );
-            
-            // The callback should be passed to execAsync, but we don't need to test
-            // its invocation here since that's the responsibility of execAsync
-        });
-
-        it('should handle undefined makeExec parameter', async () => {
-            const mockResult: SpawnResult = {
-                status: 'success',
-                stdout: 'make: `all` is up to date.',
-                stderr: ''
-            };
-            mockExecAsync.mockResolvedValue(mockResult);
-
-            const result = await makeService.runMake('/path/to/project', undefined);
-
-            expect(result).toEqual(mockResult);
-            expect(mockExecAsync).toHaveBeenCalledWith(
-                'make',
-                null,
-                undefined,
-                { cwd: '/path/to/project' }
+                { cwd: customDir, env: undefined }
             );
         });
 
@@ -237,30 +438,75 @@ describe('makeService', () => {
             expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
                 'make',
+                [],
                 null,
                 undefined,
-                { cwd: './src/modules' }
+                { cwd: './src/modules', env: undefined }
             );
         });
 
-        it('should preserve exact arguments passed to execAsync', async () => {
+        it('should handle empty string rgbdsDir', async () => {
             const mockResult: SpawnResult = {
                 status: 'success',
-                stdout: 'Build complete',
+                stdout: 'Building without RGBDS...',
                 stderr: ''
             };
             mockExecAsync.mockResolvedValue(mockResult);
-            const mockCallback = vi.fn();
 
-            await makeService.runMake('/test/dir', 'custom-make', mockCallback);
+            const options: MakeOptions = {
+                rgbdsDir: ''
+            };
 
+            const result = await makeService.runMake('/path/to/project', null, null, options);
+
+            expect(result).toEqual(mockResult);
             expect(mockExecAsync).toHaveBeenCalledWith(
-                'custom-make',      // makeExec
-                null,               // args (always null for make service)
-                mockCallback,       // onOutput callback
-                { cwd: '/test/dir' } // options with working directory
+                'make',
+                [],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
             );
-            expect(mockExecAsync).toHaveBeenCalledTimes(1);
+        });
+
+        it('should handle zero numJobs', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building with 0 jobs...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const result = await makeService.runMake('/path/to/project', 0);
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                [ '-j0' ],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
+        });
+
+        it('should handle empty string target', async () => {
+            const mockResult: SpawnResult = {
+                status: 'success',
+                stdout: 'Building default target...',
+                stderr: ''
+            };
+            mockExecAsync.mockResolvedValue(mockResult);
+
+            const result = await makeService.runMake('/path/to/project', null, '');
+
+            expect(result).toEqual(mockResult);
+            expect(mockExecAsync).toHaveBeenCalledWith(
+                'make',
+                [],
+                null,
+                undefined,
+                { cwd: '/path/to/project', env: undefined }
+            );
         });
     });
 });

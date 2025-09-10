@@ -75,12 +75,17 @@ const checkTool = async (
 
     // Get tool version
     const res = await deps.execAsync(r.cmd, ['--version']);
-    switch(res.status) {
-        case 'success': return { ok: true, exec: r.cmd, version: res.stdout.trim() } as CheckToolsResult;
-        case 'error': return { ok: false, error: res.error } as CheckToolsResult;
-        case 'canceled': return { ok: false, error: res.signal } as CheckToolsResult;
-        default: return  { ok: false, error: 'Unknown error' } as CheckToolsResult;
+    
+    if(res.status === 'success') {
+        // Parse semver token
+        const tokenRe = /(\d+\.\d+\.\d+(?:-[0-9A-Za-z-.]+)?(?:\+[0-9A-Za-z-.]+)?)/;
+        const m = res.stdout.match(tokenRe);
+        const version = m ? m[1] : res.stdout.split('\n')[0].trim();
+        return { ok: true, exec: r.cmd, version } as CheckToolsResult
     }
+    if (res.status === 'error') return { ok: false, error: res.error } as CheckToolsResult;
+    if (res.status === 'canceled') return { ok: false, error: res.signal } as CheckToolsResult;
+    return { ok: false, error: 'Unknown error' } as CheckToolsResult;
 
 }
 

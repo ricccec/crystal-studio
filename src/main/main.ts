@@ -1,18 +1,8 @@
 import {
-    app, dialog,
-    BrowserWindow,
-    ipcMain
+    app
 } from 'electron';
-import type {
-    ActionResult,
-    AppSettings,
-    ProcessResult,
-    ProjectSettings
-} from '@shared/types/types';
 import { fileURLToPath } from 'node:url';
-import fs from 'node:fs/promises';
 import path, { dirname } from 'path';
-import { readSettings, writeSettings } from './utils/settings';
 import { start } from './app';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -39,6 +29,8 @@ const PROD_PUBLIC = path.join(APP_ROOT, 'dist', 'renderer');
 
 // Pick the correct one based on mode
 const VITE_PUBLIC = IS_DEV ? DEV_PUBLIC : PROD_PUBLIC;
+
+console.debug("Electron process started:", process.pid, process.argv);
 
 app.whenReady().then(async () => {
     start(VITE_PUBLIC, VITE_DEV_SERVER_URL)

@@ -21,9 +21,17 @@ export interface ProjectSettings {
 
 export interface AppSettings {
     lastUsedPath?: string | null;
-    makePath?: string | null;
-    rgbdsPath?: string | null;
-    emulatorPath?: string | null;
+    makeDir?: string | null;
+    rgbdsDir?: string | null;
+    cygwinDir?: string | null;
+    gccDir?: string | null;
+    bashDir?: string | null;
+    emulator?: string | null;
+    rom?: string | null;
     repoUrl: string;
     toolAliases: Record<string,  Record<string, string[]>>;
+    make: {
+        numJobs: number;
+        target: string;
+    };
 }

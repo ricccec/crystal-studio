@@ -5,13 +5,22 @@ const toolAliases = {
         win32: ["make", "mingw32-make", "gmake", "nmake", "jom"],
         darwin: ["make", "gmake"],
         linux: ["make", "gmake"],
-    }
+    },
+    bash: {
+        win32: [ "bash", "mingw64", "sh", "zsh", "fish", "ksh", "tcsh", "dash"],
+        darwin: ["zsh", "bash", "sh"],
+        linux: ["bash", "zsh", "sh"],
+    },
 };
 
 export const defaultAppSettings: AppSettings = {
     repoUrl: "https://github.com/pret/pokecrystal.git",
     toolAliases,
-
+    rom: 'pokecrystal11.gbc',
+    make: {
+        numJobs: 4,
+        target: 'crystal11',
+    },
 }
 
 /** Merge a partial/persisted settings object with defaults (typed) */

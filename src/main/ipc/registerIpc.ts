@@ -10,6 +10,7 @@ import { GitService } from "@main/services/gitServices";
 import { MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
 import { registerAppIpc } from "./registerAppIpc";
+import { EmulatorService } from "@main/services/emulatorService";
 
 
 export function registerIpc(
@@ -19,18 +20,23 @@ export function registerIpc(
     // Injected deps.
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
+    restartApp: () => Promise<ActionResult>,
     saveAppSettings: () => Promise<ActionResult>,
+    resetAppSettings: () => Promise<ActionResult>,
     projectService: ProjectService,
     toolsService: ToolsService,
     gitService: GitService,
     makeService: MakeService,
+    emulatorService: EmulatorService,
     writeSettings: WriteSettingsFn,
     readSettings: ReadSettingsFn,
 ) {
 
     registerAppIpc(
         appSettings,
+        restartApp,
         saveAppSettings,
+        resetAppSettings,
     );
 
     registerProjectLifecycleIpc(
@@ -61,6 +67,7 @@ export function registerIpc(
         toolsService,
         gitService,
         makeService,
+        emulatorService,
         writeSettings,
     )
 

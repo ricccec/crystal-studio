@@ -1,6 +1,7 @@
 import { allowedChannels, Channel } from '@shared/ipc';
 import type {
     ActionResult,
+    AppSettings,
     ProcessResult,
     ProjectSettings,
     SpawnResult
@@ -16,8 +17,17 @@ contextBridge.exposeInMainWorld('api', {
     platform: process.platform,
 
     // Application IPCs
+    restartApp : (): Promise<ActionResult> => ipcRenderer.invoke('restart-app'), 
+    getAppSettings : (): Promise<AppSettings> => ipcRenderer.invoke('get-app-settings'),
+    resetAppSetting : (): Promise<ActionResult> => ipcRenderer.invoke('reset-app-settings'),
+    openAppSetting : (): Promise<ActionResult> => ipcRenderer.invoke('open-app-settings'),
     setMakeFolder : (makePath: string): Promise<ActionResult> => ipcRenderer.invoke('set-make-folder', makePath),
-    
+    setRgbdsFolder : (rgbdsDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-rgbds-folder', rgbdsDir),
+    setCygwinFolder : (cygWinDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-cygwin-folder', cygWinDir),
+    setGccFolder : (gccDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-gcc-folder', gccDir),
+    setBashFolder : (bashDir: string): Promise<ActionResult> => ipcRenderer.invoke('set-bash-folder', bashDir),
+    setEmulator : (emulatorExec: string): Promise<ActionResult> => ipcRenderer.invoke('set-emulator', emulatorExec),
+
     // Project lifecycle IPCs
     newProject : (): Promise<ActionResult> => ipcRenderer.invoke('new-project'),
     saveProject : (): Promise<ProcessResult> => ipcRenderer.invoke('save-project'),
@@ -29,6 +39,7 @@ contextBridge.exposeInMainWorld('api', {
     showSaveDialog : (options?: Electron.SaveDialogOptions): Promise<ProcessResult> => ipcRenderer.invoke('show-save-dialog', options),
     showSaveProjectDialog : (): Promise<ProcessResult> => ipcRenderer.invoke('show-save-project-dialog'),
     showOpenDirDialog : (title: string): Promise<ProcessResult> => ipcRenderer.invoke('show-open-dir-dialog', title),
+    showOpenFileDialog : (title: string, fileFilters?: Electron.FileFilter[]): Promise<ProcessResult> => ipcRenderer.invoke('show-open-file-dialog', title, fileFilters),
 
     // Shared tools IPCs
     checkTools: () => ipcRenderer.invoke('check-tools'),
@@ -38,8 +49,9 @@ contextBridge.exposeInMainWorld('api', {
     cloneGitRepo: (repoUrl: string, targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone', repoUrl, targetPath),
     cloneDefaultGitRepo: (targetPath: string): Promise<SpawnResult> => ipcRenderer.invoke('git-clone-default', targetPath),
 
-    // Make IPCs
+    // ROM building IPCs
     runMake: (): Promise<SpawnResult> => ipcRenderer.invoke('run-make'),
+    runEmulator: (): Promise<SpawnResult> => ipcRenderer.invoke('run-emulator'),
 
     // Subscribe to a whitelisted renderer event channel
     on: (channel: Channel, listener: (...args: any[]) => void) => {
