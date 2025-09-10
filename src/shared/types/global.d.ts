@@ -48,9 +48,9 @@ declare global {
             cloneGitRepo: (repoUrl: string, targetPath: string) => Promise<SpawnResult>;
             cloneDefaultGitRepo: (targetPath: string) => Promise<SpawnResult>;
             
-            // Make IPCs
+            // ROM building IPCs
             runMake: () => Promise<SpawnResult>;
-            
+            runEmulator: () => Promise<SpawnResult>
 
             // Event helpers
             on: (channel: Channel, listener: (...args: any[]) => void) => (() => void);
