@@ -7,6 +7,8 @@ import { TaskStreamPayload } from "@shared/ipc";
 import { MakeOptions, MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
 import findToolCandidate from "@main/utils/findToolCandidate";
+import path from "node:path";
+import { EmulatorService } from "@main/services/emulatorService";
 
 export function registerToolsIpc(
     win: BrowserWindow,
@@ -17,6 +19,7 @@ export function registerToolsIpc(
     toolsService: ToolsService,
     gitService: GitService,
     makeService: MakeService,
+    emulatorService: EmulatorService,
     writeSettings: WriteSettingsFn,
 ) {
 
@@ -84,12 +87,30 @@ export function registerToolsIpc(
         return res;
     });
 
+    ipcMain.handle('run-emulator', async () : Promise<SpawnResult> => {
+        
+        const repoDir = projectSettings.repoPath;
+        if (!repoDir) return { status: 'error', error: 'Pret repo not set' };
+        
+        const romName = appSettings.rom;
+        if (!romName) return { status: 'error', error: 'Missing ROM name in config. file' };
+
+        const emulatorPath = appSettings.emulator;
+        if (!emulatorPath) return { status: 'error', error: 'Missing emulator path in config. file' };
+        
+        const romPath = path.join(repoDir, romName);
+
+        const r = await emulatorService.loadRom(emulatorPath, romPath);
+        return r;
+
+    });
+
     ipcMain.handle('run-make', async (
         _,
     ) : Promise<SpawnResult> => {
         
         if (!projectSettings.repoPath) {
-            return { status:'error', error:'Repo not set'};
+            return { status: 'error', error: 'Repo not set'};
         }
 
         const makeCwd = projectSettings.repoPath;
@@ -127,6 +148,7 @@ export function registerToolsIpc(
             appSettings.cygwinDir,
         );
 
+        // Run make
         const res = await makeService.runMake(
             makeCwd,
             makeNumJobs,
