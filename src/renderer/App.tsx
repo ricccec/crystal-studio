@@ -1,11 +1,22 @@
 import { TaskStreamPayload } from '@shared/ipc';
 import type { ActionResult, ProcessResult, SpawnResult } from '@shared/types/types';
+import { app } from 'electron';
+import path from 'node:path';
 import React from 'react';
 
 const App = () => {
 
     const [ consoleOutput, setConsoleState ] = React.useState<string>('');
     const [ progressLine, setProgressLine ] = React.useState<string>('');
+
+    const taRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+    // keep textarea scrolled to the bottom
+    React.useLayoutEffect(() => {
+        const el = taRef.current;
+        if (!el) return;
+        el.scrollTop = el.scrollHeight;
+    }, [consoleOutput, progressLine]);
 
     // Register callback for app notifications
     React.useEffect(() => {
@@ -89,8 +100,18 @@ const App = () => {
     const onCheckTools = async () => {
         const res = await window.api.checkTools() as { tool: string, status: any }[];
 
-        function formatToolLine(toolName: string, res: { ok: boolean, version?: string, error?: string}) {
-            return `${toolName}: ${res.ok ? (res.version ?? 'OK') : `ERROR: ${res.error}`}`;
+        function formatToolLine(toolName: string, res: {
+             ok: boolean,
+             exec?: string,
+             version?:
+             string,
+             error?: string
+        }) {
+            if (res.ok) {
+                return `${toolName}: ${res.exec  ?? ''} ${res.version}`;
+            } else {
+                return `${toolName}: ERROR: ${res.error}`;
+            }
         }
         
         const lines = res.map((item) => formatToolLine(item.tool, item.status));
@@ -124,7 +145,7 @@ const App = () => {
         } else if (runRes.status === 'canceled') {
             appendToConsoleOutput(runRes.signal ?? 'Canceled');
         }
-    }
+    };
 
     const onRunMake = async () => {
 
@@ -134,7 +155,16 @@ const App = () => {
         } else if (runRes.status === 'canceled') {
             appendToConsoleOutput(runRes.signal ?? 'Canceled');
         }
-    }
+    };
+
+    const onRunRom = async () => {
+        const r = await window.api.runEmulator();
+        if (r.status === 'error') {
+            appendToConsoleOutput(r.error);
+        } else if (r.status === 'canceled') {
+            appendToConsoleOutput(r.signal ?? 'Canceled');
+        }
+    };
 
     const onSelectMakeDir = async () => {
         const r = await window.api.showOpenDirDialog("Select folder");
@@ -144,30 +174,126 @@ const App = () => {
                 appendToConsoleOutput(setRes.data!);
             }
         }
+    };
+
+    const onSelectRgbdsDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setRgbdsFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    };
+
+    const onSelectGccDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setGccFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    };
+
+    const onSelectCygWinDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setCygwinFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    };
+
+    const onSelectBashDir = async () => {
+        const r = await window.api.showOpenDirDialog("Select folder");
+        if (r.status === 'success') {
+            const setRes = await window.api.setBashFolder(r.data);
+            if (setRes.ok) {
+                appendToConsoleOutput(setRes.data!);
+            }
+        }
+    };
+
+    const onSelectEmulator = async () => {
+        let filters = null;
+        if (window.api.platform === 'win32') {
+            filters = [
+                { name: 'Executables', extensions: ['exe'] },
+                { name: 'All Files', extensions: ['*'] },
+            ];
+        }
+
+        const r = await window.api.showOpenFileDialog("Select emulator", filters ?? []);
+        if (r.status !== 'success') return;
+
+        const setRes = await window.api.setEmulator(r.data);
+        if (setRes.ok) {
+            appendToConsoleOutput(setRes.data!);
+        }
+        
     }
 
+    const onRestartApp = async () => {
+        const r = await window.api.restartApp();
+        if (!r.ok) appendToConsoleOutput(r.error);
+    };
+
+    const onShowAppSettings = async () => {
+        const s = await window.api.getAppSettings();
+        appendToConsoleOutput(JSON.stringify(s, null, 2));
+    };
+
+    const onResetAppSettings = async () => {
+        const r = await window.api.resetAppSetting();
+        if (!r.ok) appendToConsoleOutput(r.error);
+    };
+
+    const onOpenAppSettings = async () => {
+        const r = await window.api.openAppSetting();
+        if (!r.ok) appendToConsoleOutput(r.error);
+    };
+    
     return (
         <>
             <div>
+                <h5>App Settings</h5>
+                <button onClick={onRestartApp}>Restart App</button>
+                <button onClick={onResetAppSettings}>Reset App Settings</button>
+                <button onClick={onShowAppSettings}>Show App Settings</button>
+                <button onClick={onOpenAppSettings}>Open App Settings</button>
+            </div>
+            <div>
+                <h5>Project lifecycle</h5>
                 <button onClick={onNewProject}>New Project</button>
                 <button onClick={onOpenProject}>Open Project</button>
                 <button onClick={onSaveProject}>Save Project</button>
                 <button onClick={onSaveProjectAs}>Save Project As</button>
             </div>
             <div>
+                <h5>ROM building</h5>
                 <button onClick={onOpenGit}>Open pret repo</button>
                 <button onClick={onGitClone}>Clone pret repo</button>
                 <button onClick={onRunMake}>Build project</button>
+                <button onClick={onRunRom}>Run ROM</button>
             </div>
             <div>
+                <h5>Tools</h5>
                 <button onClick={onCheckTools}>Check tools</button>
+                <button onClick={onSelectCygWinDir}>Select CygWin folder</button>
+                <button onClick={onSelectBashDir}>Select bash folder</button>
                 <button onClick={onSelectMakeDir}>Select make folder</button>
+                <button onClick={onSelectGccDir}>Select GCC folder</button>
+                <button onClick={onSelectRgbdsDir}>Select rgbds folder</button>
+                <button onClick={onSelectEmulator}>Select emulator</button>
             </div>
             <div>
                 <textarea
                     rows={25}
                     style={{ width: '100%' }}
                     value={`${consoleOutput}${progressLine}`}
+                    ref={taRef}
                     readOnly
                 />
             </div>

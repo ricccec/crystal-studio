@@ -4,11 +4,12 @@ import { spawn, SpawnOptions, SpawnOptionsWithStdioTuple } from "node:child_proc
 export type ExecAsyncFn = (
     cmd: string,
     args?: string[] | null,
-    onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
+    shell?: string | null,
+    onOutput?: (stream: 'stdout' | 'stderr', s: string) => void | null,
     opts?: SpawnOptions,
 ) => Promise<SpawnResult>;
 
-const execAsync:ExecAsyncFn = (cmd, args, onOutput, opts) => {
+const execAsync: ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
     
     return new Promise<SpawnResult>((resolve) => {
         // child events can fire miltiple times -> ensure single resolve
@@ -22,8 +23,11 @@ const execAsync:ExecAsyncFn = (cmd, args, onOutput, opts) => {
         // Spawn child process with no stdin attached
         const child = spawn(cmd, args ?? [], {
             ...opts,
+            shell: (shell ?? undefined),
             stdio: ['ignore', 'pipe', 'pipe'],
         });
+
+        console.debug(`Spawned ${child.spawnargs}`);
 
         // Update stdout and stderr
         const stdoutChunks: Buffer[] = [];

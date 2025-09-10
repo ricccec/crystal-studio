@@ -1,5 +1,6 @@
 import { ExecAsyncFn } from "@main/utils/execAsync";
 import { ActionResult, ProjectSettings, SpawnResult } from "@shared/types/types";
+import path from "node:path";
 
 type MakeServiceDeps = {
     execAsync: ExecAsyncFn;
@@ -10,32 +11,80 @@ type MakeService = {
     runMake: RunMakeFn;
 }
 
-type RunMakeFn = (
-    targetDir: string,
+type MakeOptions = {
     makeExec?: string | null,
+    shell?: string | null,
+    rgbdsDir?: string | null,
+    env?: NodeJS.ProcessEnv | null,
+};
+
+type RunMakeFn = (
+    cwd: string,
+    numJobs?: number | null,
+    target?: string | null,
+    options?: MakeOptions | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) => Promise<SpawnResult>;
 
 function createMakeService(deps: MakeServiceDeps): MakeService {
     return {
         runMake: (
-            targetDir,
-            makeExec,
+            cwd,
+            numJobs,
+            target,
+            options,
             onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
-        ) => runMake(targetDir, deps, makeExec, onOutput),
+        ) => runMake(cwd, deps,
+            options?.makeExec ?? null,
+            numJobs,
+            target,
+            options?.shell ?? null,
+            options?.rgbdsDir ?? null,
+            options?.env ?? null,
+            onOutput),
     }
 }
 
 const runMake = async (
-    targetDir: string,
+    cwd: string,
     deps: MakeServiceDeps,
     makeExec?: string | null,
+    numJobs?: number | null,
+    target?: string | null,
+    shell?: string | null,
+    rgbdsDir?: string | null,
+    env?: NodeJS.ProcessEnv | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void,
 ) : Promise<SpawnResult> => {
-    return await deps.execAsync(makeExec ?? 'make', null, onOutput, { cwd: targetDir });
+
+    // Build args list
+    const args: string[] = [];
+    if(target) args.push(target);
+    if((numJobs !== null) && (numJobs !== undefined)) {
+        // Note that 0 is a valid value for make jobs (infinite parallelism)
+        args.push(`-j${numJobs}`);
+    }
+    if (rgbdsDir) {
+        let rgbdsArg = rgbdsDir;
+        // if running on Windows, convert to posix style
+        if (process.platform === 'win32') {
+            rgbdsArg = rgbdsArg.replace(/\\/g, '/');
+        }
+        // ensure trailing slash if your Makefile expects it
+        if (!rgbdsArg.endsWith('/')) rgbdsArg = rgbdsArg + '/';
+        args.push(`RGBDS=${rgbdsArg}`);
+    }
+    
+    return await deps.execAsync(
+        makeExec ?? 'make',
+        args,
+        shell,
+        onOutput,
+        { cwd, env: env ?? undefined });
 };
 
 export type {
+    MakeOptions,
     MakeService,
     MakeServiceDeps,
 };
