@@ -1,5 +1,5 @@
 import { ExecAsyncFn } from "@main/utils/execAsync";
-import { ActionResult, SpawnResult } from "@shared/types/types";
+import { SpawnResult } from "@shared/types/types";
 import fs  from "node:fs/promises";
 
 type EmulatorServiceDeps = {
