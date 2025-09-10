@@ -8,12 +8,13 @@ import projectService from "./services/projectServices";
 import { readSettings, writeSettings } from "./utils/settings";
 import createGitService from "./services/gitServices";
 import execAsync from "./utils/execAsync";
-import { isDirectory } from "@shared/utils/utils";
+import { isDirectory, isExecutable } from "@shared/utils/utils";
 import { withDefaultAppSettings } from "@shared/default";
 import createMakeService from "./services/makeService";
 import createToolsService from "./services/toolsService";
 import findToolCandidate from "./utils/findToolCandidate";
 import { APP_SETTINGS_FILENAME } from "@shared/constants";
+import createEmulatorService from "./services/emulatorService";
 
 let win : BrowserWindow | null = null;
 
@@ -44,6 +45,10 @@ export async function start(publicFolder: string, viteUrl?: string) {
         execAsync,
         findToolCandidate,
     })
+    const emulatorService = createEmulatorService({
+        execAsync,
+        isExecutable,
+    })
 
     // Register IPC handlers
     registerIpc(
@@ -59,6 +64,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         toolsService,
         gitService,
         makeService,
+        emulatorService,
         writeSettings,
         readSettings,
     );
