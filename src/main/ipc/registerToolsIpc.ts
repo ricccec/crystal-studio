@@ -14,11 +14,13 @@ export function registerToolsIpc(
     projectSettings: ProjectSettings,
     appSettings: AppSettings,
     // Injected deps.
-    projectService: ProjectService,
-    toolsService: ToolsService,
-    gitService: GitService,
-    makeService: MakeService,
-    emulatorService: EmulatorService,
+    services: {
+        projectService: ProjectService,
+        toolsService: ToolsService,
+        gitService: GitService,
+        makeService: MakeService,
+        emulatorService: EmulatorService,
+    },
     writeSettings: WriteSettingsFn,
 ) {
 
@@ -35,15 +37,15 @@ export function registerToolsIpc(
           
         ]
         
-        return await toolsService.checkTools(tools);
+        return await services.toolsService.checkTools(tools);
     });
 
     ipcMain.handle(IpcChannels.GIT_OPEN_REPO, async (_, repoPath: string) : Promise<ActionResult> => {
-        const res = await gitService.openGitRepo(projectSettings, repoPath);
+        const res = await services.gitService.openGitRepo(projectSettings, repoPath);
         if (!res.ok) return res;
 
         // Backup project for rcovery
-        const bkupRes = await projectService.saveProjectForRecovery(projectSettings, { writeSettings });
+        const bkupRes = await services.projectService.saveProjectForRecovery(projectSettings, { writeSettings });
         if (!bkupRes.ok) {
             // Can't save project for recovery -> keep going, but notify the renderer
             win.webContents.send('app:notification', { data: `Cannot backup project for recovery: ${bkupRes.error}` });
@@ -58,7 +60,7 @@ export function registerToolsIpc(
         repoUrl: string,
         targetPath: string,
     ) : Promise<SpawnResult> => {
-        const res = await gitService.cloneGitRepo(
+        const res = await services.gitService.cloneGitRepo(
             repoUrl, targetPath,
             null, // No need for custom bash for git 
             (stream, text) => { 
@@ -74,7 +76,7 @@ export function registerToolsIpc(
         targetPath: string,
     ) : Promise<SpawnResult> => {
         const repoUrl = appSettings.repoUrl;
-        const res = await gitService.cloneGitRepo(
+        const res = await services.gitService.cloneGitRepo(
             repoUrl, targetPath,
             null, // No need for custom bash for git
             (stream, text) => { 
@@ -98,7 +100,7 @@ export function registerToolsIpc(
         
         const romPath = path.join(repoDir, romName);
 
-        const r = await emulatorService.loadRom(emulatorPath, romPath);
+        const r = await services.emulatorService.loadRom(emulatorPath, romPath);
         return r;
 
     });
@@ -118,7 +120,7 @@ export function registerToolsIpc(
         const makeTarget = appSettings.make.target;
         
         // Check make is available
-        const checkRes = (await toolsService.checkTool(
+        const checkRes = (await services.toolsService.checkTool(
             'make',
             makePath,
             makeAliases
@@ -131,7 +133,7 @@ export function registerToolsIpc(
         // Check custom bash is available
         let bash = null;
         if (appSettings.bashDir) {
-            const bashRes = (await toolsService.checkTool(
+            const bashRes = (await services.toolsService.checkTool(
                 'bash',
                 appSettings.bashDir,
                 getToolAliases('bash')
@@ -147,7 +149,7 @@ export function registerToolsIpc(
         );
 
         // Run make
-        const res = await makeService.runMake(
+        const res = await services.makeService.runMake(
             makeCwd,
             makeNumJobs,
             makeTarget,

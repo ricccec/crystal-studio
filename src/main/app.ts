@@ -4,18 +4,14 @@ import path from 'path';
 import fs from 'node:fs/promises';
 import { createWindow, showOpenDialog, showSaveDialog } from "./windows/windows";
 import { registerIpc } from "./ipc/registerIpc";
-import projectService from "./services/projectServices";
 import { readSettings, writeSettings } from "./utils/settings";
-import createGitService from "./services/gitServices";
 import execAsync from "./utils/execAsync";
 import { isDirectory, isExecutable } from "@shared/utils/utils";
 import { withDefaultAppSettings } from "@shared/default";
-import createMakeService from "./services/makeService";
-import createToolsService from "./services/toolsService";
 import findToolCandidate from "./utils/findToolCandidate";
 import { APP_SETTINGS_FILENAME } from "@shared/constants";
-import createEmulatorService from "./services/emulatorService";
 import { AppSettingsSchema } from "@shared/types/settingsSchema";
+import createServiceContainer from "./services/serviceContainer";
 
 let win : BrowserWindow | null = null;
 
@@ -34,22 +30,12 @@ export async function start(publicFolder: string, viteUrl?: string) {
     win = createWindow(publicFolder, viteUrl);
 
     // Load services
-    const gitService = createGitService({
+    const services = createServiceContainer({
         execAsync,
         isDirectory,
-    });
-    const makeService = createMakeService({
-        execAsync,
-        isDirectory,
-    });
-    const toolsService = createToolsService(process.platform, {
-        execAsync,
-        findToolCandidate,
-    })
-    const emulatorService = createEmulatorService({
-        execAsync,
         isExecutable,
-    })
+        findToolCandidate
+    });
 
     // Register IPC handlers
     registerIpc(
@@ -61,11 +47,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         restartApp,
         saveAppSettings,
         resetAppSettings,
-        projectService,
-        toolsService,
-        gitService,
-        makeService,
-        emulatorService,
+        services,
         writeSettings,
         readSettings,
     );
