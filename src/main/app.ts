@@ -7,6 +7,7 @@ import execAsync from "./utils/execAsync";
 import { isDirectory, isExecutable } from "@shared/utils/utils";
 import findToolCandidate from "./utils/findToolCandidate";
 import createServiceContainer, { ServiceContainer } from "./services/serviceContainer";
+import createTaskManagerService from "./services/TaskManagerService";
 
 let win : BrowserWindow | null = null;
 
@@ -29,6 +30,11 @@ export async function start(publicFolder: string, viteUrl?: string) {
         readJson,
         writeJson,
     });
+
+    // Load services
+    const taskMgrService = createTaskManagerService({
+        execAsync,
+    })
 
     // Load app settings before creating the window    
     const r = await serviceContainer.initServices();
