@@ -101,10 +101,10 @@ const runTaskImpl = (
 
     t.promise = promise;
 
-    // ensure cleanup on completion
+    // ensure cleanup on completion (both success and failure)
     promise.finally(() => {
         tasks.delete(id);
-    })
+    });
 
     return { taskId: id, promise };
 };
