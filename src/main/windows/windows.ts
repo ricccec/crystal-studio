@@ -8,9 +8,11 @@ export type ShowOpenDialogFn = (win: BrowserWindow, options?: Electron.OpenDialo
 export const createWindow = (publicFolder: string, viteUrl?: string) : BrowserWindow => {
     const win = new BrowserWindow({
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, '..', 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
+            sandbox: true,
+            webSecurity: true,
         },
     });
 
