@@ -6,7 +6,7 @@ import type {
     ProjectSettings,
     SpawnResult
  } from '@shared/types/types';
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
 const listenerMap = new Map<
     Channel,
@@ -58,7 +58,7 @@ contextBridge.exposeInMainWorld('api', {
         if (!allowedChannels.includes(channel)) throw new Error('Channel not allowed');
 
         const perChannel = listenerMap.get(channel) ?? new Map();
-        const wrapper = (evt: Electron.IpcRendererEvent, ...args: any[]): void => {
+        const wrapper = (evt: IpcRendererEvent, ...args: any[]): void => {
             try {
                 // forward only the payload (no event object)
                 listener(...args);
@@ -88,4 +88,49 @@ contextBridge.exposeInMainWorld('api', {
         }
 
     },
+
+    once: {
+        // Callback style
+        subscribe: (
+            channel: Channel,
+            listener: (...args: any[]) => void,
+        ) => {
+            if (!allowedChannels.includes(channel)) throw new Error('Channel not allowed');
+
+            const wrapper = (evt: IpcRendererEvent, ...args: any[]): void => {
+                try {
+                    // forward only the payload (no event object)
+                    listener(...args);
+                } catch { /* Swallow to avoid breaking IPC internals */ }
+            }
+            
+            ipcRenderer.once(channel, wrapper);
+            
+            // allow removing before it fires
+            return () => {
+                try { ipcRenderer.removeListener(channel, wrapper); } catch {}
+            };
+        },
+        // Promise style
+        asPromise: <T = any>(
+            channel: Channel,
+            timeoutMs?: number,
+        ): Promise<T> => {
+            if (!allowedChannels.includes(channel)) throw new Error('Channel not allowed');
+
+            return new Promise<T>((resolve, reject) => {
+                const timer = (timeoutMs && timeoutMs > 0) ? setTimeout(() => {
+                    try { ipcRenderer.removeListener(channel, handler); } catch {}
+                    reject(new Error('IPC once timeout'));
+                }) : null;
+
+                const handler = (_: IpcRendererEvent, ...args: any[]) => {
+                    if (timer) clearTimeout(timer);
+                    const payload = args.length > 1 ? (args as unknown as T) : (args[0] as T);
+                    resolve(payload);
+                };
+                ipcRenderer.once(channel, handler);
+            });
+        }
+    }
 });
