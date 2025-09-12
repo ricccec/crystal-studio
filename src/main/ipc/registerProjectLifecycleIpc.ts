@@ -2,6 +2,7 @@ import type { ProjectService } from "@main/services/projectServices";
 import type { ReadSettingsFn, WriteSettingsFn } from "@main/utils/settings";
 import type { ShowOpenDialogFn, ShowSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
+import { IpcChannels } from "@shared/ipc";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from 'path';
 
@@ -19,20 +20,20 @@ export function registerProjectLifecycleIpc(
     readSettings: ReadSettingsFn,
 ) {
 
-    ipcMain.handle('get-project-settings', async (): Promise<ActionResult<ProjectSettings>> => { 
+    ipcMain.handle(IpcChannels.PROJECT_GET_SETTINGS, async (): Promise<ActionResult<ProjectSettings>> => { 
         return { ok: true, data: projectSettings };
     });
 
-    ipcMain.handle('update-settings', async (_, newSettings : Partial<ProjectSettings>) => {
+    ipcMain.handle(IpcChannels.PROJECT_UPDATE_SETTINGS, async (_, newSettings : Partial<ProjectSettings>) => {
         Object.assign(projectSettings, newSettings); 
     });
 
-    ipcMain.handle('new-project', async () : Promise<ActionResult> => {
+    ipcMain.handle(IpcChannels.PROJECT_NEW, async () : Promise<ActionResult> => {
         projectService.newProject(projectSettings);
         return { ok: true };
     });
 
-    ipcMain.handle('save-project', async () : Promise<ProcessResult> => {
+    ipcMain.handle(IpcChannels.PROJECT_SAVE, async () : Promise<ProcessResult> => {
         let savePath = projectSettings.projectPath;
         if (!savePath) {
             const result = await showSaveDialog(win, {
@@ -55,11 +56,11 @@ export function registerProjectLifecycleIpc(
         return await projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
     });
 
-    ipcMain.handle('save-project-as', async (_, savePath: string) : Promise<ProcessResult> => {
+    ipcMain.handle(IpcChannels.PROJECT_SAVE_AS, async (_, savePath: string) : Promise<ProcessResult> => {
         return await projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
     });
 
-    ipcMain.handle('open-project', async () : Promise<ProcessResult<ProjectSettings>> => {
+    ipcMain.handle(IpcChannels.PROJECT_OPEN, async () : Promise<ProcessResult<ProjectSettings>> => {
 
         let openPath = null;
         try {

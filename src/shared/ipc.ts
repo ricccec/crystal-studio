@@ -21,6 +21,7 @@ export const IpcChannels = {
     PROJECT_SAVE_AS: 'project:save-as',
     PROJECT_OPEN: 'project:open',
     PROJECT_GET_SETTINGS: 'project:get-settings',
+    PROJECT_UPDATE_SETTINGS: 'project:update-settings',
 
     // Dialog IPCs
     DIALOG_SHOW_SAVE: 'dialog:show-save',

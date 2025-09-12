@@ -1,5 +1,6 @@
 import { APP_SETTINGS_FILENAME } from "@shared/constants";
 import { defaultAppSettings, withDefaultAppSettings } from "@shared/default";
+import { IpcChannels } from "@shared/ipc";
 import { ActionResult, AppSettings } from "@shared/types/types";
 import { isExecutable } from "@shared/utils/utils";
 import { app, ipcMain, shell } from "electron";
@@ -14,51 +15,51 @@ export function registerAppIpc(
     resetAppSettings: () => Promise<ActionResult>,
 ) {
 
-    ipcMain.handle('restart-app', async () => {
+    ipcMain.handle(IpcChannels.APP_RESTART, async () => {
         return restartApp();
     });
 
-    ipcMain.handle('get-app-settings', async () => {
+    ipcMain.handle(IpcChannels.APP_GET_SETTINGS, async () => {
         return appSettings;
     });
 
-    ipcMain.handle('reset-app-settings', async () => {
+    ipcMain.handle(IpcChannels.APP_RESET_SETTINGS, async () => {
         return await resetAppSettings();
     });
 
-    ipcMain.handle('open-app-settings', async () => {
+    ipcMain.handle(IpcChannels.APP_OPEN_SETTINGS, async () => {
         const settingsPath = path.join(app.getPath('userData'), APP_SETTINGS_FILENAME);
         const res = await shell.openPath(settingsPath);
         if (res) return { ok: false, error: res };
         return { ok: true };
     });
 
-    ipcMain.handle('set-make-folder', async (_, makePath: string) => {
+    ipcMain.handle(IpcChannels.TOOLS_SET_MAKE_FOLDER, async (_, makePath: string) => {
         appSettings.makeDir = makePath;
         await saveAppSettings();
         return { ok: true, data: appSettings.makeDir };
     });
 
-    ipcMain.handle('set-rgbds-folder', async (_, rgbdsDir: string) => {
+    ipcMain.handle(IpcChannels.TOOLS_SET_RGBDS_FOLDER, async (_, rgbdsDir: string) => {
         appSettings.rgbdsDir = rgbdsDir;
         await saveAppSettings();
         return { ok: true, data: appSettings.rgbdsDir };
     });
 
-    ipcMain.handle('set-gcc-folder', async (_, gccDir: string) => {
+    ipcMain.handle(IpcChannels.TOOLS_SET_GCC_FOLDER, async (_, gccDir: string) => {
         appSettings.gccDir = gccDir;
         await saveAppSettings();
         return { ok: true, data: appSettings.gccDir };
     });
 
     
-    ipcMain.handle('set-bash-folder', async (_, bashDir: string) => {
+    ipcMain.handle(IpcChannels.TOOLS_SET_BASH_FOLDER, async (_, bashDir: string) => {
         appSettings.bashDir = bashDir;
         await saveAppSettings();
         return { ok: true, data: appSettings.bashDir };
     });
 
-    ipcMain.handle('set-emulator', async (_, emulatorExec: string) => {
+    ipcMain.handle(IpcChannels.TOOLS_SET_EMULATOR, async (_, emulatorExec: string) => {
         try {
             const ok = await isExecutable(emulatorExec);
             if (!ok) {
@@ -73,7 +74,7 @@ export function registerAppIpc(
         return { ok: true, data: appSettings.emulator };
     });
 
-    ipcMain.handle('set-cygwin-folder', async (_, cygwinDir: string) => {
+    ipcMain.handle(IpcChannels.TOOLS_SET_CYGWIN_FOLDER, async (_, cygwinDir: string) => {
         appSettings.cygwinDir = cygwinDir;
         await saveAppSettings();
         return { ok: true, data: appSettings.cygwinDir };    
