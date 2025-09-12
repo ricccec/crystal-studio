@@ -11,6 +11,7 @@ import { MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
 import { registerAppIpc } from "./registerAppIpc";
 import { EmulatorService } from "@main/services/emulatorService";
+import { ServiceContainer } from "@main/services/serviceContainer";
 
 
 export function registerIpc(
@@ -23,11 +24,7 @@ export function registerIpc(
     restartApp: () => Promise<ActionResult>,
     saveAppSettings: () => Promise<ActionResult>,
     resetAppSettings: () => Promise<ActionResult>,
-    projectService: ProjectService,
-    toolsService: ToolsService,
-    gitService: GitService,
-    makeService: MakeService,
-    emulatorService: EmulatorService,
+    services: ServiceContainer,
     writeSettings: WriteSettingsFn,
     readSettings: ReadSettingsFn,
 ) {
@@ -46,7 +43,7 @@ export function registerIpc(
         showSaveDialog,
         showOpenDialog,
         saveAppSettings,
-        projectService,
+        services,
         writeSettings,
         readSettings,
     )
@@ -63,11 +60,7 @@ export function registerIpc(
         win,
         projectSettings,
         appSettings,
-        projectService,
-        toolsService,
-        gitService,
-        makeService,
-        emulatorService,
+        services,
         writeSettings,
     )
 

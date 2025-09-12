@@ -15,7 +15,7 @@ export function registerProjectLifecycleIpc(
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
     saveAppSettings: () => Promise<ActionResult>,
-    projectService: ProjectService,
+    services: { projectService: ProjectService },
     writeSettings: WriteSettingsFn,
     readSettings: ReadSettingsFn,
 ) {
@@ -29,7 +29,7 @@ export function registerProjectLifecycleIpc(
     });
 
     ipcMain.handle(IpcChannels.PROJECT_NEW, async () : Promise<ActionResult> => {
-        projectService.newProject(projectSettings);
+        services.projectService.newProject(projectSettings);
         return { ok: true };
     });
 
@@ -53,11 +53,11 @@ export function registerProjectLifecycleIpc(
 
             savePath = result.data;
         }
-        return await projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
+        return await services.projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
     });
 
     ipcMain.handle(IpcChannels.PROJECT_SAVE_AS, async (_, savePath: string) : Promise<ProcessResult> => {
-        return await projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
+        return await services.projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
     });
 
     ipcMain.handle(IpcChannels.PROJECT_OPEN, async () : Promise<ProcessResult<ProjectSettings>> => {
@@ -83,7 +83,7 @@ export function registerProjectLifecycleIpc(
         appSettings.lastUsedPath = path.parse(openPath).dir;
         await saveAppSettings();
 
-        const result = await projectService.openProject(openPath, { readSettings });
+        const result = await services.projectService.openProject(openPath, { readSettings });
         if (!result.ok) return { status: 'error', error: result.error };
         
         // Update project settings and return
