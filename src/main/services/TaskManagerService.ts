@@ -11,6 +11,8 @@ type TaskManagerService = {
     listTasks: ListTaskFn;
     runTask: RunTaskFn;
     killTask: KillTaskFn;
+    // execAsync-compatible wrapper that preserves the old ExecAsyncFn signature
+    execAsync: ExecAsyncFn;
 }
 
 type ListTaskFn = () => { id: string, cmd: string, args: string[] }[];
@@ -22,8 +24,8 @@ type RunTaskFn = (
     args?: string[] | null,
     shell?: string | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void | null,
-    opts?: ExecAsyncOptions & { returnTaskId?: boolean },
-) => Promise<SpawnResult> | { taskId: string, promise: Promise<SpawnResult> };
+    opts?: ExecAsyncOptions,
+) => { taskId: string, promise: Promise<SpawnResult> };
 
 type Task = {
     id: string,
@@ -42,6 +44,11 @@ function createTaskManagerService(deps: TaskManagerServiceDeps): TaskManagerServ
         killTask: killTaskImpl,
         runTask: (cmd, args, shell, onOutput, opts) =>
             runTaskImpl(deps, cmd, args, shell, onOutput, opts),
+        // compatibility wrapper - calls runTask and returns only the promise
+        execAsync: (cmd, args, shell, onOutput, opts) => {
+            const res = runTaskImpl(deps, cmd, args, shell, onOutput, opts);
+            return res.promise;
+        }
     };
 };
 
@@ -59,7 +66,7 @@ const runTaskImpl = (
     args?: string[] | null,
     shell?: string | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void | null,
-    opts?: ExecAsyncOptions & { returnTaskId?: boolean },
+    opts?: ExecAsyncOptions,
 ) => {
 
     const id = randomUUID();
@@ -72,8 +79,7 @@ const runTaskImpl = (
     const t: Task = { id, cmd, args: (args ?? []), promise: null as any, controller: internalController, pid: undefined };
     tasks.set(id, t);
 
-    // strip adapter-only flag before forwarding; forward any existing onSpawn
-    const { returnTaskId, ...execOpts } = (opts ?? {});
+    const execOpts = (opts ?? {}) as ExecAsyncOptions;
 
     // Launch task; ensure we capture pid on spawn and forward caller onSpawn
     const promise = deps.execAsync(
@@ -100,11 +106,7 @@ const runTaskImpl = (
         tasks.delete(id);
     })
 
-    if (opts?.returnTaskId) {
-        return { taskId: id, promise };
-    } else {
-        return promise;
-    }
+    return { taskId: id, promise };
 };
 
 const killTaskImpl: KillTaskFn = async (id) => {
