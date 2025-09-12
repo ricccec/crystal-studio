@@ -6,7 +6,6 @@ import type { GitService } from "@main/services/gitServices";
 import { TaskStreamPayload } from "@shared/ipc";
 import { MakeOptions, MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
-import findToolCandidate from "@main/utils/findToolCandidate";
 import path from "node:path";
 import { EmulatorService } from "@main/services/emulatorService";
 
@@ -30,7 +29,6 @@ export function registerToolsIpc(
             { name: 'gcc', path: appSettings.gccDir },
             { name: 'bash', path: appSettings.bashDir, aliases: getToolAliases('bash')},
             { name: 'rgbasm', path: appSettings.rgbdsDir },
-            { name: 'rgbfix', path: appSettings.rgbdsDir },
             { name: 'rgbgfx', path: appSettings.rgbdsDir },
             { name: 'rgbfix', path: appSettings.rgbdsDir },
             { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
