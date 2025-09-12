@@ -15,6 +15,7 @@ import createToolsService from "./services/toolsService";
 import findToolCandidate from "./utils/findToolCandidate";
 import { APP_SETTINGS_FILENAME } from "@shared/constants";
 import createEmulatorService from "./services/emulatorService";
+import { AppSettingsSchema } from "@shared/types/settingsSchema";
 
 let win : BrowserWindow | null = null;
 
@@ -115,7 +116,13 @@ async function loadAppSettings() : Promise<ActionResult<Partial<AppSettings>>> {
     try {
         const data = await fs.readFile(settingPath, 'utf-8');
         const settings = JSON.parse(data) as Partial<AppSettings>;
-        return { ok: true, data: settings };
+
+        // Validate settings
+        const validated = AppSettingsSchema.partial().safeParse(settings);
+        if (!validated.success) {
+            return { ok: false, error: validated.error.message };
+        }
+        return { ok: true, data: validated.data };
     } catch (e: any) {
         // ENOENT -> No settings yet, that's fine
         if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
