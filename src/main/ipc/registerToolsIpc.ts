@@ -3,7 +3,7 @@ import type { ActionResult, AppSettings, ProjectSettings, SpawnResult } from "@s
 import type { ProjectService } from "@main/services/projectServices";
 import type { WriteSettingsFn } from "@main/utils/settings";
 import type { GitService } from "@main/services/gitServices";
-import { TaskStreamPayload } from "@shared/ipc";
+import { TaskStreamPayload, IpcChannels } from "@shared/ipc";
 import { MakeOptions, MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
 import path from "node:path";
@@ -22,7 +22,7 @@ export function registerToolsIpc(
     writeSettings: WriteSettingsFn,
 ) {
 
-    ipcMain.handle('check-tools', async () => {
+    ipcMain.handle(IpcChannels.TOOLS_CHECK, async () => {
 
         const tools = [
             { name: 'git', path: null, aliases: null },
@@ -38,7 +38,7 @@ export function registerToolsIpc(
         return await toolsService.checkTools(tools);
     });
 
-    ipcMain.handle('git-open-repo', async (_, repoPath: string) : Promise<ActionResult> => {
+    ipcMain.handle(IpcChannels.GIT_OPEN_REPO, async (_, repoPath: string) : Promise<ActionResult> => {
         const res = await gitService.openGitRepo(projectSettings, repoPath);
         if (!res.ok) return res;
 
@@ -53,7 +53,7 @@ export function registerToolsIpc(
         
     });
 
-    ipcMain.handle('git-clone', async (
+    ipcMain.handle(IpcChannels.GIT_CLONE, async (
         _,
         repoUrl: string,
         targetPath: string,
@@ -63,13 +63,13 @@ export function registerToolsIpc(
             null, // No need for custom bash for git 
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
-                win.webContents.send('task:stream', payload);
+                win.webContents.send(IpcChannels.TASK_STREAM, payload);
             },
         );
         return res;
     });
 
-    ipcMain.handle('git-clone-default', async (
+    ipcMain.handle(IpcChannels.GIT_CLONE_DEFAULT, async (
         _,
         targetPath: string,
     ) : Promise<SpawnResult> => {
@@ -79,13 +79,13 @@ export function registerToolsIpc(
             null, // No need for custom bash for git
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
-                win.webContents.send('task:stream', payload);
+                win.webContents.send(IpcChannels.TASK_STREAM, payload);
             },
         );
         return res;
     });
 
-    ipcMain.handle('run-emulator', async () : Promise<SpawnResult> => {
+    ipcMain.handle(IpcChannels.EMULATOR_RUN, async () : Promise<SpawnResult> => {
         
         const repoDir = projectSettings.repoPath;
         if (!repoDir) return { status: 'error', error: 'Pret repo not set' };
@@ -103,7 +103,7 @@ export function registerToolsIpc(
 
     });
 
-    ipcMain.handle('run-make', async (
+    ipcMain.handle(IpcChannels.BUILD_RUN_MAKE, async (
         _,
     ) : Promise<SpawnResult> => {
         
@@ -159,7 +159,7 @@ export function registerToolsIpc(
             },
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
-                win.webContents.send('task:stream', payload);
+                win.webContents.send(IpcChannels.TASK_STREAM, payload);
             },
         );
         return res;
