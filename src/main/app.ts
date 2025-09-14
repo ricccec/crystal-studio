@@ -25,7 +25,9 @@ export async function start(publicFolder: string, viteUrl?: string) {
         execAsync,
         isDirectory,
         isExecutable,
-        findToolCandidate
+        findToolCandidate,
+        readJson,
+        writeJson,
     });
 
     // Load app settings before creating the window    
@@ -42,8 +44,6 @@ export async function start(publicFolder: string, viteUrl?: string) {
         showOpenDialog,
         restartApp,
         serviceContainer,
-        writeJson,
-        readJson,
     );
     
     app.on('window-all-closed', () => {

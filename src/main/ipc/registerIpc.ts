@@ -1,4 +1,4 @@
-import type { ProjectService } from "@main/services/projectServices";
+import type { ProjectService } from "@main/services/projectService";
 import type { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 import type { ShowOpenDialogFn, ShowSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
@@ -6,7 +6,7 @@ import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import { registerProjectLifecycleIpc } from "./registerProjectLifecycleIpc";
 import { registerDialogIpc } from "./registerDialogIpc";
 import { registerToolsIpc } from "./registerToolsIpc";
-import { GitService } from "@main/services/gitServices";
+import { GitService } from "@main/services/gitService";
 import { MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
 import { registerAppIpc } from "./registerAppIpc";
@@ -22,8 +22,6 @@ export function registerIpc(
     showOpenDialog: ShowOpenDialogFn,
     restartApp: () => Promise<ActionResult>,
     services: ServiceContainer,
-    writeSettings: WriteJsonFn,
-    readSettings: ReadJsonFn,
 ) {
 
     registerAppIpc(
@@ -37,8 +35,6 @@ export function registerIpc(
         showSaveDialog,
         showOpenDialog,
         services,
-        writeSettings,
-        readSettings,
     )
 
     registerDialogIpc(
@@ -52,7 +48,6 @@ export function registerIpc(
         win,
         projectSettings,
         services,
-        writeSettings,
     )
 
 }

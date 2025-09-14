@@ -5,7 +5,7 @@ import {
     saveProject,
     saveProjectAs,
     saveProjectForRecovery
-} from '../projectServices';
+} from '../projectService';
 import type { ProjectSettings } from '@shared/types/types';
 import path from 'path';
 
