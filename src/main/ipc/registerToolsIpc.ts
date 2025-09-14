@@ -1,8 +1,8 @@
 import { BrowserWindow, ipcMain } from "electron";
 import type { ActionResult, AppSettings, ProjectSettings, SpawnResult } from "@shared/types/types"; 
-import type { ProjectService } from "@main/services/projectServices";
+import type { ProjectService } from "@main/services/projectService";
 import type { WriteJsonFn } from "@main/utils/jsonPersistence";
-import type { GitService } from "@main/services/gitServices";
+import type { GitService } from "@main/services/gitService";
 import { TaskStreamPayload, IpcChannels } from "@shared/ipc";
 import { MakeOptions, MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
@@ -22,7 +22,6 @@ export function registerToolsIpc(
         makeService: MakeService,
         emulatorService: EmulatorService,
     },
-    writeSettings: WriteJsonFn,
 ) {
 
     const { getAppSettings } = services.appSettingsService;
@@ -48,7 +47,7 @@ export function registerToolsIpc(
         if (!res.ok) return res;
 
         // Backup project for rcovery
-        const bkupRes = await services.projectService.saveProjectForRecovery(projectSettings, { writeSettings });
+        const bkupRes = await services.projectService.saveProjectForRecovery(projectSettings);
         if (!bkupRes.ok) {
             // Can't save project for recovery -> keep going, but notify the renderer
             win.webContents.send('app:notification', { data: `Cannot backup project for recovery: ${bkupRes.error}` });

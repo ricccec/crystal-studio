@@ -1,4 +1,4 @@
-import type { ProjectService } from "@main/services/projectServices";
+import type { ProjectService } from "@main/services/projectService";
 import type { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 import type { ShowOpenDialogFn, ShowSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
@@ -18,8 +18,6 @@ export function registerProjectLifecycleIpc(
         projectService: ProjectService,
         appSettingsService: AppSettingsService,
      },
-    writeSettings: WriteJsonFn,
-    readSettings: ReadJsonFn,
 ) {
     const { getAppSettings, saveAppSettings } = services.appSettingsService;
 
@@ -56,11 +54,11 @@ export function registerProjectLifecycleIpc(
 
             savePath = result.data;
         }
-        return await services.projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
+        return await services.projectService.saveProjectAs(projectSettings, savePath);
     });
 
     ipcMain.handle(IpcChannels.PROJECT_SAVE_AS, async (_, savePath: string) : Promise<ProcessResult> => {
-        return await services.projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
+        return await services.projectService.saveProjectAs(projectSettings, savePath);
     });
 
     ipcMain.handle(IpcChannels.PROJECT_OPEN, async () : Promise<ProcessResult<ProjectSettings>> => {
@@ -86,7 +84,7 @@ export function registerProjectLifecycleIpc(
         getAppSettings().lastUsedPath = path.parse(openPath).dir;
         await saveAppSettings();
 
-        const result = await services.projectService.openProject(openPath, { readSettings });
+        const result = await services.projectService.openProject(openPath);
         if (!result.ok) return { status: 'error', error: result.error };
         
         // Update project settings and return
