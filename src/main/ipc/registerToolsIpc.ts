@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain } from "electron";
 import type { ActionResult, AppSettings, ProjectSettings, SpawnResult } from "@shared/types/types"; 
 import type { ProjectService } from "@main/services/projectServices";
-import type { WriteSettingsFn } from "@main/utils/projectSettings";
+import type { WriteJsonFn } from "@main/utils/jsonPersistence";
 import type { GitService } from "@main/services/gitServices";
 import { TaskStreamPayload, IpcChannels } from "@shared/ipc";
 import { MakeOptions, MakeService } from "@main/services/makeService";
@@ -22,7 +22,7 @@ export function registerToolsIpc(
         makeService: MakeService,
         emulatorService: EmulatorService,
     },
-    writeSettings: WriteSettingsFn,
+    writeSettings: WriteJsonFn,
 ) {
 
     const { getAppSettings } = services.appSettingsService;

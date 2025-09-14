@@ -1,4 +1,4 @@
-import { ReadSettingsFn, WriteSettingsFn } from "@main/utils/projectSettings";
+import { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 import { ActionResult, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { app } from "electron";
 import path from 'path';
@@ -9,23 +9,23 @@ export type NewProjectFn = (
 
 export type OpenProjectFn = (
   loadPath: string,
-  deps: { readSettings: ReadSettingsFn }
+  deps: { readSettings: ReadJsonFn }
 ) => Promise<ActionResult<ProjectSettings>>;
 
 export type SaveProjectFn = (
   projectSettings: ProjectSettings,
-  deps: { writeSettings: WriteSettingsFn }
+  deps: { writeSettings: WriteJsonFn }
 ) => Promise<ProcessResult>;
 
 export type SaveProjectAsFn = (
   projectSettings: ProjectSettings,
   savePath: string,
-  deps: { writeSettings: WriteSettingsFn }
+  deps: { writeSettings: WriteJsonFn }
 ) => Promise<ProcessResult>;
 
 export type SaveProjectForRecoveryFn = (
     projectSettings: ProjectSettings,
-    deps: { writeSettings: WriteSettingsFn }
+    deps: { writeSettings: WriteJsonFn }
 ) => Promise<ActionResult>;
 
 export type ProjectService = {
