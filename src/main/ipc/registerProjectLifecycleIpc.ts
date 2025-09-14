@@ -1,5 +1,5 @@
 import type { ProjectService } from "@main/services/projectServices";
-import type { ReadSettingsFn, WriteSettingsFn } from "@main/utils/projectSettings";
+import type { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 import type { ShowOpenDialogFn, ShowSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { IpcChannels } from "@shared/ipc";
@@ -18,8 +18,8 @@ export function registerProjectLifecycleIpc(
         projectService: ProjectService,
         appSettingsService: AppSettingsService,
      },
-    writeSettings: WriteSettingsFn,
-    readSettings: ReadSettingsFn,
+    writeSettings: WriteJsonFn,
+    readSettings: ReadJsonFn,
 ) {
     const { getAppSettings, saveAppSettings } = services.appSettingsService;
 

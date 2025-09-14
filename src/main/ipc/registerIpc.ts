@@ -1,5 +1,5 @@
 import type { ProjectService } from "@main/services/projectServices";
-import type { ReadSettingsFn, WriteSettingsFn } from "@main/utils/projectSettings";
+import type { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 import type { ShowOpenDialogFn, ShowSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
@@ -22,8 +22,8 @@ export function registerIpc(
     showOpenDialog: ShowOpenDialogFn,
     restartApp: () => Promise<ActionResult>,
     services: ServiceContainer,
-    writeSettings: WriteSettingsFn,
-    readSettings: ReadSettingsFn,
+    writeSettings: WriteJsonFn,
+    readSettings: ReadJsonFn,
 ) {
 
     registerAppIpc(
