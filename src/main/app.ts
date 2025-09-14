@@ -2,7 +2,7 @@ import type { ActionResult, AppSettings, ProjectSettings } from "@shared/types/t
 import { app, BrowserWindow } from "electron";
 import { createWindow, showOpenDialog, showSaveDialog } from "./windows/windows";
 import { registerIpc } from "./ipc/registerIpc";
-import { readSettings, writeSettings } from "./utils/settings";
+import { readProjectSettings, writeProjectSettings } from "./utils/projectSettings";
 import execAsync from "./utils/execAsync";
 import { isDirectory, isExecutable } from "@shared/utils/utils";
 import findToolCandidate from "./utils/findToolCandidate";
@@ -42,8 +42,8 @@ export async function start(publicFolder: string, viteUrl?: string) {
         showOpenDialog,
         restartApp,
         serviceContainer,
-        writeSettings,
-        readSettings,
+        writeProjectSettings,
+        readProjectSettings,
     );
     
     app.on('window-all-closed', () => {

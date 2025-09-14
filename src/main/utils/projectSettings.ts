@@ -1,6 +1,5 @@
 import path from 'path';
 import fs from 'node:fs/promises';
-import {app} from 'electron';
 import { ActionResult, ProjectSettings } from '@shared/types/types';
 
 type WriteSettingsFn = (s: ProjectSettings, filePath: string) => Promise<ActionResult>;
@@ -46,6 +45,6 @@ export type {
     ReadSettingsFn,
 };
 export {
-    readSettings,
-    writeSettings
+    readSettings as readProjectSettings,
+    writeSettings as writeProjectSettings
 };
