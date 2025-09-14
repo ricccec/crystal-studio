@@ -1,4 +1,4 @@
-import { ReadSettingsFn, WriteSettingsFn } from "@main/utils/settings";
+import { ReadSettingsFn, WriteSettingsFn } from "@main/utils/projectSettings";
 import { ActionResult, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { app } from "electron";
 import path from 'path';
