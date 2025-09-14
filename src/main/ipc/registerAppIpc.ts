@@ -1,26 +1,31 @@
+import { AppSettingsService } from "@main/services/appSettingsService";
 import { APP_SETTINGS_FILENAME } from "@shared/constants";
 import { defaultAppSettings, withDefaultAppSettings } from "@shared/default";
 import { IpcChannels } from "@shared/ipc";
 import { ActionResult, AppSettings } from "@shared/types/types";
 import { isExecutable } from "@shared/utils/utils";
 import { app, ipcMain, shell } from "electron";
-import { error } from "node:console";
 import path from "node:path";
 
 export function registerAppIpc(
-    appSettings: AppSettings,
     // Injected deps.
     restartApp: () => Promise<ActionResult>,
-    saveAppSettings: () => Promise<ActionResult>,
-    resetAppSettings: () => Promise<ActionResult>,
+    services: {
+        appSettingsService: AppSettingsService,
+    },
 ) {
+    const {
+        getAppSettings, 
+        saveAppSettings,
+        resetAppSettings
+    } = services.appSettingsService;
 
     ipcMain.handle(IpcChannels.APP_RESTART, async () => {
         return restartApp();
     });
 
     ipcMain.handle(IpcChannels.APP_GET_SETTINGS, async () => {
-        return appSettings;
+        return getAppSettings();
     });
 
     ipcMain.handle(IpcChannels.APP_RESET_SETTINGS, async () => {
@@ -35,28 +40,28 @@ export function registerAppIpc(
     });
 
     ipcMain.handle(IpcChannels.TOOLS_SET_MAKE_FOLDER, async (_, makePath: string) => {
-        appSettings.makeDir = makePath;
+        getAppSettings().makeDir = makePath;
         await saveAppSettings();
-        return { ok: true, data: appSettings.makeDir };
+        return { ok: true, data: getAppSettings().makeDir };
     });
 
     ipcMain.handle(IpcChannels.TOOLS_SET_RGBDS_FOLDER, async (_, rgbdsDir: string) => {
-        appSettings.rgbdsDir = rgbdsDir;
+        getAppSettings().rgbdsDir = rgbdsDir;
         await saveAppSettings();
-        return { ok: true, data: appSettings.rgbdsDir };
+        return { ok: true, data: getAppSettings().rgbdsDir };
     });
 
     ipcMain.handle(IpcChannels.TOOLS_SET_GCC_FOLDER, async (_, gccDir: string) => {
-        appSettings.gccDir = gccDir;
+        getAppSettings().gccDir = gccDir;
         await saveAppSettings();
-        return { ok: true, data: appSettings.gccDir };
+        return { ok: true, data: getAppSettings().gccDir };
     });
 
     
     ipcMain.handle(IpcChannels.TOOLS_SET_BASH_FOLDER, async (_, bashDir: string) => {
-        appSettings.bashDir = bashDir;
+        getAppSettings().bashDir = bashDir;
         await saveAppSettings();
-        return { ok: true, data: appSettings.bashDir };
+        return { ok: true, data: getAppSettings().bashDir };
     });
 
     ipcMain.handle(IpcChannels.TOOLS_SET_EMULATOR, async (_, emulatorExec: string) => {
@@ -69,15 +74,15 @@ export function registerAppIpc(
             return { ok: false, error: `Failed to validate executable: ${e.message ?? String(e)}`};
         }    
 
-        appSettings.emulator = emulatorExec;
+        getAppSettings().emulator = emulatorExec;
         await saveAppSettings();
-        return { ok: true, data: appSettings.emulator };
+        return { ok: true, data: getAppSettings().emulator };
     });
 
     ipcMain.handle(IpcChannels.TOOLS_SET_CYGWIN_FOLDER, async (_, cygwinDir: string) => {
-        appSettings.cygwinDir = cygwinDir;
+        getAppSettings().cygwinDir = cygwinDir;
         await saveAppSettings();
-        return { ok: true, data: appSettings.cygwinDir };    
+        return { ok: true, data: getAppSettings().cygwinDir };    
     });
 
 }

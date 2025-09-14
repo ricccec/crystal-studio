@@ -8,13 +8,14 @@ import { MakeOptions, MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
 import path from "node:path";
 import { EmulatorService } from "@main/services/emulatorService";
+import { AppSettingsService } from "@main/services/appSettingsService";
 
 export function registerToolsIpc(
     win: BrowserWindow,
     projectSettings: ProjectSettings,
-    appSettings: AppSettings,
     // Injected deps.
     services: {
+        appSettingsService: AppSettingsService,
         projectService: ProjectService,
         toolsService: ToolsService,
         gitService: GitService,
@@ -24,16 +25,18 @@ export function registerToolsIpc(
     writeSettings: WriteSettingsFn,
 ) {
 
+    const { getAppSettings } = services.appSettingsService;
+
     ipcMain.handle(IpcChannels.TOOLS_CHECK, async () => {
 
         const tools = [
             { name: 'git', path: null, aliases: null },
-            { name: 'gcc', path: appSettings.gccDir },
-            { name: 'bash', path: appSettings.bashDir, aliases: getToolAliases('bash')},
-            { name: 'rgbasm', path: appSettings.rgbdsDir },
-            { name: 'rgbgfx', path: appSettings.rgbdsDir },
-            { name: 'rgbfix', path: appSettings.rgbdsDir },
-            { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
+            { name: 'gcc', path: getAppSettings().gccDir },
+            { name: 'bash', path: getAppSettings().bashDir, aliases: getToolAliases('bash')},
+            { name: 'rgbasm', path: getAppSettings().rgbdsDir },
+            { name: 'rgbgfx', path: getAppSettings().rgbdsDir },
+            { name: 'rgbfix', path: getAppSettings().rgbdsDir },
+            { name: 'make', path: getAppSettings().makeDir, aliases: getToolAliases('make')},
           
         ]
         
@@ -75,7 +78,7 @@ export function registerToolsIpc(
         _,
         targetPath: string,
     ) : Promise<SpawnResult> => {
-        const repoUrl = appSettings.repoUrl;
+        const repoUrl = getAppSettings().repoUrl;
         const res = await services.gitService.cloneGitRepo(
             repoUrl, targetPath,
             null, // No need for custom bash for git
@@ -92,10 +95,10 @@ export function registerToolsIpc(
         const repoDir = projectSettings.repoPath;
         if (!repoDir) return { status: 'error', error: 'Pret repo not set' };
         
-        const romName = appSettings.rom;
+        const romName = getAppSettings().rom;
         if (!romName) return { status: 'error', error: 'Missing ROM name in config. file' };
 
-        const emulatorPath = appSettings.emulator;
+        const emulatorPath = getAppSettings().emulator;
         if (!emulatorPath) return { status: 'error', error: 'Missing emulator path in config. file' };
         
         const romPath = path.join(repoDir, romName);
@@ -114,10 +117,10 @@ export function registerToolsIpc(
         }
 
         const makeCwd = projectSettings.repoPath;
-        const makePath = appSettings.makeDir;
+        const makePath = getAppSettings().makeDir;
         const makeAliases = getToolAliases('make');
-        const makeNumJobs = appSettings.make.numJobs;
-        const makeTarget = appSettings.make.target;
+        const makeNumJobs = getAppSettings().make.numJobs;
+        const makeTarget = getAppSettings().make.target;
         
         // Check make is available
         const checkRes = (await services.toolsService.checkTool(
@@ -132,10 +135,10 @@ export function registerToolsIpc(
         
         // Check custom bash is available
         let bash = null;
-        if (appSettings.bashDir) {
+        if (getAppSettings().bashDir) {
             const bashRes = (await services.toolsService.checkTool(
                 'bash',
-                appSettings.bashDir,
+                getAppSettings().bashDir,
                 getToolAliases('bash')
             ));
             if (bashRes.ok) bash = bashRes.exec;
@@ -143,9 +146,9 @@ export function registerToolsIpc(
 
         // Prepare PATH for make so it can find its deps.
         const envForMake = buildPathForMake(
-            appSettings.rgbdsDir,
-            appSettings.gccDir,
-            appSettings.cygwinDir,
+            getAppSettings().rgbdsDir,
+            getAppSettings().gccDir,
+            getAppSettings().cygwinDir,
         );
 
         // Run make
@@ -156,7 +159,7 @@ export function registerToolsIpc(
             {
                 env: envForMake,
                 makeExec,
-                rgbdsDir: appSettings.rgbdsDir,
+                rgbdsDir: getAppSettings().rgbdsDir,
                 shell: bash,
             },
             (stream, text) => { 
@@ -168,9 +171,9 @@ export function registerToolsIpc(
     });
 
     function getToolAliases(tool: string): string[] {
-        if (!appSettings.toolAliases[tool])
+        if (!getAppSettings().toolAliases[tool])
             return [];
-        const toolAliases = appSettings.toolAliases[tool];
+        const toolAliases = getAppSettings().toolAliases[tool];
         return toolAliases[process.platform] ?? [];
     }
 

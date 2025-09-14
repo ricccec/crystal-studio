@@ -16,33 +16,26 @@ import { ServiceContainer } from "@main/services/serviceContainer";
 
 export function registerIpc(
     win: BrowserWindow,
-    appSettings: AppSettings,
     projectSettings: ProjectSettings,
     // Injected deps.
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
     restartApp: () => Promise<ActionResult>,
-    saveAppSettings: () => Promise<ActionResult>,
-    resetAppSettings: () => Promise<ActionResult>,
     services: ServiceContainer,
     writeSettings: WriteSettingsFn,
     readSettings: ReadSettingsFn,
 ) {
 
     registerAppIpc(
-        appSettings,
         restartApp,
-        saveAppSettings,
-        resetAppSettings,
+        services,
     );
 
     registerProjectLifecycleIpc(
         win,
-        appSettings,
         projectSettings,
         showSaveDialog,
         showOpenDialog,
-        saveAppSettings,
         services,
         writeSettings,
         readSettings,
@@ -50,16 +43,14 @@ export function registerIpc(
 
     registerDialogIpc(
         win,
-        appSettings,
         showSaveDialog,
         showOpenDialog,
-        saveAppSettings,
+        services,
     )
 
     registerToolsIpc(
         win,
         projectSettings,
-        appSettings,
         services,
         writeSettings,
     )
