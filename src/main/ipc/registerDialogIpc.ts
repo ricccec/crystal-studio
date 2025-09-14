@@ -3,16 +3,18 @@ import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shar
 import { IpcChannels } from "@shared/ipc";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from 'path';
+import { AppSettingsService } from "@main/services/appSettingsService";
 
 
 export function registerDialogIpc(
     win: BrowserWindow,
-    appSettings: AppSettings,
     // Injected deps.
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
-    saveAppSettings: () => Promise<ActionResult>,
+    services: { appSettingsService: AppSettingsService, },
 ) {
+
+    const { getAppSettings, saveAppSettings } = services.appSettingsService;
 
     ipcMain.handle(IpcChannels.DIALOG_SHOW_SAVE, async (_, options?: Electron.SaveDialogOptions) : Promise<ProcessResult> => {
         return await showSaveDialog(win, options);
@@ -21,7 +23,7 @@ export function registerDialogIpc(
     ipcMain.handle(IpcChannels.DIALOG_SHOW_SAVE_PROJECT, async () : Promise<ProcessResult> => {
         const res = await showSaveDialog(win, {
             title: 'Save project',
-            defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+            defaultPath: getAppSettings().lastUsedPath ?? app.getPath('documents'),
             filters: [
                 { name: 'JSON files', extensions: ['json'] },
                 { name: 'All Files', extensions: ['*'] },
@@ -31,7 +33,7 @@ export function registerDialogIpc(
         if (res.status === 'success') {
             // Update last used path and persist
             const filePath = res.data;
-            appSettings.lastUsedPath = path.parse(filePath).dir;
+            getAppSettings().lastUsedPath = path.parse(filePath).dir;
             await saveAppSettings();
         }
 
@@ -42,7 +44,7 @@ export function registerDialogIpc(
 
         const res = await showOpenDialog(win, {
             title: title,
-            defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+            defaultPath: getAppSettings().lastUsedPath ?? app.getPath('documents'),
             properties: ['openFile'],
             filters: fileFilters,
         });
@@ -50,7 +52,7 @@ export function registerDialogIpc(
         if (res.status === 'success') {
             // Update last used path and persist
             const filePath = res.data;
-            appSettings.lastUsedPath = path.parse(filePath).dir;
+            getAppSettings().lastUsedPath = path.parse(filePath).dir;
 
             await saveAppSettings();
         }
@@ -62,14 +64,14 @@ export function registerDialogIpc(
     ipcMain.handle(IpcChannels.DIALOG_SHOW_OPEN_DIR, async (_, title: string) : Promise<ProcessResult> => {
         const res = await showOpenDialog(win, {
             title: title,
-            defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+            defaultPath: getAppSettings().lastUsedPath ?? app.getPath('documents'),
             properties: ['openDirectory'],
         });
 
         if (res.status === 'success') {
             // Update last used path and persist
             const filePath = res.data;
-            appSettings.lastUsedPath = path.normalize(filePath);
+            getAppSettings().lastUsedPath = path.normalize(filePath);
 
             await saveAppSettings();
         }

@@ -5,20 +5,23 @@ import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shar
 import { IpcChannels } from "@shared/ipc";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from 'path';
+import { AppSettingsService } from "@main/services/appSettingsService";
 
 
 export function registerProjectLifecycleIpc(
     win: BrowserWindow,
-    appSettings: AppSettings,
     projectSettings: ProjectSettings,
     // Injected deps.
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
-    saveAppSettings: () => Promise<ActionResult>,
-    services: { projectService: ProjectService },
+    services: {
+        projectService: ProjectService,
+        appSettingsService: AppSettingsService,
+     },
     writeSettings: WriteSettingsFn,
     readSettings: ReadSettingsFn,
 ) {
+    const { getAppSettings, saveAppSettings } = services.appSettingsService;
 
     ipcMain.handle(IpcChannels.PROJECT_GET_SETTINGS, async (): Promise<ActionResult<ProjectSettings>> => { 
         return { ok: true, data: projectSettings };
@@ -38,7 +41,7 @@ export function registerProjectLifecycleIpc(
         if (!savePath) {
             const result = await showSaveDialog(win, {
                 title: 'Save project',
-                defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+                defaultPath: getAppSettings().lastUsedPath ?? app.getPath('documents'),
                 filters: [
                     { name: 'JSON files', extensions: ['json'] },
                     { name: 'All Files', extensions: ['*'] },
@@ -48,7 +51,7 @@ export function registerProjectLifecycleIpc(
 
             // Update last used path and persist
             const filePath = result.data;
-            appSettings.lastUsedPath = path.parse(filePath).dir;
+            getAppSettings().lastUsedPath = path.parse(filePath).dir;
             await saveAppSettings();
 
             savePath = result.data;
@@ -66,7 +69,7 @@ export function registerProjectLifecycleIpc(
         try {
             const res = await showOpenDialog(win, {
                 title: 'Open project',
-                defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+                defaultPath: getAppSettings().lastUsedPath ?? app.getPath('documents'),
                 filters: [
                     { name: 'JSON files', extensions: ['json'] },
                     { name: 'All Files', extensions: ['*'] },
@@ -80,7 +83,7 @@ export function registerProjectLifecycleIpc(
         }
 
         // Update last used path and persist
-        appSettings.lastUsedPath = path.parse(openPath).dir;
+        getAppSettings().lastUsedPath = path.parse(openPath).dir;
         await saveAppSettings();
 
         const result = await services.projectService.openProject(openPath, { readSettings });

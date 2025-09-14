@@ -5,8 +5,12 @@ import createMakeService, { MakeService } from "./makeService";
 import projectService, { ProjectService } from "./projectServices";
 import createToolsService, { ToolsService } from "./toolsService";
 import { ExecAsyncFn } from "@main/utils/execAsync";
+import type { AppSettingsService } from "./appSettingsService";
+import createAppSettingsService from "./appSettingsService";
+import { ActionResult } from "@shared/types/types";
 
 type ServiceContainerDeps = {
+    appSettingsPath?: string;
     execAsync: ExecAsyncFn;
     findToolCandidate: FindToolCandidateFn;
     isDirectory: (path: string) => Promise<boolean>;
@@ -14,6 +18,8 @@ type ServiceContainerDeps = {
 }
 
 type ServiceContainer = {
+    initServices: () => Promise<ActionResult>;
+    appSettingsService: AppSettingsService;
     projectService: ProjectService;
     toolsService: ToolsService;
     gitService: GitService;
@@ -21,14 +27,18 @@ type ServiceContainer = {
     emulatorService: EmulatorService;
 }
 
-function createServiceContainer({ 
+function createServiceContainer({
+    appSettingsPath, 
     execAsync,
     isDirectory,
     isExecutable,
     findToolCandidate,
 }: ServiceContainerDeps): ServiceContainer {   
 
-    // Load services
+    // Create services
+    const appSettingsService = createAppSettingsService({
+        settingsPath: appSettingsPath,
+    })
     const gitService = createGitService({
         execAsync,
         isDirectory,
@@ -47,11 +57,16 @@ function createServiceContainer({
     });
 
     return {
+        appSettingsService,
         gitService,
         makeService,
         toolsService,
         emulatorService,
-        projectService
+        projectService,
+
+        initServices: () => {
+            return appSettingsService.initAppSettings();
+        },
     };
 }
 
