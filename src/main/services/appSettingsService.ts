@@ -1,10 +1,10 @@
 import { app } from 'electron';
 import path from 'path';
-import fs from 'node:fs/promises';
 import type { ActionResult, AppSettings } from '@shared/types/types';
 import { withDefaultAppSettings } from '@shared/default';
 import { APP_SETTINGS_FILENAME } from '@shared/constants';
 import { AppSettingsSchema } from '@shared/types/settingsSchema';
+import { ReadJsonFn, WriteJsonFn } from '@main/utils/jsonPersistence';
 
 type AppSettingsService = {
     initAppSettings(): Promise<ActionResult>;
@@ -16,15 +16,17 @@ type AppSettingsService = {
 
 type AppSettingsServiceDeps = {
     settingsPath?: string;
+    writeSettings: WriteJsonFn;
+    readSettings: ReadJsonFn;
 }
 
-function createAppSettingsService(deps: AppSettingsServiceDeps = {}): AppSettingsService {
+function createAppSettingsService(deps: AppSettingsServiceDeps): AppSettingsService {
     let appSettings: AppSettings | null = null;
     const settingsPath = path.join(deps.settingsPath ?? app.getPath('userData'), APP_SETTINGS_FILENAME);
 
     return {
         async initAppSettings(): Promise<ActionResult> {
-            const r = await initAppSettingsImpl(settingsPath);
+            const r = await initAppSettingsImpl(settingsPath, deps);
             if (r.ok) appSettings = r.data!;
             return r as ActionResult;
         },
@@ -33,7 +35,7 @@ function createAppSettingsService(deps: AppSettingsServiceDeps = {}): AppSetting
             if (!appSettings) {
                 return { ok: false, error: 'Settings not initialized' };
             }
-            const r = await loadAppSettingsImpl(settingsPath);
+            const r = await loadAppSettingsImpl(settingsPath, deps);
             if (r.ok) Object.assign(appSettings, r.data);
             return r as ActionResult;
         },
@@ -42,11 +44,11 @@ function createAppSettingsService(deps: AppSettingsServiceDeps = {}): AppSetting
             if (!appSettings) {
                 return { ok: false, error: 'Settings not initialized' };
             }
-            return await saveAppSettingsImpl(appSettings, settingsPath, preserveExisting);
+            return await saveAppSettingsImpl(appSettings, settingsPath, preserveExisting, deps);
         },
 
         async resetAppSettings(): Promise<ActionResult> {
-            appSettings = await resetAppSettingsImpl(settingsPath);
+            appSettings = await resetAppSettingsImpl(settingsPath, deps);
             return { ok: true };
         },
         
@@ -60,12 +62,15 @@ function createAppSettingsService(deps: AppSettingsServiceDeps = {}): AppSetting
 }
 
 // Implementation functions outside the factory
-const initAppSettingsImpl = async (settingsPath: string): Promise<ActionResult<AppSettings>> => {
+const initAppSettingsImpl = async (
+    settingsPath: string,
+    deps: AppSettingsServiceDeps,
+): Promise<ActionResult<AppSettings>> => {
+
     const appSettings = withDefaultAppSettings();
 
     // Load app settings
-    const r = await loadAppSettingsImpl(settingsPath);
-    
+    const r = await loadAppSettingsImpl(settingsPath, deps);
     if (!r.ok) {
         return { ok: false, error: `Failed to load settings: ${r.error}`};    
     }
@@ -75,11 +80,14 @@ const initAppSettingsImpl = async (settingsPath: string): Promise<ActionResult<A
 };
 
 const loadAppSettingsImpl = async (
-    settingsPath: string
+    settingsPath: string,
+    deps: AppSettingsServiceDeps,
 ): Promise<ActionResult<Partial<AppSettings>>> => {
     try {
-        const data = await fs.readFile(settingsPath, 'utf-8');
-        const settings = JSON.parse(data) as Partial<AppSettings>;
+        const r = await deps.readSettings(settingsPath);
+        if (!r.ok) return r;
+
+        const settings = r.data as AppSettings;
 
         // Validate settings
         const validated = AppSettingsSchema.partial().safeParse(settings);
@@ -99,17 +107,16 @@ const loadAppSettingsImpl = async (
 const saveAppSettingsImpl = async (
     appSettings: AppSettings,
     settingsPath: string,
-    preserveExisting = true
+    preserveExisting: boolean,
+    deps: AppSettingsServiceDeps,
 ): Promise<ActionResult> => {
     try {
-        // Ensure folder exists
-        await fs.mkdir(path.dirname(settingsPath), { recursive: true });
-
         let prevSettings: Partial<AppSettings> = {};
+
         if (preserveExisting) {
             // Read existing settings file (if any) so we can preserve older keys
             try {
-                const result = await loadAppSettingsImpl(settingsPath);
+                const result = await loadAppSettingsImpl(settingsPath, deps);
                 if (result.ok) prevSettings = result.data ?? {};
             } catch (e: any) {}
         }
@@ -117,26 +124,25 @@ const saveAppSettingsImpl = async (
         // Merge existing with current (current overwrites existing)
         const merged = { ...prevSettings, ...appSettings };
 
-        // Atomic write: write to temp then rename
-        const tmp = `${settingsPath}.tmp`;
-        await fs.writeFile(tmp, JSON.stringify(merged, null, 2), 'utf-8');
-        await fs.rename(tmp, settingsPath);
-
+        deps.writeSettings(merged, settingsPath);
         return { ok: true };
     } catch (e: any) {
         return { ok: false, error: e?.message ?? String(e) };
     }
 };
 
-const resetAppSettingsImpl = async (settingsPath: string): Promise<AppSettings> => {
+const resetAppSettingsImpl = async (
+    settingsPath: string,
+    deps: AppSettingsServiceDeps,
+): Promise<AppSettings> => {
     const defaultSettings = withDefaultAppSettings();
-    await saveAppSettingsImpl(defaultSettings, settingsPath, false);
+    await saveAppSettingsImpl(defaultSettings, settingsPath, false, deps);
     return defaultSettings;
 };
 
 export type {
-    AppSettingsService,
     AppSettingsServiceDeps,
+    AppSettingsService,
 };
 
 export default createAppSettingsService;

@@ -2,8 +2,15 @@ import path from 'path';
 import fs from 'node:fs/promises';
 import { ActionResult, ProjectSettings } from '@shared/types/types';
 
-type WriteJsonFn = (data: Record<string, any>, filePath: string) => Promise<ActionResult>;
-type ReadJsonFn = (filePath: string) => Promise<ActionResult<Record<string, any>>>;
+type WriteJsonFn = (
+    data: Record<string, any>,
+    filePath: string,
+    forceFolderCreation?: boolean,
+) => Promise<ActionResult>;
+
+type ReadJsonFn = (
+    filePath: string
+) => Promise<ActionResult<Record<string, any>>>;
 
 const readJson: ReadJsonFn = async (
     filePath
@@ -19,11 +26,24 @@ const readJson: ReadJsonFn = async (
 
 const writeJson: WriteJsonFn = async (
     data,
-    filePath
+    filePath,
+    forceFolderCreation = true,
 ) => {
     try {
-        // Ensure the directory exists
-        await fs.mkdir(path.dirname(filePath), { recursive: true });
+
+        const dirPath = path.dirname(filePath);
+
+        if (forceFolderCreation) {
+            // Ensure the directory exists
+            await fs.mkdir(dirPath, { recursive: true });
+        } else {
+            // Check folder exists
+            try {
+                await fs.stat(dirPath)
+            } catch (e: any){
+                return { ok: false, error: `Directory does not exist: ${dirPath}` };
+            }
+        }
         
         // Atomic write
         const tmp = `${filePath}.tmp`
