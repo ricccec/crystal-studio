@@ -5,8 +5,8 @@ import createMakeService, { MakeService } from "./makeService";
 import createProjectService, { ProjectService } from "./projectService";
 import createToolsService, { ToolsService } from "./toolsService";
 import { ExecAsyncFn } from "@main/utils/execAsync";
-import type { AppSettingsService } from "./appSettingsService";
 import createAppSettingsService from "./appSettingsService";
+import type { AppSettingsService } from "./appSettingsService";
 import { ActionResult } from "@shared/types/types";
 import { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 
@@ -42,7 +42,9 @@ function createServiceContainer({
 
     // Create services
     const appSettingsService = createAppSettingsService({
-        settingsPath: appSettingsPath,
+        settingsPath: appSettingsPath, 
+        readSettings: readJson,
+        writeSettings: writeJson,
     })
     const gitService = createGitService({
         execAsync,
