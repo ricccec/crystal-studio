@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-    newProject,
-    openProject,
-    saveProject,
-    saveProjectAs,
-    saveProjectForRecovery
-} from '../projectService';
+import createProjectService from '../projectService';
 import type { ProjectSettings } from '@shared/types/types';
 import path from 'path';
 
@@ -30,6 +24,7 @@ describe('projectServices', () => {
     let mockProjectSettings: ProjectSettings;
     let mockWriteSettings: any;
     let mockReadSettings: any;
+    let projectService: ReturnType<typeof createProjectService>;
 
     beforeEach(() => {
         mockProjectSettings = {
@@ -41,11 +36,17 @@ describe('projectServices', () => {
 
         mockWriteSettings = vi.fn();
         mockReadSettings = vi.fn();
+
+        projectService = createProjectService({
+            readSettings: mockReadSettings,
+            writeSettings: mockWriteSettings,
+        });
+
     });
 
     describe('newProject', () => {
         it('should reset all project settings to null', () => {
-            newProject(mockProjectSettings);
+            projectService.newProject(mockProjectSettings);
 
             expect(mockProjectSettings.projectName).toBeNull();
             expect(mockProjectSettings.projectPath).toBeNull();
@@ -59,7 +60,7 @@ describe('projectServices', () => {
             const expectedData = { projectName: 'Loaded Project' };
             mockReadSettings.mockResolvedValue({ ok: true, data: expectedData });
 
-            const result = await openProject('/test/path.json', { readSettings: mockReadSettings });
+            const result = await projectService.openProject('/test/path.json');
 
             expect(result).toEqual({ ok: true, data: expectedData });
             expect(mockReadSettings).toHaveBeenCalledWith('/test/path.json');
@@ -68,7 +69,7 @@ describe('projectServices', () => {
         it('should return error when readSettings fails', async () => {
             mockReadSettings.mockResolvedValue({ ok: false, error: 'File not found' });
 
-            const result = await openProject('/test/path.json', { readSettings: mockReadSettings });
+            const result = await projectService.openProject('/test/path.json');
 
             expect(result).toEqual({ ok: false, error: 'File not found' });
         });
@@ -78,7 +79,7 @@ describe('projectServices', () => {
         it('should return error when projectPath is not set', async () => {
             mockProjectSettings.projectPath = null;
 
-            const result = await saveProject(mockProjectSettings, { writeSettings: mockWriteSettings });
+            const result = await projectService.saveProject(mockProjectSettings);
 
             expect(result.status).toBe('error');
             if (result.status === 'error') {
@@ -90,7 +91,7 @@ describe('projectServices', () => {
         it('should save project when path is set', async () => {
             mockWriteSettings.mockResolvedValue({ ok: true });
 
-            const result = await saveProject(mockProjectSettings, { writeSettings: mockWriteSettings });
+            const result = await projectService.saveProject(mockProjectSettings);
 
             expect(result.status).toBe('success');
             if (result.status === 'success') {
@@ -106,7 +107,7 @@ describe('projectServices', () => {
             const originalName = mockProjectSettings.projectName;
             const originalPath = mockProjectSettings.projectPath;
 
-            const result = await saveProjectAs(mockProjectSettings, '/new/path.json', { writeSettings: mockWriteSettings });
+            const result = await projectService.saveProjectAs(mockProjectSettings, '/new/path.json');
 
             expect(result.status).toBe('success');
             if (result.status === 'success') {
@@ -126,7 +127,7 @@ describe('projectServices', () => {
             mockProjectSettings.projectPath = '/old/path.json';
             mockProjectSettings.tempName = 'temp123';
 
-            await saveProjectAs(mockProjectSettings, '/new/path.json', { writeSettings: mockWriteSettings });
+            await projectService.saveProjectAs(mockProjectSettings, '/new/path.json');
 
             expect(mockWriteSettings).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -141,7 +142,7 @@ describe('projectServices', () => {
             mockProjectSettings.projectPath = null;
             mockProjectSettings.tempName = 'temp123';
 
-            await saveProjectAs(mockProjectSettings, '/new/path.json', { writeSettings: mockWriteSettings });
+            await projectService.saveProjectAs(mockProjectSettings, '/new/path.json');
 
             expect(mockWriteSettings).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -157,7 +158,7 @@ describe('projectServices', () => {
             const originalPath = mockProjectSettings.projectPath;
             const originalTempName = mockProjectSettings.tempName;
 
-            const result = await saveProjectAs(mockProjectSettings, '/new/path.json', { writeSettings: mockWriteSettings });
+            const result = await projectService.saveProjectAs(mockProjectSettings, '/new/path.json');
 
             expect(result.status).toBe('error');
             if (result.status === 'error') {
@@ -174,12 +175,12 @@ describe('projectServices', () => {
             mockWriteSettings.mockResolvedValue({ ok: true });
             mockProjectSettings.tempName = 'existing_temp';
 
-            const result = await saveProjectForRecovery(mockProjectSettings, { writeSettings: mockWriteSettings });
+            const result = await projectService.saveProjectForRecovery(mockProjectSettings);
 
             expect(result).toEqual({ ok: true });
             expect(mockWriteSettings).toHaveBeenCalledWith(
                 mockProjectSettings,
-                path.join('/', 'mock', 'userdata', 'existing_temp.json'),
+                path.join('/', 'mock', 'userdata', 'existing_temp.json'),       
             );
         });
 
@@ -191,7 +192,7 @@ describe('projectServices', () => {
             const mockNow = 1234567890;
             vi.spyOn(Date, 'now').mockReturnValue(mockNow);
 
-            const result = await saveProjectForRecovery(mockProjectSettings, { writeSettings: mockWriteSettings });
+            const result = await projectService.saveProjectForRecovery(mockProjectSettings);
 
             expect(result).toEqual({ ok: true });
             expect(mockProjectSettings.tempName).toBe(`proj_${mockNow}`);
@@ -205,7 +206,7 @@ describe('projectServices', () => {
             mockWriteSettings.mockResolvedValue({ ok: false, error: 'Failed to write' });
             mockProjectSettings.tempName = null;
 
-            const result = await saveProjectForRecovery(mockProjectSettings, { writeSettings: mockWriteSettings });
+            const result = await projectService.saveProjectForRecovery(mockProjectSettings);
 
             expect(result).toEqual({ ok: false, error: 'Failed to write' });
         });
