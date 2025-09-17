@@ -52,7 +52,7 @@ export function registerDialogIpc(
         if (res.status === 'success') {
             // Update last used path and persist
             const filePath = res.data;
-            getAppSettings().lastUsedPath = path.parse(filePath).dir;
+            getAppSettings().lastUsedPath = path.normalize(path.parse(filePath).dir);
 
             await saveAppSettings();
         }
