@@ -99,6 +99,18 @@ describe('projectServices', () => {
             }
             expect(mockWriteSettings).toHaveBeenCalledWith(mockProjectSettings, '/test/path.json');
         });
+
+        it('should handle saveProjectAs failure by propagating error', async () => {
+            // Setup to trigger saveProjectAs failure through writeSettings
+            mockWriteSettings.mockResolvedValue({ ok: false, error: 'Permission denied' });
+
+            const result = await projectService.saveProject(mockProjectSettings);
+
+            expect(result.status).toBe('error');
+            if (result.status === 'error') {
+                expect(result.error).toBe('Permission denied');
+            }
+        });
     });
 
     describe('saveProjectAs', () => {
@@ -167,6 +179,38 @@ describe('projectServices', () => {
             expect(mockProjectSettings.projectName).toBe(originalName);
             expect(mockProjectSettings.projectPath).toBe(originalPath);
             expect(mockProjectSettings.tempName).toBe(originalTempName);
+        });
+
+        it('should restore original values when writeSettings returns error result', async () => {
+            mockWriteSettings.mockResolvedValue({ ok: false, error: 'Disk full' });
+            const originalName = mockProjectSettings.projectName;
+            const originalPath = mockProjectSettings.projectPath;
+            const originalTempName = mockProjectSettings.tempName;
+
+            const result = await projectService.saveProjectAs(mockProjectSettings, '/new/path.json');
+
+            expect(result.status).toBe('error');
+            if (result.status === 'error') {
+                expect(result.error).toBe('Disk full');
+            }
+            expect(mockProjectSettings.projectName).toBe(originalName);
+            expect(mockProjectSettings.projectPath).toBe(originalPath);
+            expect(mockProjectSettings.tempName).toBe(originalTempName);
+        });
+
+        it('should preserve tempName when saving to same path', async () => {
+            mockWriteSettings.mockResolvedValue({ ok: true });
+            mockProjectSettings.projectPath = '/test/path.json';
+            mockProjectSettings.tempName = 'temp123';
+
+            await projectService.saveProjectAs(mockProjectSettings, '/test/path.json');
+
+            expect(mockWriteSettings).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    tempName: 'temp123'
+                }),
+                '/test/path.json'
+            );
         });
     });
 
