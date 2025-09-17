@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createGitService } from '../gitServices';
-import type { ExecAsyncFn } from '@main/utils/execAsync';
+import { createGitService } from '../gitService';
 import type { ProjectSettings, SpawnResult } from '@shared/types/types';
 
 describe('gitServices', () => {

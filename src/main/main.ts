@@ -35,20 +35,3 @@ console.debug("Electron process started:", process.pid, process.argv);
 app.whenReady().then(async () => {
     start(VITE_PUBLIC, VITE_DEV_SERVER_URL)
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

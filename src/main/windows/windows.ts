@@ -11,6 +11,8 @@ export const createWindow = (publicFolder: string, viteUrl?: string) : BrowserWi
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: false,
+            sandbox: true,
+            webSecurity: true,
         },
     });
 

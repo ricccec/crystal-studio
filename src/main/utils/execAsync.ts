@@ -1,12 +1,12 @@
 import type { SpawnResult } from "@shared/types/types";
-import { spawn, SpawnOptions, SpawnOptionsWithStdioTuple } from "node:child_process";
+import { spawn, SpawnOptions } from "node:child_process";
 
 export type ExecAsyncFn = (
     cmd: string,
     args?: string[] | null,
     shell?: string | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void | null,
-    opts?: SpawnOptions,
+    opts?: SpawnOptions & { timeoutMs?: number, signal?: AbortSignal },
 ) => Promise<SpawnResult>;
 
 const execAsync: ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
@@ -25,6 +25,14 @@ const execAsync: ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
             ...opts,
             shell: (shell ?? undefined),
             stdio: ['ignore', 'pipe', 'pipe'],
+        });
+
+        // Enable abort
+        const timeout = opts?.timeoutMs ? setTimeout(() => {
+            try { child.kill('SIGTERM'); } catch {}
+        }, opts.timeoutMs) : null;
+        opts?.signal?.addEventListener('abort', () => {
+            try { child.kill('SIGTERM'); } catch {}
         });
 
         console.debug(`Spawned ${child.spawnargs}`);
@@ -61,6 +69,9 @@ const execAsync: ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
         });
 
         child.on('close', (code, signal) => {
+
+            if (timeout) clearTimeout(timeout);
+
             // flush pending tails as final partial lines (ending === null)
             if (stdoutPending) {
                 try { onOutput?.('stdout', stdoutPending); } catch { /* swallow */ }
