@@ -1,43 +1,45 @@
-import type { ProjectService } from "@main/services/projectServices";
-import type { ReadSettingsFn, WriteSettingsFn } from "@main/utils/settings";
+import type { ProjectService } from "@main/services/projectService";
+import type { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 import type { ShowOpenDialogFn, ShowSaveDialogFn } from "@main/windows/windows";
 import { ActionResult, AppSettings, ProcessResult, ProjectSettings } from "@shared/types/types";
+import { IpcChannels } from "@shared/ipc";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import path from 'path';
+import { AppSettingsService } from "@main/services/appSettingsService";
 
 
 export function registerProjectLifecycleIpc(
     win: BrowserWindow,
-    appSettings: AppSettings,
     projectSettings: ProjectSettings,
     // Injected deps.
     showSaveDialog: ShowSaveDialogFn,
     showOpenDialog: ShowOpenDialogFn,
-    saveAppSettings: () => Promise<ActionResult>,
-    projectService: ProjectService,
-    writeSettings: WriteSettingsFn,
-    readSettings: ReadSettingsFn,
+    services: {
+        projectService: ProjectService,
+        appSettingsService: AppSettingsService,
+     },
 ) {
+    const { getAppSettings, saveAppSettings } = services.appSettingsService;
 
-    ipcMain.handle('get-project-settings', async (): Promise<ActionResult<ProjectSettings>> => { 
+    ipcMain.handle(IpcChannels.PROJECT_GET_SETTINGS, async (): Promise<ActionResult<ProjectSettings>> => { 
         return { ok: true, data: projectSettings };
     });
 
-    ipcMain.handle('update-settings', async (_, newSettings : Partial<ProjectSettings>) => {
+    ipcMain.handle(IpcChannels.PROJECT_UPDATE_SETTINGS, async (_, newSettings : Partial<ProjectSettings>) => {
         Object.assign(projectSettings, newSettings); 
     });
 
-    ipcMain.handle('new-project', async () : Promise<ActionResult> => {
-        projectService.newProject(projectSettings);
+    ipcMain.handle(IpcChannels.PROJECT_NEW, async () : Promise<ActionResult> => {
+        services.projectService.newProject(projectSettings);
         return { ok: true };
     });
 
-    ipcMain.handle('save-project', async () : Promise<ProcessResult> => {
+    ipcMain.handle(IpcChannels.PROJECT_SAVE, async () : Promise<ProcessResult> => {
         let savePath = projectSettings.projectPath;
         if (!savePath) {
             const result = await showSaveDialog(win, {
                 title: 'Save project',
-                defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+                defaultPath: getAppSettings().lastUsedPath ?? app.getPath('documents'),
                 filters: [
                     { name: 'JSON files', extensions: ['json'] },
                     { name: 'All Files', extensions: ['*'] },
@@ -47,25 +49,25 @@ export function registerProjectLifecycleIpc(
 
             // Update last used path and persist
             const filePath = result.data;
-            appSettings.lastUsedPath = path.parse(filePath).dir;
+            getAppSettings().lastUsedPath = path.parse(filePath).dir;
             await saveAppSettings();
 
             savePath = result.data;
         }
-        return await projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
+        return await services.projectService.saveProjectAs(projectSettings, savePath);
     });
 
-    ipcMain.handle('save-project-as', async (_, savePath: string) : Promise<ProcessResult> => {
-        return await projectService.saveProjectAs(projectSettings, savePath, { writeSettings });
+    ipcMain.handle(IpcChannels.PROJECT_SAVE_AS, async (_, savePath: string) : Promise<ProcessResult> => {
+        return await services.projectService.saveProjectAs(projectSettings, savePath);
     });
 
-    ipcMain.handle('open-project', async () : Promise<ProcessResult<ProjectSettings>> => {
+    ipcMain.handle(IpcChannels.PROJECT_OPEN, async () : Promise<ProcessResult<ProjectSettings>> => {
 
         let openPath = null;
         try {
             const res = await showOpenDialog(win, {
                 title: 'Open project',
-                defaultPath: appSettings.lastUsedPath ?? app.getPath('documents'),
+                defaultPath: getAppSettings().lastUsedPath ?? app.getPath('documents'),
                 filters: [
                     { name: 'JSON files', extensions: ['json'] },
                     { name: 'All Files', extensions: ['*'] },
@@ -79,10 +81,10 @@ export function registerProjectLifecycleIpc(
         }
 
         // Update last used path and persist
-        appSettings.lastUsedPath = path.parse(openPath).dir;
+        getAppSettings().lastUsedPath = path.parse(openPath).dir;
         await saveAppSettings();
 
-        const result = await projectService.openProject(openPath, { readSettings });
+        const result = await services.projectService.openProject(openPath);
         if (!result.ok) return { status: 'error', error: result.error };
         
         // Update project settings and return

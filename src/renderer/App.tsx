@@ -1,4 +1,4 @@
-import { TaskStreamPayload } from '@shared/ipc';
+import { TaskStreamPayload, IpcChannels } from '@shared/ipc';
 import type { ActionResult, ProcessResult, SpawnResult } from '@shared/types/types';
 import { app } from 'electron';
 import path from 'node:path';
@@ -20,7 +20,7 @@ const App = () => {
 
     // Register callback for app notifications
     React.useEffect(() => {
-        const unsub = window.api.on('task:stream', (payload) => {
+        const unsub = window.api.on(IpcChannels.TASK_STREAM, (payload) => {
             if (!payload) return;
 
             const p = payload as TaskStreamPayload;

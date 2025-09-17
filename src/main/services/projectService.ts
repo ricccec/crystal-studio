@@ -1,34 +1,14 @@
-import { ReadSettingsFn, WriteSettingsFn } from "@main/utils/settings";
+import { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
 import { ActionResult, ProcessResult, ProjectSettings } from "@shared/types/types";
 import { app } from "electron";
 import path from 'path';
 
-export type NewProjectFn = (
-    projectSettings: ProjectSettings,
-) => void;
+type ProjectServiceDeps = {
+    readSettings: ReadJsonFn;
+    writeSettings: WriteJsonFn;
+};
 
-export type OpenProjectFn = (
-  loadPath: string,
-  deps: { readSettings: ReadSettingsFn }
-) => Promise<ActionResult<ProjectSettings>>;
-
-export type SaveProjectFn = (
-  projectSettings: ProjectSettings,
-  deps: { writeSettings: WriteSettingsFn }
-) => Promise<ProcessResult>;
-
-export type SaveProjectAsFn = (
-  projectSettings: ProjectSettings,
-  savePath: string,
-  deps: { writeSettings: WriteSettingsFn }
-) => Promise<ProcessResult>;
-
-export type SaveProjectForRecoveryFn = (
-    projectSettings: ProjectSettings,
-    deps: { writeSettings: WriteSettingsFn }
-) => Promise<ActionResult>;
-
-export type ProjectService = {
+type ProjectService = {
     newProject: NewProjectFn;
     openProject: OpenProjectFn;
     saveProject: SaveProjectFn;
@@ -36,25 +16,64 @@ export type ProjectService = {
     saveProjectForRecovery: SaveProjectForRecoveryFn;
 };
 
-export const newProject: NewProjectFn = (projectSettings) => {
+type NewProjectFn = (
+    projectSettings: ProjectSettings,
+) => void;
+
+type OpenProjectFn = (
+  loadPath: string,
+) => Promise<ActionResult<ProjectSettings>>;
+
+type SaveProjectFn = (
+  projectSettings: ProjectSettings,
+) => Promise<ProcessResult>;
+
+type SaveProjectAsFn = (
+  projectSettings: ProjectSettings,
+  savePath: string,
+) => Promise<ProcessResult>;
+
+type SaveProjectForRecoveryFn = (
+    projectSettings: ProjectSettings,
+) => Promise<ActionResult>;
+
+function createProjectService(deps: ProjectServiceDeps): ProjectService {
+    return {
+        newProject: (projectSettings) => newProject(projectSettings),
+        openProject: (loadPath) => openProject(loadPath, deps),
+        saveProject: (projectSettings) => saveProject(projectSettings, deps),
+        saveProjectAs: (projectSettings, savePath) => saveProjectAs(projectSettings, savePath, deps),
+        saveProjectForRecovery: (projectSettings) => saveProjectForRecovery(projectSettings, deps),
+    };
+}
+
+const newProject = (projectSettings: ProjectSettings): void => {
     (Object.keys(projectSettings) as Array<keyof ProjectSettings>)
         .forEach((key) => projectSettings[key] = null);
 }
 
-export const openProject: OpenProjectFn = async (loadPath, deps) => {
+const openProject = async (
+    loadPath: string,
+    deps: ProjectServiceDeps
+): Promise<ActionResult<ProjectSettings>> => {
     return await deps.readSettings(loadPath);
 };
 
-export const saveProject: SaveProjectFn = async (projectSettings, deps) => {
-
+const saveProject = async (
+    projectSettings: ProjectSettings,
+    deps: ProjectServiceDeps
+): Promise<ProcessResult> => {
     const savePath = projectSettings.projectPath;
-    if (!savePath) return { status: 'error', error: "Path not set"};
+    if (!savePath) return { status: 'error', error: "Path not set" };
 
     return await saveProjectAs(projectSettings, savePath, deps);
-
 };
 
-export const saveProjectAs: SaveProjectAsFn = async (projectSettings, savePath, deps) =>  {
+const saveProjectAs = async (
+    projectSettings: ProjectSettings,
+    savePath: string,
+    deps: ProjectServiceDeps
+): Promise<ProcessResult> => {
 
     // Cache prev name, path and tempName in case writing goes wrong
     const oldName = projectSettings.projectName;
@@ -92,7 +111,10 @@ export const saveProjectAs: SaveProjectAsFn = async (projectSettings, savePath, 
     }
 };
 
-export const saveProjectForRecovery: SaveProjectForRecoveryFn = async (projectSettings,deps) => {
+const saveProjectForRecovery = async (
+    projectSettings: ProjectSettings,
+    deps: ProjectServiceDeps
+): Promise<ActionResult> => {
 
     // Use the project temp name or generate one on the fly
     const filename = projectSettings.tempName ?? `proj_${Date.now()}`;
@@ -102,12 +124,9 @@ export const saveProjectForRecovery: SaveProjectForRecoveryFn = async (projectSe
     return await deps.writeSettings(projectSettings, targetPath);
 };
 
-export const projectService: ProjectService = {
-    newProject,
-    openProject,
-    saveProject,
-    saveProjectAs,
-    saveProjectForRecovery,
+export type {
+    ProjectServiceDeps,
+    ProjectService,
 };
 
-export default projectService;
+export default createProjectService;

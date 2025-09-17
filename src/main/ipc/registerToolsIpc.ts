@@ -1,51 +1,53 @@
 import { BrowserWindow, ipcMain } from "electron";
 import type { ActionResult, AppSettings, ProjectSettings, SpawnResult } from "@shared/types/types"; 
-import type { ProjectService } from "@main/services/projectServices";
-import type { WriteSettingsFn } from "@main/utils/settings";
-import type { GitService } from "@main/services/gitServices";
-import { TaskStreamPayload } from "@shared/ipc";
+import type { ProjectService } from "@main/services/projectService";
+import type { WriteJsonFn } from "@main/utils/jsonPersistence";
+import type { GitService } from "@main/services/gitService";
+import { TaskStreamPayload, IpcChannels } from "@shared/ipc";
 import { MakeOptions, MakeService } from "@main/services/makeService";
 import { ToolsService } from "@main/services/toolsService";
-import findToolCandidate from "@main/utils/findToolCandidate";
 import path from "node:path";
 import { EmulatorService } from "@main/services/emulatorService";
+import { AppSettingsService } from "@main/services/appSettingsService";
 
 export function registerToolsIpc(
     win: BrowserWindow,
     projectSettings: ProjectSettings,
-    appSettings: AppSettings,
     // Injected deps.
-    projectService: ProjectService,
-    toolsService: ToolsService,
-    gitService: GitService,
-    makeService: MakeService,
-    emulatorService: EmulatorService,
-    writeSettings: WriteSettingsFn,
+    services: {
+        appSettingsService: AppSettingsService,
+        projectService: ProjectService,
+        toolsService: ToolsService,
+        gitService: GitService,
+        makeService: MakeService,
+        emulatorService: EmulatorService,
+    },
 ) {
 
-    ipcMain.handle('check-tools', async () => {
+    const { getAppSettings } = services.appSettingsService;
+
+    ipcMain.handle(IpcChannels.TOOLS_CHECK, async () => {
 
         const tools = [
             { name: 'git', path: null, aliases: null },
-            { name: 'gcc', path: appSettings.gccDir },
-            { name: 'bash', path: appSettings.bashDir, aliases: getToolAliases('bash')},
-            { name: 'rgbasm', path: appSettings.rgbdsDir },
-            { name: 'rgbfix', path: appSettings.rgbdsDir },
-            { name: 'rgbgfx', path: appSettings.rgbdsDir },
-            { name: 'rgbfix', path: appSettings.rgbdsDir },
-            { name: 'make', path: appSettings.makeDir, aliases: getToolAliases('make')},
+            { name: 'gcc', path: getAppSettings().gccDir },
+            { name: 'bash', path: getAppSettings().bashDir, aliases: getToolAliases('bash')},
+            { name: 'rgbasm', path: getAppSettings().rgbdsDir },
+            { name: 'rgbgfx', path: getAppSettings().rgbdsDir },
+            { name: 'rgbfix', path: getAppSettings().rgbdsDir },
+            { name: 'make', path: getAppSettings().makeDir, aliases: getToolAliases('make')},
           
         ]
         
-        return await toolsService.checkTools(tools);
+        return await services.toolsService.checkTools(tools);
     });
 
-    ipcMain.handle('git-open-repo', async (_, repoPath: string) : Promise<ActionResult> => {
-        const res = await gitService.openGitRepo(projectSettings, repoPath);
+    ipcMain.handle(IpcChannels.GIT_OPEN_REPO, async (_, repoPath: string) : Promise<ActionResult> => {
+        const res = await services.gitService.openGitRepo(projectSettings, repoPath);
         if (!res.ok) return res;
 
         // Backup project for rcovery
-        const bkupRes = await projectService.saveProjectForRecovery(projectSettings, { writeSettings });
+        const bkupRes = await services.projectService.saveProjectForRecovery(projectSettings);
         if (!bkupRes.ok) {
             // Can't save project for recovery -> keep going, but notify the renderer
             win.webContents.send('app:notification', { data: `Cannot backup project for recovery: ${bkupRes.error}` });
@@ -55,57 +57,57 @@ export function registerToolsIpc(
         
     });
 
-    ipcMain.handle('git-clone', async (
+    ipcMain.handle(IpcChannels.GIT_CLONE, async (
         _,
         repoUrl: string,
         targetPath: string,
     ) : Promise<SpawnResult> => {
-        const res = await gitService.cloneGitRepo(
+        const res = await services.gitService.cloneGitRepo(
             repoUrl, targetPath,
             null, // No need for custom bash for git 
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
-                win.webContents.send('task:stream', payload);
+                win.webContents.send(IpcChannels.TASK_STREAM, payload);
             },
         );
         return res;
     });
 
-    ipcMain.handle('git-clone-default', async (
+    ipcMain.handle(IpcChannels.GIT_CLONE_DEFAULT, async (
         _,
         targetPath: string,
     ) : Promise<SpawnResult> => {
-        const repoUrl = appSettings.repoUrl;
-        const res = await gitService.cloneGitRepo(
+        const repoUrl = getAppSettings().repoUrl;
+        const res = await services.gitService.cloneGitRepo(
             repoUrl, targetPath,
             null, // No need for custom bash for git
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'git-clone', stream, text };
-                win.webContents.send('task:stream', payload);
+                win.webContents.send(IpcChannels.TASK_STREAM, payload);
             },
         );
         return res;
     });
 
-    ipcMain.handle('run-emulator', async () : Promise<SpawnResult> => {
+    ipcMain.handle(IpcChannels.EMULATOR_RUN, async () : Promise<SpawnResult> => {
         
         const repoDir = projectSettings.repoPath;
         if (!repoDir) return { status: 'error', error: 'Pret repo not set' };
         
-        const romName = appSettings.rom;
+        const romName = getAppSettings().rom;
         if (!romName) return { status: 'error', error: 'Missing ROM name in config. file' };
 
-        const emulatorPath = appSettings.emulator;
+        const emulatorPath = getAppSettings().emulator;
         if (!emulatorPath) return { status: 'error', error: 'Missing emulator path in config. file' };
         
         const romPath = path.join(repoDir, romName);
 
-        const r = await emulatorService.loadRom(emulatorPath, romPath);
+        const r = await services.emulatorService.loadRom(emulatorPath, romPath);
         return r;
 
     });
 
-    ipcMain.handle('run-make', async (
+    ipcMain.handle(IpcChannels.BUILD_RUN_MAKE, async (
         _,
     ) : Promise<SpawnResult> => {
         
@@ -114,13 +116,13 @@ export function registerToolsIpc(
         }
 
         const makeCwd = projectSettings.repoPath;
-        const makePath = appSettings.makeDir;
+        const makePath = getAppSettings().makeDir;
         const makeAliases = getToolAliases('make');
-        const makeNumJobs = appSettings.make.numJobs;
-        const makeTarget = appSettings.make.target;
+        const makeNumJobs = getAppSettings().make.numJobs;
+        const makeTarget = getAppSettings().make.target;
         
         // Check make is available
-        const checkRes = (await toolsService.checkTool(
+        const checkRes = (await services.toolsService.checkTool(
             'make',
             makePath,
             makeAliases
@@ -132,10 +134,10 @@ export function registerToolsIpc(
         
         // Check custom bash is available
         let bash = null;
-        if (appSettings.bashDir) {
-            const bashRes = (await toolsService.checkTool(
+        if (getAppSettings().bashDir) {
+            const bashRes = (await services.toolsService.checkTool(
                 'bash',
-                appSettings.bashDir,
+                getAppSettings().bashDir,
                 getToolAliases('bash')
             ));
             if (bashRes.ok) bash = bashRes.exec;
@@ -143,34 +145,34 @@ export function registerToolsIpc(
 
         // Prepare PATH for make so it can find its deps.
         const envForMake = buildPathForMake(
-            appSettings.rgbdsDir,
-            appSettings.gccDir,
-            appSettings.cygwinDir,
+            getAppSettings().rgbdsDir,
+            getAppSettings().gccDir,
+            getAppSettings().cygwinDir,
         );
 
         // Run make
-        const res = await makeService.runMake(
+        const res = await services.makeService.runMake(
             makeCwd,
             makeNumJobs,
             makeTarget,
             {
                 env: envForMake,
                 makeExec,
-                rgbdsDir: appSettings.rgbdsDir,
+                rgbdsDir: getAppSettings().rgbdsDir,
                 shell: bash,
             },
             (stream, text) => { 
                 const payload: TaskStreamPayload = { task: 'make', stream, text };
-                win.webContents.send('task:stream', payload);
+                win.webContents.send(IpcChannels.TASK_STREAM, payload);
             },
         );
         return res;
     });
 
     function getToolAliases(tool: string): string[] {
-        if (!appSettings.toolAliases[tool])
+        if (!getAppSettings().toolAliases[tool])
             return [];
-        const toolAliases = appSettings.toolAliases[tool];
+        const toolAliases = getAppSettings().toolAliases[tool];
         return toolAliases[process.platform] ?? [];
     }
 
