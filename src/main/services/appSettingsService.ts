@@ -66,7 +66,6 @@ const initAppSettingsImpl = async (
     settingsPath: string,
     deps: AppSettingsServiceDeps,
 ): Promise<ActionResult<AppSettings>> => {
-
     const appSettings = withDefaultAppSettings();
 
     // Load app settings
@@ -124,8 +123,8 @@ const saveAppSettingsImpl = async (
         // Merge existing with current (current overwrites existing)
         const merged = { ...prevSettings, ...appSettings };
 
-        deps.writeSettings(merged, settingsPath);
-        return { ok: true };
+        const r = await deps.writeSettings(merged, settingsPath);
+        return r;
     } catch (e: any) {
         return { ok: false, error: e?.message ?? String(e) };
     }
