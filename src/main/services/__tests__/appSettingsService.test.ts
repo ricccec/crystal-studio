@@ -11,14 +11,36 @@ vi.mock('electron', () => ({
 }));
 
 // Mock path.join to use consistent separators
-vi.mock('path', async () => {
-    const actual = await vi.importActual('path') as any;
-    return {
-        ...actual,
-        join: (...args: string[]) => args.join('/'),
-        parse: actual.parse
-    };
-});
+vi.mock('path', () => ({
+    default: {
+        join: (...args: string[]) => {
+            const result = args.filter(arg => arg).join('/');
+            return result;
+        },
+        parse: (p: string) => {
+            const lastSlash = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
+            return {
+                dir: lastSlash === -1 ? '' : p.substring(0, lastSlash),
+                base: lastSlash === -1 ? p : p.substring(lastSlash + 1),
+                name: p.split('.')[0],
+                ext: p.includes('.') ? '.' + p.split('.').pop() : ''
+            };
+        }
+    },
+    join: (...args: string[]) => {
+        const result = args.filter(arg => arg).join('/');
+        return result;
+    },
+    parse: (p: string) => {
+        const lastSlash = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
+        return {
+            dir: lastSlash === -1 ? '' : p.substring(0, lastSlash),
+            base: lastSlash === -1 ? p : p.substring(lastSlash + 1),
+            name: p.split('.')[0],
+            ext: p.includes('.') ? '.' + p.split('.').pop() : ''
+        };
+    }
+}));
 
 // Mock constants
 vi.mock('@shared/constants', () => ({
@@ -31,7 +53,7 @@ describe('appSettingsService', () => {
     let appSettingsService: ReturnType<typeof createAppSettingsService>;
 
     beforeEach(() => {
-        mockWriteSettings = vi.fn();
+        mockWriteSettings = vi.fn().mockResolvedValue({ ok: true });
         mockReadSettings = vi.fn();
 
         appSettingsService = createAppSettingsService({
@@ -48,7 +70,7 @@ describe('appSettingsService', () => {
             const result = await appSettingsService.initAppSettings();
 
             expect(result.ok).toBe(false); // Should fail when file read fails, even with ENOENT
-            expect(mockReadSettings).toHaveBeenCalledWith('\\test\\settings.json');
+            expect(mockReadSettings).toHaveBeenCalledWith('/test/settings.json');
         });
 
         it('should initialize app settings with loaded data when file exists', async () => {
@@ -61,7 +83,7 @@ describe('appSettingsService', () => {
             const result = await appSettingsService.initAppSettings();
 
             expect(result.ok).toBe(true);
-            expect(mockReadSettings).toHaveBeenCalledWith('\\test\\settings.json');
+            expect(mockReadSettings).toHaveBeenCalledWith('/test/settings.json');
             
             // Verify settings were merged with defaults
             const settings = appSettingsService.getAppSettings();
@@ -125,7 +147,7 @@ describe('appSettingsService', () => {
             const result = await appSettingsService.loadAppSettings();
 
             expect(result.ok).toBe(true);
-            expect(mockReadSettings).toHaveBeenCalledWith('\\test\\settings.json');
+            expect(mockReadSettings).toHaveBeenCalledWith('/test/settings.json');
             
             // Verify settings were updated
             const settings = appSettingsService.getAppSettings();
@@ -200,7 +222,7 @@ describe('appSettingsService', () => {
             const result = await appSettingsService.saveAppSettings(false);
 
             expect(result.ok).toBe(true);
-            expect(mockWriteSettings).toHaveBeenCalledWith(settings, '\\test\\settings.json');
+            expect(mockWriteSettings).toHaveBeenCalledWith(settings, '/test/settings.json');
         });
 
         it('should save current settings and preserve existing when requested', async () => {
@@ -221,7 +243,7 @@ describe('appSettingsService', () => {
             // Verify that the service tried to merge existing settings
             expect(mockWriteSettings).toHaveBeenCalled();
             const callArgs = mockWriteSettings.mock.calls[0];
-            expect(callArgs[1]).toBe('\\test\\settings.json');
+            expect(callArgs[1]).toBe('/test/settings.json');
             // The merged settings should have both existing and current values
             // Note: customKey will be filtered out by schema validation
             expect(callArgs[0]).toMatchObject({
@@ -234,9 +256,7 @@ describe('appSettingsService', () => {
 
         it('should handle write errors gracefully', async () => {
             const writeError = new Error('Write permission denied');
-            mockWriteSettings.mockImplementation(() => {
-                throw writeError;
-            });
+            mockWriteSettings.mockResolvedValue({ ok: false, error: 'Write permission denied' });
 
             const result = await appSettingsService.saveAppSettings(false);
 
@@ -272,7 +292,7 @@ describe('appSettingsService', () => {
             // Should still save successfully, just without preserving existing
             expect(result.ok).toBe(true);
             const settings = appSettingsService.getAppSettings();
-            expect(mockWriteSettings).toHaveBeenCalledWith(settings, '\\test\\settings.json');
+            expect(mockWriteSettings).toHaveBeenCalledWith(settings, '/test/settings.json');
         });
     });
 
@@ -288,7 +308,7 @@ describe('appSettingsService', () => {
             const result = await appSettingsService.resetAppSettings();
 
             expect(result.ok).toBe(true);
-            expect(mockWriteSettings).toHaveBeenCalledWith(defaultAppSettings, '\\test\\settings.json');
+            expect(mockWriteSettings).toHaveBeenCalledWith(defaultAppSettings, '/test/settings.json');
             
             // Verify internal state was reset
             const currentSettings = appSettingsService.getAppSettings();
@@ -297,9 +317,7 @@ describe('appSettingsService', () => {
 
         it('should handle write errors during reset but still update internal state', async () => {
             const writeError = new Error('Write failed');
-            mockWriteSettings.mockImplementation(() => {
-                throw writeError;
-            });
+            mockWriteSettings.mockResolvedValue({ ok: false, error: 'Write failed' });
 
             const result = await appSettingsService.resetAppSettings();
             
