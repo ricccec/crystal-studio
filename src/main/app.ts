@@ -7,7 +7,6 @@ import execAsync from "./utils/execAsync";
 import { isDirectory, isExecutable } from "@shared/utils/utils";
 import findToolCandidate from "./utils/findToolCandidate";
 import createServiceContainer, { ServiceContainer } from "./services/serviceContainer";
-import createTaskManagerService from "./services/TaskManagerService";
 
 let win : BrowserWindow | null = null;
 
@@ -31,12 +30,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         writeJson,
     });
 
-    // Load services
-    const taskMgrService = createTaskManagerService({
-        execAsync,
-    })
-
-    // Load app settings before creating the window    
+    // Init services    
     const r = await serviceContainer.initServices();
     if (!r.ok) throw new Error(`Failed to initialize services: ${r.error}`);
 
