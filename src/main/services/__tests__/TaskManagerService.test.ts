@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ChildProcess } from 'node:child_process';
-import { createTaskManagerService } from '../TaskManagerService';
+import createTaskManagerService from '../TaskManagerService';
 import type { ExecAsyncFn } from '@main/utils/execAsync';
 import type { SpawnResult } from '@shared/types/types';
 
