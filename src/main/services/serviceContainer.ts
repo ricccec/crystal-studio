@@ -9,6 +9,7 @@ import createAppSettingsService from "./appSettingsService";
 import type { AppSettingsService } from "./appSettingsService";
 import { ActionResult } from "@shared/types/types";
 import { ReadJsonFn, WriteJsonFn } from "@main/utils/jsonPersistence";
+import createTaskManagerService, { TaskManagerService } from "./TaskManagerService";
 
 type ServiceContainerDeps = {
     appSettingsPath?: string;
@@ -28,6 +29,7 @@ type ServiceContainer = {
     gitService: GitService;
     makeService: MakeService;
     emulatorService: EmulatorService;
+    taskMgrService: TaskManagerService;
 }
 
 function createServiceContainer({
@@ -41,25 +43,28 @@ function createServiceContainer({
 }: ServiceContainerDeps): ServiceContainer {   
 
     // Create services
+    const taskMgrService = createTaskManagerService({
+        execAsync,
+    });
     const appSettingsService = createAppSettingsService({
         settingsPath: appSettingsPath, 
         readSettings: readJson,
         writeSettings: writeJson,
-    })
+    });
     const gitService = createGitService({
-        execAsync,
+        execAsync: taskMgrService.execAsync,
         isDirectory,
     });
     const makeService = createMakeService({
-        execAsync,
+        execAsync: taskMgrService.execAsync,
         isDirectory,
     });
     const toolsService = createToolsService(process.platform, {
-        execAsync,
+        execAsync: taskMgrService.execAsync,
         findToolCandidate,
     });
     const emulatorService = createEmulatorService({
-        execAsync,
+        execAsync: taskMgrService.execAsync,
         isExecutable,
     });
     const projectService = createProjectService({
@@ -68,6 +73,7 @@ function createServiceContainer({
     });
 
     return {
+        taskMgrService,
         appSettingsService,
         gitService,
         makeService,

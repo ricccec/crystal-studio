@@ -1,12 +1,18 @@
 import type { SpawnResult } from "@shared/types/types";
-import { spawn, SpawnOptions } from "node:child_process";
+import { ChildProcess, spawn, SpawnOptions } from "node:child_process";
+
+export type ExecAsyncOptions = SpawnOptions & {
+    timeoutMs?: number;
+    signal?: AbortSignal;
+    onSpawn?: (child: ChildProcess) => void; 
+};
 
 export type ExecAsyncFn = (
     cmd: string,
     args?: string[] | null,
     shell?: string | null,
     onOutput?: (stream: 'stdout' | 'stderr', s: string) => void | null,
-    opts?: SpawnOptions & { timeoutMs?: number, signal?: AbortSignal },
+    opts?: ExecAsyncOptions,
 ) => Promise<SpawnResult>;
 
 const execAsync: ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
@@ -26,6 +32,9 @@ const execAsync: ExecAsyncFn = (cmd, args, shell, onOutput, opts) => {
             shell: (shell ?? undefined),
             stdio: ['ignore', 'pipe', 'pipe'],
         });
+
+        // Notify caller
+        try { opts?.onSpawn?.(child); } catch {}
 
         // Enable abort
         const timeout = opts?.timeoutMs ? setTimeout(() => {

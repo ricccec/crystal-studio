@@ -30,7 +30,7 @@ export async function start(publicFolder: string, viteUrl?: string) {
         writeJson,
     });
 
-    // Load app settings before creating the window    
+    // Init services    
     const r = await serviceContainer.initServices();
     if (!r.ok) throw new Error(`Failed to initialize services: ${r.error}`);
 
