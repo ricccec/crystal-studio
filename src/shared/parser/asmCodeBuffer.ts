@@ -3,7 +3,7 @@ import { AsmLine, LineId } from "./asmLine";
 export interface AsmCodeBuffer {
 
     getLineById(id: LineId): { line: AsmLine; index: number } | null;
-    readRangeByIds(ids: LineId[]): AsmLine[];
+    getLinesByIds(ids: LineId[]): { line: AsmLine; index: number }[];
     getIndexOfLine(id: LineId): number | null;
 
     editLineById(id: LineId, newText: string): AsmLine;
@@ -22,9 +22,12 @@ export interface AsmCodeBuffer {
     removeLinesByIds(ids: LineId[]): number; // returns number removed
 
     // moving
-    moveLineToIndex(id: LineId, destIndex: number): boolean;
-    moveLinesToIndex(ids: LineId[], destIndex: number): boolean;
-    swapLines(id1: LineId, id2: LineId): boolean;
+    moveLineToIndex(id: LineId, destIndex: number): any;
+    swapLines(id1: LineId, id2: LineId): any;
+
+    moveRangeToIndex(rangeFrom: number, rangeLength: number, destIndex: number): any;
+    removeRange(rangeFrom: number, rangeLength: number): any;
+    replaceRange(rangeFrom: number, rangeLength: number, newTexts: string[]): AsmLine[];
 
     getAllLines(): AsmLine[];
     toSource(): string;
