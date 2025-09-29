@@ -22,7 +22,7 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
 
     getLineById(id: LineId): { line: AsmLine; index: number } | null {
         const idx = this.idToIndex[id];
-        return idx !== undefined ? {
+        return (idx !== undefined && idx !== -1) ? {
             line: this.lines[idx],
             index: idx
         } : null;
@@ -133,6 +133,9 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
             getLinesByIds(ids)
             .sort((a, b) => b!.index - a!.index);
         
+        // Only proceed if there are actual lines to remove
+        if (linesToRemove.length === 0) return 0;
+        
         // Remove lines from end to beginning
         linesToRemove.forEach(line => {
             this.lines.splice(line.index!, 1);
@@ -176,8 +179,7 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
         const result1 = this.getLineById(id1);
         const result2 = this.getLineById(id2);
         
-        if (!result1) throw new Error(`Line with ID ${id1} not found`);
-        if (!result2) throw new Error(`Line with ID ${id2} not found`);
+        if (!result1 || !result2) return false;
         
         const { line: line1, index: index1 } = result1;
         const { line: line2, index: index2 } = result2;
@@ -256,7 +258,7 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
 
     getIndexOfLine(id: LineId): number | null {
         const idx = this.idToIndex[id];
-        return idx !== undefined ? idx : null;
+        return (idx !== undefined && idx !== -1) ? idx : null;
     }
 
     getAllLines(): AsmLine[] {
@@ -301,8 +303,8 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
         const trimmed = rawLine.trim();
         return {
             id: id,
-            text: trimmed,
-            length: trimmed.length,
+            text: rawLine, // Don't use trimmed version
+            length: rawLine.length,
             isEmpty: (trimmed === ''),
             isComment: trimmed.startsWith(';'),
         }
