@@ -44,70 +44,58 @@ type InsertWithIdOp =
     & InsertOp
     & {id?: number};
 
-export class LineManager {
-    private lines: AsmLine[] = [];
-    private idToIndex: number[] = [];
-    private lineIdCount = 0;
-    private version = 0;
+export type LineFactory = (text: string, id?: LineId) => AsmLine;
 
-    constructor(initialLines: AsmLine[] = []) {
-        this.lines = [...initialLines];
-        this.lineIdCount = initialLines.length > 0 ? Math.max(...initialLines.map(l => l.id)) + 1 : 0;
-        this.rebuildIndexMap();
-    }
+/**
+ * Execute a batch of line operations on the provided lines array.
+ * Returns a new array with all operations applied atomically.
+ * 
+ * @param lines - The initial array of lines to operate on
+ * @param ops - Array of operations to execute
+ * @param createLine - Factory function to create new AsmLine instances
+ * @returns New array of lines with operations applied
+ * @throws Error if any operation is invalid or conflicts occur
+ */
+export function execBatchLineOps(
+    lines: readonly AsmLine[], 
+    ops: AsmLineOp[], 
+    createLine: LineFactory
+): AsmLine[] {
 
-    /**
-     * Execute a batch of operations atomically.
-     * All operations use indices relative to the initial state.
-     * Version is only incremented if all operations succeed.
-     */
-    execBatchOps(ops: AsmLineOp[]): void {
-        if (ops.length === 0) return;
+    if (ops.length === 0) return [...lines];
 
-        // Create a snapshot of the current state for potential rollback
-        const originalLineIdCount = this.lineIdCount;
+    // Step 1: Create a working copy of the lines array
+    const workingLines: (AsmLine | null)[] = [...lines];
+    
+    // Step 2: First pass - execute edits and mark deletes as null
+    // Also validate all operations and check for conflicts
+    validateAndExecuteFirstPass(ops, workingLines, lines.length, createLine);
+    
+    // Step 3: Convert move operations to insert operations
+    const opsWithMovesConverted = convertMovesToInserts(ops, workingLines);
+    
+    // Step 4: Execute insert operations in proper order
+    const finalLines = executeInsertOperations(opsWithMovesConverted, workingLines, createLine);
 
-        try {
-            // Step 1: Create a working copy of the lines array
-            const workingLines: (AsmLine | null)[] = [...this.lines];
-            
-            // Step 2: First pass - execute edits and mark deletes as null
-            // Also validate all operations and check for conflicts
-            this.validateAndExecuteFirstPass(ops, workingLines);
-            
-            // Step 3: Convert move operations to insert operations
-            const opsWithMovesConverted = this.convertMovesToInserts(ops, workingLines);
-            
-            // Step 4: Execute insert operations in proper order
-            const finalLines = this.executeInsertOperations(opsWithMovesConverted, workingLines);
+    // Step 5: Remove all null elements and return
+    return finalLines.filter(line => line !== null) as AsmLine[];
+}
 
-            // Step 5: Remove all null elements
-            const cleanLines = finalLines.filter(line => line !== null);
-            
-            // Step 6: Replace original lines and rebuild index map
-            this.lines = cleanLines;
-            this.rebuildIndexMap();
-            
-            // Increment version only after successful completion
-            this.version++;
-            
-        } catch (error) {
-            // Rollback on any failure
-            this.lineIdCount = originalLineIdCount;
-            throw error;
-        }
-    }
-
-    /**
-     * Step 2: First pass - execute edits and mark deletes as null
-     * Also validate all operations and check for conflicts
-     */
-    private validateAndExecuteFirstPass(ops: AsmLineOp[], workingLines: (AsmLine | null)[]): void {
+/**
+ * Step 2: First pass - execute edits and mark deletes as null
+ * Also validate all operations and check for conflicts
+ */
+function validateAndExecuteFirstPass(
+    ops: AsmLineOp[], 
+    workingLines: (AsmLine | null)[], 
+    bufferSize: number, 
+    createLine: LineFactory
+): void {
         const deletedIndices = new Set<number>();
 
         for (const op of ops) {
             // Validate operation ranges
-            this.validateOperationRange(op, this.lines.length);
+            validateOperationRange(op, bufferSize);
 
             // Validate operations sequence
             switch (op.type) {
@@ -133,7 +121,7 @@ export class LineManager {
                     const editOp = op as EditOp;
                     // Execute edit immediately - preserves line ID
                     const originalLine = workingLines[editOp.index] as AsmLine;
-                    workingLines[editOp.index] = this.createLine(editOp.newText, originalLine.id);
+                    workingLines[editOp.index] = createLine(editOp.newText, originalLine.id);
                     break;
 
                 case LineOpType.DELETE:
@@ -156,10 +144,10 @@ export class LineManager {
         }
     }
 
-    /**
-     * Step 3: Convert move operations to insert operations
-     */
-    private convertMovesToInserts(ops: AsmLineOp[], workingLines: (AsmLine | null)[]): InsertWithIdOp[] {
+/**
+ * Step 3: Convert move operations to insert operations
+ */
+function convertMovesToInserts(ops: AsmLineOp[], workingLines: (AsmLine | null)[]): InsertWithIdOp[] {
         const result: InsertWithIdOp[] = [];
 
         for (const op of ops) {
@@ -190,10 +178,14 @@ export class LineManager {
         return result;
     }
 
-    /**
-     * Step 4: Execute insert operations in proper order
-     */
-    private executeInsertOperations(insertOps: InsertWithIdOp[], workingLines: (AsmLine | null)[]): (AsmLine | null)[] {
+/**
+ * Step 4: Execute insert operations in proper order
+ */
+function executeInsertOperations(
+    insertOps: InsertWithIdOp[], 
+    workingLines: (AsmLine | null)[], 
+    createLine: LineFactory
+): (AsmLine | null)[] {
 
         // Sort by index descending, preserving original order for same index
         const sortedInserts = insertOps
@@ -211,17 +203,17 @@ export class LineManager {
 
         // Execute inserts in sorted order
         for (const op of sortedInserts) {
-            const newLine = this.createLine(op.text, op.id);
+            const newLine = createLine(op.text, op.id);
             result.splice(op.index, 0, newLine);
         }
 
         return result;
     }
 
-    /**
-     * Validate operation range
-     */
-    private validateOperationRange(op: AsmLineOp, bufferSize: number): void {
+/**
+ * Validate operation range
+ */
+function validateOperationRange(op: AsmLineOp, bufferSize: number): void {
         switch (op.type) {
             case LineOpType.DELETE:
             case LineOpType.EDIT:
@@ -250,76 +242,3 @@ export class LineManager {
         }
     }
 
-    /**
-     * Create a new line
-     */
-    private createLine(text: string, id?: number): AsmLine {
-        const processedText =  this.stripLineEndings(text);
-        return {
-            id: id ?? this.getNextId(),
-            text: processedText,
-            length: processedText.length,
-            isEmpty: (processedText.trim() === ''),
-            isComment: processedText.trim().startsWith(';'),
-        };
-    }
-    
-    /**
-     * remove newline and carriage return characters 
-     */
-    private stripLineEndings(text: string): string {
-        return text.replace(/^[\n\r]+|[\n\r]+$/g, '');
-    }
-
-    /**
-     * Get the next available line ID
-     */
-    private getNextId(): LineId {
-        return this.lineIdCount++;
-    }
-
-    /**
-     * Rebuild the index mapping after operations
-     */
-    private rebuildIndexMap(): void {
-        // Ensure array can hold all current IDs
-        this.ensureIdToIndexCapacity(this.lineIdCount);
-
-        // Clear existing mappings
-        this.idToIndex.fill(-1);
-        
-        this.lines.forEach((line,idx)=> {
-            this.idToIndex[line.id] = idx;
-        });
-    }
-
-    /**
-     * Ensure the idToIndex array has sufficient capacity
-     */
-    private ensureIdToIndexCapacity(minCapacity: number): void {
-        while (this.idToIndex.length < minCapacity) {
-            this.idToIndex.push(-1);
-        }
-    }
-
-    // Public getters for read access
-    getLines(): readonly AsmLine[] {
-        return this.lines;
-    }
-
-    getVersion(): number {
-        return this.version;
-    }
-
-    getLineById(id: LineId): { line: AsmLine; index: number } | null {
-        const idx = this.idToIndex[id];
-        return (idx !== undefined && idx !== -1) ? {
-            line: this.lines[idx],
-            index: idx
-        } : null;
-    }
-
-    getLineCount(): number {
-        return this.lines.length;
-    }
-}
