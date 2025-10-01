@@ -194,7 +194,7 @@ function executeInsertOperations(
                 if (a.op.index !== b.op.index) {
                     return b.op.index - a.op.index; // Descending by index
                 }
-                return a.originalIndex - b.originalIndex; // Preserve order for same index
+                return b.originalIndex - a.originalIndex; // Ascending by original order for same index
             })
             .map(({ op }) => op);
 
