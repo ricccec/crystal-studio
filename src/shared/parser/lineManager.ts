@@ -8,31 +8,41 @@ export enum LineOpType {
     FAIL = 'fail'
 }
 
-export interface InsertOp {
+export type InsertOp = {
     type: LineOpType.INSERT;
     index: number;
     text: string;
-    id?: number;
 }
 
-export interface DeleteOp {
+export type DeleteOp = {
     type: LineOpType.DELETE;
     index: number;
 }
 
-export interface EditOp {
+export type EditOp = {
     type: LineOpType.EDIT;
     index: number;
     newText: string;
 }
 
-export interface MoveOp {
+export type MoveOp = {
     type: LineOpType.MOVE;
     indexFrom: number;
     indexTo: number;
 }
 
-export type AsmLineOp = InsertOp | DeleteOp | EditOp | MoveOp;
+export type FailOp = {
+    type: LineOpType.FAIL;
+    index: number;
+    message: string;
+}
+
+export type AsmLineOp = InsertOp | DeleteOp | EditOp | MoveOp | FailOp;
+
+// Used internally for move operations
+type InsertWithIdOp = 
+    & InsertOp
+    & {id?: number};
 
 export class LineManager {
     private lines: AsmLine[] = [];
@@ -57,165 +67,208 @@ export class LineManager {
         // Create a snapshot of the current state for potential rollback
         const originalLineIdCount = this.lineIdCount;
 
-        // Operations' target
-        const opsTarget: (AsmLine | null)[] = [...this.lines];
-
         try {
-            // Convert complex operations to basic insert/delete operations
-            const basicOps = this.convertComplexOps(ops);
+            // Step 1: Create a working copy of the lines array
+            const workingLines: (AsmLine | null)[] = [...this.lines];
             
-            // Sort operations by index descending, DELETE first, but preserve original order for same index
-            const sortedOps = this.sortBasicOps(basicOps);
+            // Step 2: First pass - execute edits and mark deletes as null
+            // Also validate all operations and check for conflicts
+            this.validateAndExecuteFirstPass(ops, workingLines);
             
-            // Execute basic operations
-            for (const op of sortedOps) {
-                //Check operation is valid
-                this.checkBasicOp(op);
-                
-                switch (op.type) {
-                    case LineOpType.INSERT:
-                        const newLine = this.createLine(op.text, op.id);
-                        opsTarget.splice(op.index, 0, newLine);
-                        break;
-                    case LineOpType.DELETE:
-                        opsTarget[op.index] = null;
-                        break;
-                }
-            }
+            // Step 3: Convert move operations to insert operations
+            const opsWithMovesConverted = this.convertMovesToInserts(ops, workingLines);
+            
+            // Step 4: Execute insert operations in proper order
+            const finalLines = this.executeInsertOperations(opsWithMovesConverted, workingLines);
+
+            // Step 5: Remove all null elements
+            const cleanLines = finalLines.filter(line => line !== null);
+            
+            // Step 6: Replace original lines and rebuild index map
+            this.lines = cleanLines;
+            this.rebuildIndexMap();
+            
+            // Increment version only after successful completion
+            this.version++;
+            
         } catch (error) {
             // Rollback on any failure
             this.lineIdCount = originalLineIdCount;
             throw error;
         }
-
-        // Remove deleted lines and update state
-        this.lines = opsTarget.filter((line) => line !== null);
-
-        // Rebuild index map after all operations
-        this.rebuildIndexMap();
-            
-        // Increment version only after successful completion
-        this.version++;
     }
 
     /**
-     * Convert complex operations (edit, move) to basic insert/delete operations
+     * Step 2: First pass - execute edits and mark deletes as null
+     * Also validate all operations and check for conflicts
      */
-    private convertComplexOps(ops: AsmLineOp[]): (InsertOp | DeleteOp)[] {
-        const basicOps: (InsertOp | DeleteOp)[] = [];
+    private validateAndExecuteFirstPass(ops: AsmLineOp[], workingLines: (AsmLine | null)[]): void {
+        const deletedIndices = new Set<number>();
+
         for (const op of ops) {
-            basicOps.push(...this.convertComplexOp(op));
+            // Validate operation ranges
+            this.validateOperationRange(op, this.lines.length);
+
+            // Validate operations sequence
+            switch (op.type) {
+                case LineOpType.EDIT:
+                case LineOpType.DELETE:
+                    if (workingLines[op.index] === null) {
+                        throw new Error(`Cannot delete line at index ${op.index}: line was already deleted`);
+                    }
+                    break;
+
+                case LineOpType.MOVE:
+                    const moveOp = op as MoveOp;
+                    if (workingLines[moveOp.indexFrom] === null) {
+                        throw new Error(`Cannot move line from index ${moveOp.indexFrom}: line was already deleted`);
+                    }
+                    // Move validation will be done later
+                    break;
+            }
+
+            // Execute operation
+            switch (op.type) {
+                case LineOpType.EDIT:
+                    const editOp = op as EditOp;
+                    // Execute edit immediately - preserves line ID
+                    const originalLine = workingLines[editOp.index] as AsmLine;
+                    workingLines[editOp.index] = this.createLine(editOp.newText, originalLine.id);
+                    break;
+
+                case LineOpType.DELETE:
+                    const deleteOp = op as DeleteOp;
+                    // Mark as deleted (null) but keep array structure intact
+                    workingLines[deleteOp.index] = null;
+                    break;
+
+                case LineOpType.MOVE:
+                case LineOpType.INSERT:
+                    // Move and insert operations will be done later
+                    break;
+
+                case LineOpType.FAIL:
+                    throw new Error('Operation batch failed due to explicit FAIL operation');
+
+                default:
+                    throw new Error(`Unknown operation type: ${(op as any).type}`);
+            }
         }
-        return basicOps;
     }
 
     /**
-     * Convert a complex operation (edit, move) to basic insert/delete operations
+     * Step 3: Convert move operations to insert operations
      */
-    private convertComplexOp(op: AsmLineOp): (InsertOp | DeleteOp)[] {
-        switch (op.type) {
-            case LineOpType.INSERT:
-            case LineOpType.DELETE:
-                return [op];
-            case LineOpType.EDIT:
-                const editOp = op as EditOp;
-                const lineToEdit = this.lines[editOp.index];
-                // Edit = Delete + Insert at same position
-                return [
-                    {
-                        type: LineOpType.DELETE,
-                        index: editOp.index,
-                    },
-                    {
-                        type: LineOpType.INSERT,
-                        index: editOp.index,
-                        text: editOp.newText,
-                        id: lineToEdit.id,
-                    },
-                ];
-            case LineOpType.MOVE:
+    private convertMovesToInserts(ops: AsmLineOp[], workingLines: (AsmLine | null)[]): InsertWithIdOp[] {
+        const result: InsertWithIdOp[] = [];
+
+        for (const op of ops) {
+            if (op.type === LineOpType.MOVE) {
                 const moveOp = op as MoveOp;
-                // Move = Extract line + Delete from source + Insert at destination
-                const lineToMove = this.lines[moveOp.indexFrom];
-                const textsToMove = lineToMove.text;
-                return [
-                    // Delete from source
-                    {
-                        type: LineOpType.DELETE,
-                        index: moveOp.indexFrom,
-                    },
-                    // Insert at destination
-                    {
-                        type: LineOpType.INSERT,
-                        index: moveOp.indexTo,
-                        text: textsToMove,
-                        id: lineToMove.id,
-                    },
-                ];
-            default:
-                throw new Error(`Unknown operation type: ${(op as any).type}`);
+                const lineToMove = workingLines[moveOp.indexFrom];
+                
+                if (lineToMove === null) {
+                    throw new Error(`Cannot move line from index ${moveOp.indexFrom}: line was deleted`);
+                }
+
+                // Replace move with insert operation
+                result.push({
+                    type: LineOpType.INSERT,
+                    index: moveOp.indexTo,
+                    text: lineToMove.text,
+                    id: lineToMove.id
+                } as InsertWithIdOp);
+
+                // Mark source as deleted
+                workingLines[moveOp.indexFrom] = null;
+            } else if (op.type === LineOpType.INSERT) {
+                result.push(op as InsertWithIdOp);
+            }
+            // Skip edit and delete operations - already handled
         }
+
+        return result;
     }
 
     /**
-     * Sort operations by index descending, preserving order for operations on same index
+     * Step 4: Execute insert operations in proper order
      */
-    private sortBasicOps(ops: (InsertOp | DeleteOp)[]): (InsertOp | DeleteOp)[] {
-        return ops
+    private executeInsertOperations(insertOps: InsertWithIdOp[], workingLines: (AsmLine | null)[]): (AsmLine | null)[] {
+
+        // Sort by index descending, preserving original order for same index
+        const sortedInserts = insertOps
             .map((op, originalIndex) => ({ op, originalIndex }))
             .sort((a, b) => {
-                // First sort by index descending
                 if (a.op.index !== b.op.index) {
-                    return b.op.index - a.op.index;
+                    return b.op.index - a.op.index; // Descending by index
                 }
-                if (a.op.type !== b.op.type) {
-                    return (a.op.type === LineOpType.DELETE) ? -1 : +1;
-                }
-                // Then by original order for same index
-                return a.originalIndex - b.originalIndex;
+                return a.originalIndex - b.originalIndex; // Preserve order for same index
             })
             .map(({ op }) => op);
+
+        // Create a copy to work with
+        let result: (AsmLine | null)[] = [...workingLines];
+
+        // Execute inserts in sorted order
+        for (const op of sortedInserts) {
+            const newLine = this.createLine(op.text, op.id);
+            result.splice(op.index, 0, newLine);
+        }
+
+        return result;
     }
 
-    private checkBasicOp(op: InsertOp | DeleteOp): void {
+    /**
+     * Validate operation range
+     */
+    private validateOperationRange(op: AsmLineOp, bufferSize: number): void {
         switch (op.type) {
-            case LineOpType.INSERT:
-                this.checkInsert(op);
-                break;
             case LineOpType.DELETE:
-                this.checkDelete(op);
+            case LineOpType.EDIT:
+                const indexOp = op as DeleteOp | EditOp;
+                if (indexOp.index < 0 || indexOp.index >= bufferSize) {
+                    throw new Error(`Invalid ${op.type} index ${indexOp.index}: buffer contains ${bufferSize} lines`);
+                }
                 break;
-            default:
-                throw new Error(`Unexpected basic operation type: ${(op as any).type}`);
-        }
-    }
 
-    private checkInsert(op: InsertOp): void {
-        const { index, text } = op;
-        if (index < 0 || index > this.lines.length) {
-            throw new Error(`Invalid insert index ${index}: buffer contains ${this.lines.length} lines`);
-        }
-    }
+            case LineOpType.INSERT:
+                const insertOp = op as InsertOp;
+                if (insertOp.index < 0 || insertOp.index > bufferSize) {
+                    throw new Error(`Invalid insert index ${insertOp.index}: buffer contains ${bufferSize} lines`);
+                }
+                break;
 
-    private checkDelete(op: DeleteOp): void {
-        const index = op.index;
-        if (index < 0 || index >= this.lines.length) {
-            throw new Error(`Invalid delete index ${index}: buffer contains ${this.lines.length} lines`);
+            case LineOpType.MOVE:
+                const moveOp = op as MoveOp;
+                if (moveOp.indexFrom < 0 || moveOp.indexFrom >= bufferSize) {
+                    throw new Error(`Invalid move source index ${moveOp.indexFrom}: buffer contains ${bufferSize} lines`);
+                }
+                if (moveOp.indexTo < 0 || moveOp.indexTo > bufferSize) {
+                    throw new Error(`Invalid move destination index ${moveOp.indexTo}: buffer contains ${bufferSize} lines`);
+                }
+                break;
         }
     }
 
     /**
-     * Create a new line with unique ID
+     * Create a new line
      */
     private createLine(text: string, id?: number): AsmLine {
-        const trimmed = text.replace(/^[\n\r]+|[\n\r]+$/g, '');
+        const processedText =  this.stripLineEndings(text);
         return {
             id: id ?? this.getNextId(),
-            text,
-            length: text.length,
-            isEmpty: (trimmed === ''),
-            isComment: trimmed.startsWith(';'),
+            text: processedText,
+            length: processedText.length,
+            isEmpty: (processedText.trim() === ''),
+            isComment: processedText.trim().startsWith(';'),
         };
+    }
+    
+    /**
+     * remove newline and carriage return characters 
+     */
+    private stripLineEndings(text: string): string {
+        return text.replace(/^[\n\r]+|[\n\r]+$/g, '');
     }
 
     /**
@@ -266,4 +319,7 @@ export class LineManager {
         } : null;
     }
 
+    getLineCount(): number {
+        return this.lines.length;
+    }
 }
