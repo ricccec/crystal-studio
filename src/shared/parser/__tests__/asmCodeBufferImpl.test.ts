@@ -14,7 +14,7 @@ describe('AsmCodeBufferImpl', () => {
     const newline = '\n';
 
     beforeEach(() => {
-        buffer = new AsmCodeBufferImpl(sampleLines, newline);
+        buffer = AsmCodeBufferImpl.fromLines(sampleLines, newline);
     });
 
     describe('Constructor and Basic Properties', () => {
@@ -453,10 +453,10 @@ describe('AsmCodeBufferImpl', () => {
         });
 
         it('should handle different newline types', () => {
-            const windowsBuffer = new AsmCodeBufferImpl(['LINE1', 'LINE2'], '\r\n');
+            const windowsBuffer = AsmCodeBufferImpl.fromLines(['LINE1', 'LINE2'], '\r\n');
             expect(windowsBuffer.toSource()).toBe('LINE1\r\nLINE2');
             
-            const macBuffer = new AsmCodeBufferImpl(['LINE1', 'LINE2'], '\r');
+            const macBuffer = AsmCodeBufferImpl.fromLines(['LINE1', 'LINE2'], '\r');
             expect(macBuffer.toSource()).toBe('LINE1\rLINE2');
         });
     });
@@ -494,13 +494,13 @@ describe('AsmCodeBufferImpl', () => {
 
     describe('Edge Cases and Error Handling', () => {
         it('should handle empty buffer initialization', () => {
-            const emptyBuffer = new AsmCodeBufferImpl([], '\n');
+            const emptyBuffer = AsmCodeBufferImpl.fromLines([], '\n');
             expect(emptyBuffer.getAllLines()).toHaveLength(0);
             expect(emptyBuffer.getVersion()).toBe(0);
         });
 
         it('should handle whitespace and special characters', () => {
-            const specialBuffer = new AsmCodeBufferImpl([
+            const specialBuffer = AsmCodeBufferImpl.fromLines([
                 '  \t  ',  // Whitespace only
                 '\t; Comment with tabs',
                 'NORMAL LINE',
@@ -533,7 +533,7 @@ describe('AsmCodeBufferImpl', () => {
         it('should handle large operations efficiently', () => {
             // Create a larger buffer for performance testing
             const largeLines = Array(1000).fill(0).map((_, i) => `LINE ${i}`);
-            const largeBuffer = new AsmCodeBufferImpl(largeLines, '\n');
+            const largeBuffer = AsmCodeBufferImpl.fromLines(largeLines, '\n');
             
             // Perform bulk operations
             const insertTexts = Array(100).fill(0).map((_, i) => `INSERT ${i}`);
