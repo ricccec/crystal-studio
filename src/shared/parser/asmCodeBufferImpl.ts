@@ -51,7 +51,7 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
             if (!result) throw new Error(`Line with ID ${id} not found`);
             
             const { line, index } = result;
-            const updatedLine = this.createLineWithId(newTexts[i], line.id);
+            const updatedLine = this.createLine(newTexts[i], line.id);
 
             // Replace the line at the same position
             this.lines[index] = updatedLine;
@@ -295,19 +295,25 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
         return this.lineIdCount++;
     }
 
-    private createLine(rawLine: string): AsmLine {
-        return this.createLineWithId(rawLine, this.getNextId());
-    }
-
-    private createLineWithId(rawLine: string, id: LineId): AsmLine {
-        const trimmed = rawLine.trim();
+    /**
+     * Create a new line
+     */
+    private createLine(text: string, id?: number): AsmLine {
+        const processedText =  this.stripLineEndings(text);
         return {
-            id: id,
-            text: rawLine, // Don't use trimmed version
-            length: rawLine.length,
-            isEmpty: (trimmed === ''),
-            isComment: trimmed.startsWith(';'),
-        }
+            id: id ?? this.getNextId(),
+            text: processedText,
+            length: processedText.length,
+            isEmpty: (processedText.trim() === ''),
+            isComment: processedText.trim().startsWith(';'),
+        };
+    }
+    
+    /**
+     * remove newline and carriage return characters 
+     */
+    private stripLineEndings(text: string): string {
+        return text.replace(/^[\n\r]+|[\n\r]+$/g, '');
     }
 
 
