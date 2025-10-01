@@ -9,7 +9,25 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
     private version = 0;
     private newline: "\n" | "\r\n" | "\r";
 
-    constructor(rawLines: string[], newline: "\n" | "\r\n" | "\r") {
+    /**
+     * Parse raw ASM text into an AsmCodeBufferImpl instance
+     */
+    static parseAsmCode(asmSource: string): AsmCodeBufferImpl {
+        const newline = detectNewline(asmSource);
+        const lines = asmSource.split(/\r\n|\r|\n/); // Allow for messed up newlines
+
+        return new AsmCodeBufferImpl(lines, newline);
+    }
+
+    /**
+     * Create an AsmCodeBufferImpl from pre-split lines with specific newline style
+     * Primarily for testing purposes
+     */
+    static fromLines(rawLines: string[], newline: "\n" | "\r\n" | "\r" = '\n'): AsmCodeBufferImpl {
+        return new AsmCodeBufferImpl(rawLines, newline);
+    }
+
+    private constructor(rawLines: string[], newline: "\n" | "\r\n" | "\r") {
         
         this.newline = newline;
         
@@ -316,5 +334,17 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
         return text.replace(/^[\n\r]+|[\n\r]+$/g, '');
     }
 
+}
 
+/**
+ * Detect the newline style used in the source.
+ */
+function detectNewline(asmSource: string): "\n" | "\r\n" | "\r" {
+    const crlf = asmSource.indexOf('\r\n');
+    if (crlf !== -1) return '\r\n';
+
+    const cr = asmSource.indexOf("\r");
+    if (cr !== -1) return "\r";
+
+    return "\n"; // default
 }
