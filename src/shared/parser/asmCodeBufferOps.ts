@@ -61,21 +61,12 @@ export function insertLinesAfterId(buffer: AsmCodeBuffer, targetId: LineId, ...n
 
 export function removeLinesById(buffer: AsmCodeBuffer, ...ids: LineId[]): number {
     if (ids.length === 0) return 0;
-    
-    // Get indices of existing lines only
-    const indicesToDelete = ids
-        .map(id => buffer.getIndexOfLine(id))
-        .filter((index): index is number => index !== null);
-    
-    if (indicesToDelete.length === 0) return 0;
-    
-    const deleteOps = indicesToDelete.map(index => ({
-        type: LineOpType.DELETE as const,
-        index
-    }));
-    buffer.execBatchLineOps(deleteOps);
-    
-    return indicesToDelete.length;
+    // Remove invalid IDs
+    const idsToDelete = ids.filter((id) => buffer.getLineById(id) !== null);
+    // Use replaceLines to remove the lines
+    replaceLines(buffer, idsToDelete, []);
+
+    return idsToDelete.length;
 }
 
 export function swapLines(buffer: AsmCodeBuffer, id1: LineId, id2: LineId): boolean {
@@ -133,46 +124,18 @@ export function removeRange(buffer: AsmCodeBuffer, rangeFrom: number, rangeLengt
     return rangeLength;
 }
 
-/**
- * Replace a range of lines with new content
- * @param buffer The buffer to modify
- * @param rangeFrom Starting index of the range
- * @param rangeLength Number of lines to replace
- * @param newTexts Array of new texts to replace with
- * @returns Array of new lines that were inserted
- */
 export function replaceRange(buffer: AsmCodeBuffer, rangeFrom: number, rangeLength: number, newTexts: string[]): AsmLine[] {
-    const allLines = buffer.getAllLines();
-    
     // Validate range parameters
+    const allLines = buffer.getAllLines();
     if (rangeFrom < 0 || rangeLength < 0 || rangeFrom + rangeLength > allLines.length) {
         throw new Error(`Invalid range [${rangeFrom}, ${rangeLength}]: buffer contains ${allLines.length} lines`);
     }
-    
-    const ops = [];
-    
-    // First, delete the existing range
-    for (let i = rangeLength - 1; i >= 0; i--) {
-        ops.push({
-            type: LineOpType.DELETE as const,
-            index: rangeFrom + i
-        });
-    }
-    
-    // Then, insert the new lines at the start of the range
-    for (let i = 0; i < newTexts.length; i++) {
-        ops.push({
-            type: LineOpType.INSERT as const,
-            index: rangeFrom + i,
-            text: newTexts[i]
-        });
-    }
-    
-    buffer.execBatchLineOps(ops);
-    
-    // Return the newly inserted lines
-    const updatedLines = buffer.getAllLines();
-    return updatedLines.slice(rangeFrom, rangeFrom + newTexts.length);
+    // Get line IDs within range
+    const rangeIds = buffer.getAllLines()
+        .slice(rangeFrom, rangeFrom + rangeLength)
+        .map((line) => line.id);
+    // Use replaceLines to replace the range
+    return replaceLines(buffer, rangeIds, newTexts);
 }
 
 /**
