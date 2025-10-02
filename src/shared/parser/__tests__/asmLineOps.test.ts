@@ -585,7 +585,7 @@ describe('execBatchLineOps', () => {
             expect(result[4999].text).toBe('Line 9000'); // Moved line
         });
 
-        it('should handle large number of operations on a larhe buffer efficiently', () => {
+        it('should handle large number of operations on a large buffer efficiently', () => {
             const largeBuffer: AsmLine[] = [];
             for (let i = 0; i < 10000; i++) {
                 largeBuffer.push(createLine(`Line ${i}`));
