@@ -191,4 +191,28 @@ describe('AsmCodeBuffer', () => {
             expect(lines[1].length).toBe(10);
         });
     });
+
+    describe('Edge Cases and Error Handling', () => {
+        it('should handle empty buffer initialization', () => {
+            const emptyBuffer = AsmCodeBuffer.fromLines([]);
+            expect(emptyBuffer.getAllLines()).toHaveLength(0);
+            expect(emptyBuffer.getVersion()).toBe(0);
+        });
+
+        it('should handle whitespace and special characters', () => {
+            const specialBuffer = AsmCodeBuffer.fromLines([
+                '  \t  ',  // Whitespace only
+                '\t; Comment with tabs',
+                'NORMAL LINE',
+                '!!!Special chars!!!'
+            ]);
+            
+            const lines = specialBuffer.getAllLines();
+            expect(lines[0].isEmpty).toBe(true); // Tabs and whitespaces
+            expect(lines[1].isComment).toBe(true);
+            expect(lines[1].text).toBe('\t; Comment with tabs');
+            expect(lines[3].text).toBe('!!!Special chars!!!');
+        });
+
+    });
 });
