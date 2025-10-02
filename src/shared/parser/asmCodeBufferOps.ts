@@ -175,6 +175,53 @@ export function replaceRange(buffer: AsmCodeBuffer, rangeFrom: number, rangeLeng
     return updatedLines.slice(rangeFrom, rangeFrom + newTexts.length);
 }
 
+/**
+ * Replace lines by their IDs with new text content
+ * @param buffer The buffer to modify
+ * @param ids Array of line IDs to replace (must have at least one element)
+ * @param newTexts Array of new text strings to replace with
+ * @returns Array of new lines that were inserted
+ */
+export function replaceLines(buffer: AsmCodeBuffer, ids: LineId[], newTexts: string[]): AsmLine[] {
+    if (ids.length === 0) {
+        throw new Error('IDs array must have at least one element');
+    }
+    
+    // Get all line positions and validate IDs exist
+    const lineIndexes = getLinesById(buffer, ...ids).map((line) => buffer.getIndexOfLine(line.id)) as number[];
+    
+    // Step 1: Insert new lines at the positions of the original lines
+    const ops = [];
+    for (let i = 0; i < newTexts.length; i++) {
+        const targetPosition = lineIndexes[Math.min(i, lineIndexes.length - 1)];
+        ops.push({
+            type: LineOpType.INSERT as const,
+            index: targetPosition,
+            text: newTexts[i]
+        });
+    }
+    
+    // Step 2: Delete all the original lines
+    for (const index of lineIndexes) {
+        ops.push({
+            type: LineOpType.DELETE as const,
+            index: index
+        });
+    }
+    
+    buffer.execBatchLineOps(ops);
+    
+    // Return the newly inserted lines
+    const result: AsmLine[] = [];
+    for (let i = 0; i < newTexts.length; i++) {
+        const newLineIndx = lineIndexes[Math.min(i, lineIndexes.length - 1)] + Math.max(0, i - lineIndexes.length + 1);
+        const line = buffer.getAllLines()[newLineIndx];
+        result.push(line);
+    }
+
+    return result;
+}
+
 function getLinesById(buffer: AsmCodeBuffer, ...ids: LineId[]): AsmLine[] {
     return ids.map(id => {
         const result = buffer.getLineById(id);
