@@ -1,7 +1,6 @@
 import { AsmLine, LineId } from "./asmLine";
-import { AsmCodeBuffer } from "./asmCodeBuffer";
 
-export class AsmCodeBufferImpl implements AsmCodeBuffer {
+export class AsmCodeBufferImpl {
 
     private lines: AsmLine[];
     private idToIndex: number[] = [];    // idToIndex[lineId] = index in lines[]
@@ -46,7 +45,7 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
         } : null;
     }
 
-    getLinesByIds(ids: LineId[]): { line: AsmLine; index: number }[] {
+    getLinesByIds(...ids: LineId[]): { line: AsmLine; index: number }[] {
         return ids
             .map(id => this.getLineById(id))
             .filter(result => result !== null);
@@ -148,7 +147,7 @@ export class AsmCodeBufferImpl implements AsmCodeBuffer {
         // Sort indices in descending order to remove from end first
         // This prevents index shifting from affecting subsequent removals
         const linesToRemove = this.
-            getLinesByIds(ids)
+            getLinesByIds(...ids)
             .sort((a, b) => b!.index - a!.index);
         
         // Only proceed if there are actual lines to remove
