@@ -333,4 +333,97 @@ describe('AsmCodeBufferImpl Module Functions', () => {
         });
     });
 
+    describe('replaceLines', () => {
+        it('should just delete lines when third argument is empty', () => {
+            const originalLength = buffer.getAllLines().length;
+            const newLines = BufferOps.replaceLines(buffer, [1, 3], []);
+
+            expect(newLines).toHaveLength(0); // No new lines created
+            expect(buffer.getAllLines()).toHaveLength(originalLength - 2);
+            expect(buffer.getLineById(1)).toBeNull;
+            expect(buffer.getLineById(3)).toBeNull;
+        });
+
+        it('should replace lines with same number of new texts', () => {
+            const newLines = BufferOps.replaceLines(buffer, [1, 3], ['REPLACED COMMENT', 'REPLACED EMPTY']);
+            
+            expect(newLines).toHaveLength(2);
+            expect(buffer.getAllLines()).toHaveLength(5); // Same number of lines
+            expect(buffer.getAllLines()[1].text).toBe('REPLACED COMMENT');
+            expect(buffer.getAllLines()[3].text).toBe('REPLACED EMPTY');
+            expect(buffer.getVersion()).toBe(1);
+        });
+        
+        it('should insert a single block of lines when just one ID is provided', () => {
+            const newLines = BufferOps.replaceLines(buffer, [2], ['NEW LINE 1', 'NEW LINE 2', 'NEW LINE 3']);
+            
+            expect(newLines).toHaveLength(3);
+            expect(buffer.getAllLines()).toHaveLength(7); // 5 original - 1 removed + 3 added
+            expect(buffer.getAllLines()[2].text).toBe('NEW LINE 1');
+            expect(buffer.getAllLines()[3].text).toBe('NEW LINE 2');
+            expect(buffer.getAllLines()[4].text).toBe('NEW LINE 3');
+        });
+
+        it('should replace lines with more new texts than IDs', () => {
+            const newLines = BufferOps.replaceLines(buffer, [2, 4], ['NEW LINE 1', 'NEW LINE 2', 'NEW LINE 3']);
+            
+            expect(newLines).toHaveLength(3);
+            expect(buffer.getAllLines()).toHaveLength(6); // 5 original - 2 removed + 3 added
+            expect(buffer.getAllLines()[2].text).toBe('NEW LINE 1');
+            expect(buffer.getAllLines()[4].text).toBe('NEW LINE 2');
+            expect(buffer.getAllLines()[5].text).toBe('NEW LINE 3');
+        });
+
+        it('should replace lines with fewer new texts than IDs', () => {
+            const newLines = BufferOps.replaceLines(buffer, [0, 1, 2], ['SINGLE REPLACEMENT']);
+            
+            expect(newLines).toHaveLength(1);
+            expect(buffer.getAllLines()).toHaveLength(3); // 5 original - 3 removed + 1 added
+            expect(buffer.getAllLines()[0].text).toBe('SINGLE REPLACEMENT');
+            expect(buffer.getLineById(0)).toBeNull;
+            expect(buffer.getLineById(1)).toBeNull;
+            expect(buffer.getLineById(2)).toBeNull;
+          
+        });
+
+        it('should return the correct lines when provided with fewer IDs then new texts', () => {
+            const newLines = BufferOps.replaceLines(buffer, [0, 4], ['FIRST', 'SECOND', 'THIRD', 'FOURTH']);
+
+            expect(newLines).toHaveLength(4);
+            expect(newLines[0].text).toBe('FIRST');
+            expect(newLines[1].text).toBe('SECOND');
+            expect(newLines[2].text).toBe('THIRD');
+            expect(newLines[3].text).toBe('FOURTH');
+        });
+
+        it('should return the correct lines when provided with same number of IDs and texts', () => {
+            const newLines = BufferOps.replaceLines(buffer, [0, 2, 4], ['FIRST', 'SECOND', 'THIRD']);
+
+            expect(newLines).toHaveLength(3);
+            expect(newLines[0].text).toBe('FIRST');
+            expect(newLines[1].text).toBe('SECOND');
+            expect(newLines[2].text).toBe('THIRD');
+        });
+
+        it('should return the correct lines when provided with more IDs then new texts', () => {
+            const newLines = BufferOps.replaceLines(buffer, [0, 1, 3, 4], ['FIRST', 'SECOND', 'THIRD']);
+
+            expect(newLines).toHaveLength(3);
+            expect(newLines[0].text).toBe('FIRST');
+            expect(newLines[1].text).toBe('SECOND');
+            expect(newLines[2].text).toBe('THIRD');
+        });
+
+        it('should throw error for empty IDs array', () => {
+            expect(() => BufferOps.replaceLines(buffer, [], ['NEW TEXT']))
+                .toThrowError();
+        });
+
+        it('should throw error for invalid IDs', () => {
+            expect(() => BufferOps.replaceLines(buffer, [999], ['NEW TEXT']))
+                .toThrowError();
+        });
+
+    });
+
 });
