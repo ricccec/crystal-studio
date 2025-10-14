@@ -178,6 +178,30 @@ describe('compareSimplePatterns', () => {
         });
     });
 
+    describe('spaces and tabs', () => {
+        it('should ignore leading spaces', () => {
+            expect(comparePatterns('ld reg', '  ld reg')).toBe(true);
+        });
+
+        it('should ignore leading tabs', () => {
+            expect(comparePatterns('ld reg', '\tld reg')).toBe(true);
+        });
+
+        
+        it('should ignore trailing spaces', () => {
+            expect(comparePatterns('ld reg', 'ld reg  ')).toBe(true);
+        });
+
+        it('should ignore trailing tabs', () => {
+            expect(comparePatterns('ld reg', 'ld reg\t')).toBe(true);
+        });
+
+        it('should ignore multiple spaces and tabs inside patterns', () => {
+            expect(comparePatterns('ld\treg a  b', 'ld reg   a\t b')).toBe(true);
+        });
+
+    });
+
     describe('edge cases', () => {
         it('should not match malformed placeholder in both patterns', () => {
             expect(comparePatterns('ld {reg', 'ld {reg')).toBe(false);

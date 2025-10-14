@@ -302,12 +302,12 @@ describe('parseBranches', () => {
         });
 
         it('should not flag non-equivalent branches even for complex cases', () => {
-            const result = parseBranches('a {} {} d|{} b {w}');
+            const result = parseBranches('a {}\t{} d|{} b {w}');
             expect(result.ok).toBe(true);
         });
 
         it('should flag equivalent branches even for complex cases', () => {
-            const result = parseBranches('a {}-{} d|{} b-cde {w} ');
+            const result = parseBranches('a\t{}-{} d|{} b-cde {w} ');
             expect(result.ok).toBe(false);
         });
     });
