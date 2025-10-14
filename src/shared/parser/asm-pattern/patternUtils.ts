@@ -49,8 +49,10 @@ export function normalizePattern(pattern: string): string {
     const withoutLabels = pattern.replace(getPlaceholderNameRegex(), '{}');
     // Replace tabs and multiple spaces with single space
     const normalized = withoutLabels.replace(/\s+/g, ' ');
-    
-    return normalized;
+    // Trim leading/trailing spaces
+    const trimmed = normalized.trim();
+
+    return trimmed;
 }
 
 /**
