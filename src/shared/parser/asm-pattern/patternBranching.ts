@@ -70,7 +70,7 @@ export function parseBranches(pattern: string):
  * @param pattern The pattern with optional branches
  * @returns ParsePatternResult with success status, error message, branches, and placeholders
  */
-function validateBranches(branches: SimplePattern[]): string | undefined {
+export function validateBranches(branches: SimplePattern[]): string | undefined {
     
     // Store sorted placeholder arrays for value-based comparison
     const branchesPlaceholders: string[][] = [];
@@ -83,7 +83,7 @@ function validateBranches(branches: SimplePattern[]): string | undefined {
 
         // Multiple branches with no placeholder?
         if (hasBranchWithNoPlaceholders && sortedPlaceholders.length === 0) {
-            return `Multiple branches with no placeholders in ${branches}`;
+            return `Multiple branches with no placeholders in branching [${branches.map(b=>b.pattern).join('|')}]`;
         }
         hasBranchWithNoPlaceholders = sortedPlaceholders.length === 0;
 
@@ -106,7 +106,7 @@ function validateBranches(branches: SimplePattern[]): string | undefined {
             const br1 = branches[i];
             const br2 = branches[j];
             if (compareSimplePatterns(br1, br2)) {
-                return `Branches ${br1} and ${br2} are equivalent`;
+                return `Branches ${br1.pattern} and ${br2.pattern} are equivalent`;
             }
         }
     }

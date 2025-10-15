@@ -10,8 +10,8 @@
  * @returns Success status plus an array of subpatterns or an error message if validation fails
  */
 export function splitPattern(pattern: string): 
-    | { success: false, error: string }
-    | { success: true, subpatterns: string[] } {
+    | { ok: false, error: string }
+    | { ok: true, subpatterns: string[] } {
         
     const subpatterns: string[] = [];
     let currentPart = '';
@@ -24,7 +24,7 @@ export function splitPattern(pattern: string):
         
         // Handle escaped brackets
         if (char === '\\' && (nextChar === '[' || nextChar === ']')) {
-            currentPart += nextChar;
+            currentPart += char + nextChar;
             i += 2;
             continue;
         }
@@ -33,8 +33,8 @@ export function splitPattern(pattern: string):
         if (char === '[') {
             if (bracketDepth > 0) {
                 return {
-                    success: false,
-                    error: `Nested unescaped brackets at position i in pattern "${pattern}". Use \\[ and \\] for literal brackets.`
+                    ok: false,
+                    error: `Nested unescaped brackets at position ${i} in pattern "${pattern}". Use \\[ and \\] for literal brackets.`
                 };
             }
             bracketDepth++;
@@ -46,7 +46,7 @@ export function splitPattern(pattern: string):
         } else if (char === ']') {
             if (bracketDepth === 0) {
                 return {
-                    success: false,
+                    ok: false,
                     error: `Closing unescaped brackets without opening at position i in pattern "${pattern}". Use \\[ and \\] for literal brackets.`
                 };
             }
@@ -66,7 +66,7 @@ export function splitPattern(pattern: string):
     // Check for unclosed brackets
     if (bracketDepth > 0) {
         return {
-            success: false,
+            ok: false,
             error: `Unclosed brackets in pattern "${pattern}".`
         };
     }
@@ -76,5 +76,5 @@ export function splitPattern(pattern: string):
         subpatterns.push(currentPart);
     }
     
-    return { success: true, subpatterns };
+    return { ok: true, subpatterns };
 }
