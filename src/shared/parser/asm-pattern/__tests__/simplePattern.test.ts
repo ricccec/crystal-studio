@@ -202,14 +202,31 @@ describe('compareSimplePatterns', () => {
 
     });
 
-    describe('edge cases', () => {
-        it('should not match malformed placeholder in both patterns', () => {
-            expect(comparePatterns('ld {reg', 'ld {reg')).toBe(false);
+    describe('malformed patterns', () => {
+        it('should throw error for malformed placeholder in both patterns', () => {
+            expect(() => comparePatterns('ld {reg', 'ld {reg')).toThrowError();
+        });
+    
+        it('should throw error for malformed vs well-formed', () => {
+            expect(() => comparePatterns('ld {reg', 'ld {reg}')).toThrowError();
+        });
+    
+        it('should throw error for well-formed vs  malformed', () => {
+            expect(() => comparePatterns('ld {reg}', 'ld {reg')).toThrowError();
         });
 
-        it('should not match malformed vs well-formed', () => {
-            expect(comparePatterns('ld {reg', 'ld {reg}')).toBe(false);
+        it('should throw error for consecutive placeholders in first pattern', () => {
+            expect(() => comparePatterns('ld {reg}_{test}', 'ld {reg}_a')).toThrowError();
         });
+
+        
+        it('should throw error for consecutive placeholders in second pattern', () => {
+            expect(() => comparePatterns('ld {reg}_a', 'ld {reg}_{test}')).toThrowError();
+        });
+    
+    });
+
+    describe('edge cases', () => {
 
         it('should handle placeholder at very end', () => {
             expect(comparePatterns('ld {reg}', 'ld abc')).toBe(true);
@@ -217,6 +234,33 @@ describe('compareSimplePatterns', () => {
 
         it('should handle placeholder with no following char', () => {
             expect(comparePatterns('{op}', 'mov')).toBe(true);
+        });
+    });
+
+    describe('placeholders within literals', () => {
+        it.each([
+            // [pattern1, pattern2, expected]
+            ['a{}', 'abcd', true],
+            ['a{}_def', 'a_def', false],
+            ['a{}_def', 'ab_def', true],
+            ['a{}_def', 'ab_deft', false],
+            ['a{}_def', 'ab_def_def', true],
+            ['a{}_def t', 'ab_def_def t', true],
+            ['a{}d', 'abc', false],
+            ['a{}c', 'ab@c', false],
+            ['{}@', 'ptrn1@', true],
+            ['{}ptrn1@', 'ptrn2ptrn1@', true],
+            ['{}ptrn1@', 'ptrn1@', false],
+            ['{}ptrn1@', '{}ptrn1@', true],
+            ['{}ptrn1@', 'ptrn2{}@', true],
+            ['{}ptrn1@', 'ptrn2{}ptrn1@', true],
+            ['ptrn2ptrn1@', '{}ptrn1@', true],
+            ['ptrn1@', '{}ptrn1@', false],
+            ['{}ptrn1@', '{}ptrn1@', true],
+            ['ptrn2{}@', '{}ptrn1@', true],
+            ['ptrn2{}ptrn1@', '{}ptrn1@', true],
+        ])('%s vs %s => %s', (pattern1, pattern2, expected) => {
+            expect(comparePatterns(pattern1, pattern2)).toBe(expected);
         });
     });
 });
@@ -317,6 +361,14 @@ describe('parseSimplePattern', () => {
             if (result.ok) {
                 expect(result.simplePattern.placeholderNames).toEqual([]);
                 expect(result.simplePattern.hasUnnamedPlaceholders).toBe(true);
+            }
+        });
+
+        it('should parse pattern with placeholders inside litterals', () => {
+            const result = parseSimplePattern('ld temp_{var_1}2');
+            expect(result.ok).toBe(true);
+            if (result.ok) {
+                expect(result.simplePattern.placeholderNames).toEqual(['var_1']);
             }
         });
     });
