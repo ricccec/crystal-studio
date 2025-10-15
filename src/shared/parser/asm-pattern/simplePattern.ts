@@ -74,20 +74,31 @@ export function compareSimplePatterns(pattern1: SimplePattern, pattern2: SimpleP
     let i = 0;
     let j = 0;
 
-    let ptrn1InsidePlaceholder = false;
-    let ptrn2InsidePlaceholder = false;
-
     while (i < p1.length && j < p2.length) {
         const char1 = p1[i];
         const char2 = p2[j];
+
+        if ((char1 !== '{') && (char2 !== '{')) {
+            // None inside placeholder -> compare characters
+            if (char1 !== char2) return false;
+            i++; j++;
+            continue;
+        }
+        
+        let ptrn1InsidePlaceholder = false;
+        let ptrn2InsidePlaceholder = false;
 
         // Check if we're at the start of a placeholder in pattern1
         if (char1 === '{') {
             ptrn1InsidePlaceholder = true;
             // Move pattern1 cursor to the } at the end of the placeholder
             const placeholderEnd = p1.indexOf('}', i);
-            if (placeholderEnd === -1) return false; // Malformed placeholder
+            if (placeholderEnd === -1) {
+                throw new Error(`Unmatched closing bracket detected in pattern ${pattern1.pattern}`);
+            }
             i = placeholderEnd;
+            
+
         }
 
         // Check if we're at the start of a placeholder in pattern2
@@ -95,7 +106,9 @@ export function compareSimplePatterns(pattern1: SimplePattern, pattern2: SimpleP
             ptrn2InsidePlaceholder = true;
             // Move pattern2 cursor to the } at the end of the placeholder
             const placeholderEnd = p2.indexOf('}', j);
-            if (placeholderEnd === -1) return false; // Malformed placeholder
+            if (placeholderEnd === -1) {
+                throw new Error(`Unmatched closing bracket detected in pattern ${pattern2.pattern}`);
+            }
             j = placeholderEnd;
         }
 
@@ -103,32 +116,32 @@ export function compareSimplePatterns(pattern1: SimplePattern, pattern2: SimpleP
         if (ptrn1InsidePlaceholder && !ptrn2InsidePlaceholder) {
             // Check if the first literal matches the placeholder character class
             if (!isPlaceholderMatch(char2)) return false;
-            // Move pattern2 cursor to the last char of the literal
-            while ((j + 1) < p2.length) {
-                if (!isPlaceholderMatch(p2[j + 1])) break;
-                j++; 
-            }
         }
 
         // pattern2 has placeholder, pattern1 has literal
         if (ptrn2InsidePlaceholder && !ptrn1InsidePlaceholder) {
             // Check if the first literal matches the placeholder character class
             if (!isPlaceholderMatch(char1)) return false;
-            // Move pattern1 cursor to the last char of the literal
-            while ((i + 1) < p1.length) {
-                if (!isPlaceholderMatch(p1[i + 1])) break;
-                i++; 
+        }
+        
+        // One or both inside placeholder -> reverse check
+        // Move both cursors to the first chars that could not be captured by a placeholder's regex
+        let b1 = findPlaceholderBoundaries(p1, i, ptrn1InsidePlaceholder);
+        let b2 = findPlaceholderBoundaries(p2, j, ptrn2InsidePlaceholder);
+        // reverse check until one of the cursor hits a placeholder
+        let k = 0;
+        while(true) {
+            const char1 = p1[b1-k];
+            const char2 = p2[b2-k];
+            if (char1 === '}' || char2 === '}') {
+                i = b1; j = b2;
+                break;
             }
-        }
-
-        // None inside placeholder -> compare characters
-        if (!(ptrn1InsidePlaceholder || ptrn2InsidePlaceholder)) {
+            if (((b1-k) === i) || ((b2-k) === j)) return false;
             if (char1 !== char2) return false;
+            k++;
         }
-
-        ptrn1InsidePlaceholder = false;
-        ptrn2InsidePlaceholder = false;
-
+        
         i++; j++;
 
     }
@@ -136,4 +149,25 @@ export function compareSimplePatterns(pattern1: SimplePattern, pattern2: SimpleP
     // Both patterns should be fully consumed
     return i === p1.length && j === p2.length;
 
+}
+
+function findPlaceholderBoundaries(pattern: string, startPos: number, checkBrackets: boolean): number {
+    for (let i = startPos + 1; i < pattern.length; i++) {
+        const nextChar = pattern[i];
+        if (nextChar === '{') {
+            if (checkBrackets) {
+                throw new Error(`Consecutive placeholders detected in pattern ${pattern}`);
+            }
+            continue; // Skip bracket
+        }
+        if (nextChar === '}') {
+            if (checkBrackets) {
+                throw new Error(`Unmatched closing bracket detected in pattern ${pattern}`);
+            }
+            continue; // Skip brackets
+        }
+        // Check we've reached the border
+        if (!isPlaceholderMatch(nextChar)) return i - 1;
+    }
+    return pattern.length - 1;
 }
