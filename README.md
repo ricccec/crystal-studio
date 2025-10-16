@@ -26,7 +26,7 @@ Built with **Electron**, **Vite**, **React**, and **TypeScript**.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites (Windows)
 
@@ -40,3 +40,4 @@ Built with **Electron**, **Vite**, **React**, and **TypeScript**.
 ```bash
 npm install
 npm run dev
+
