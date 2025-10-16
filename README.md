@@ -1,37 +1,42 @@
-### GIT
-- Avoid merging main into feature branches repeatedly — rebase instead.
-- Delete merged branches to keep the repo tidy.
-- Add well-written PR descriptions — even if you’re the only reviewer.
-- Tag versions (v0.1.0, v1.0.0) when you hit milestones.
-- Use GitHub Releases with changelogs — employers see structured progress.
-- Use an industry-standard Branching Strategy:
-```
-main — Always deployable/stable.
-dev — Integration branch for new features before merging to main.
-feature branches — Named like feature/map-patcher or fix/memory-leak.
-hotfix branches — For quick production fixes, e.g., hotfix/build-error.
-```
+# Crystal Studio
 
-#### Commit message types
-- fix
-- feat
-- build
-- chore
-- docs
-- style
-- refactor
-- perf
-- test
-e.g.:
-```
-feat: allow provided config object to extend other configs
-```
+A **GBStudio-style IDE** built on top of the [pret/pokecrystal](https://github.com/pret/pokecrystal) disassembly to edit game content and manage the full Game Boy ROM workflow.  
+Built with **Electron**, **Vite**, **React**, and **TypeScript**.
 
 ---
 
-### Use GitHub Issues + Project Boards
-Use labels: bug, feature, enhancement, docs, refactor.
+## Goals
 
-### Tags & Releases
-- Tag versions (v0.1.0, v1.0.0) when you hit milestones.
-- Use GitHub Releases with changelogs — employers see structured progress.
+- Provide **disassembly-aware editors** for pokecrystal content (maps, connections, encounters, trainers, Pokémon data, items, scripts, text, etc.).
+- Enable a **seamless ROM workflow**:
+  - Configure toolchain and emulator paths.
+  - Clone or open an existing pret/pokecrystal repo.
+  - Build the ROM via `make`.
+  - Run the game directly in an emulator.
+  - Stream logs and build output inside the UI.
+
+---
+
+## Tech Stack
+
+- **Frontend:** React + Vite + TypeScript  
+- **Backend:** Electron (main/preload)  
+- **Testing:** Vitest  
+- **Toolchain:** RGBDS, GNU make, Git, optional Python (used by pokecrystal build scripts)
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites (Windows)
+
+- **Node.js 18+**
+- **Cygwin** with `make`, `git`, and `gcc-core`
+- **RGBDS** (`rgbasm`, `rgblink`, `rgbfix`)
+- **Emulator** (e.g. BGB, Emulicious)
+
+### Install & Run
+
+```bash
+npm install
+npm run dev
