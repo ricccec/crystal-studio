@@ -47,7 +47,7 @@ export function splitPattern(pattern: string):
             if (bracketDepth === 0) {
                 return {
                     ok: false,
-                    error: `Closing unescaped brackets without opening at position i in pattern "${pattern}". Use \\[ and \\] for literal brackets.`
+                    error: `Closing unescaped brackets without opening at position ${i} in pattern "${pattern}". Use \\[ and \\] for literal brackets.`
                 };
             }
             bracketDepth--;

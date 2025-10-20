@@ -58,7 +58,7 @@ export function parsePattern(pattern: string): SimplePattern[] {
 
     // Step 5: validate language
     const err = validateBranches(result);
-    if (err) throw new Error(`Failed to falidate pattern ${pattern}: ${err}`);
+    if (err) throw new Error(`Failed to validate pattern ${pattern}: ${err}`);
     
     return result;
 }
