@@ -57,7 +57,7 @@ describe('splitPattern', () => {
         expect(result.ok).toBe(false);
     });
     
-    it('should return error for unmatched closing bracket (comlplex case)', () => {
+    it('should return error for unmatched closing bracket (complex case)', () => {
         const result = splitPattern('a[b]c]');
         expect(result.ok).toBe(false);
     });

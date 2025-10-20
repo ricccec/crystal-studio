@@ -27,10 +27,10 @@ export function concatLanguages(languages: string[][], currDepth: number = 0): S
     if (languages[currDepth].length === 0) return new Set();
 
     const subproduct = concatLanguages(languages, currDepth + 1);
-    const result: string[] = []
+    const result: string[] = [];
     for (const suffix of subproduct) {
         for (const prefix of languages[currDepth]) {
-            result.push(prefix+suffix);
+            result.push(prefix + suffix);
         }
     }
     
