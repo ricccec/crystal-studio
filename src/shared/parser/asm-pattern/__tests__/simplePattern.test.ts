@@ -176,6 +176,31 @@ describe('compareSimplePatterns', () => {
         it('should handle pattern with escaped brackets', () => {
             expect(comparePatterns('ld \\[{reg}\\]', 'ld \\[a\\]')).toBe(true);
         });
+
+        describe('various scenarios', () => {
+            it.each([
+                ['a{}', 'abcd', true],
+                ['a{}_def', 'a_def', false],
+                ['a{}_def', 'ab_def', true],
+                ['a{}_def', 'ab_deft', false],
+                ['a{}_def', 'ab_def_def', true],
+                ['a{}d', 'abc', false],
+                ['a{}c', 'ab@c', false],
+                ['{}@', 'ptrn1@', true],
+                ['{}ptrn1@', 'ptrn2ptrn1@', true],
+                ['{}ptrn1@', 'ptrn1@', false],
+                ['{}ptrn1@', '{}ptrn1@', true],
+                ['{}ptrn1@', 'ptrn2{}@', true],
+                ['{}ptrn1@', 'ptrn2{}ptrn1@', true],
+                ['ptrn2ptrn1@', '{}ptrn1@', true],
+                ['ptrn1@', '{}ptrn1@', false],
+                ['{}ptrn1@', '{}ptrn1@', true],
+                ['ptrn2{}@', '{}ptrn1@', true],
+                ['ptrn2{}ptrn1@', '{}ptrn1@', true],
+            ])('%s vs %s => %s', (pattern1, pattern2, expected) => {
+                expect(comparePatterns(pattern1, pattern2)).toBe(expected);
+            });
+        });
     });
 
     describe('spaces and tabs', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitToChunks } from '../chunkUtils';
+import { splitToChunks, compareChunks } from '../chunkUtils';
 
 describe('splitToChunks', () => {
     describe('basic delimiter-based splitting', () => {
@@ -321,17 +321,120 @@ describe('splitToChunks', () => {
     });
 
     describe('splitToChunks - various scenarios', () => {
-    it.each([
-        // [inputPattern,       expectedChunks]
-        ['ld {reg}, val',       ['ld', ' ', '{reg}', ', ', 'val']],
-        ['r{num}x',             ['r{num}x']],
-        ['',                    []],
-        ['abc123',              ['abc123']],    // Only placeholder-class chars
-        [', ',                  [', ']],        // Only separators
-    ])('should split "%s" correctly', (inputPattern, expectedChunks) => {
-        const result = splitToChunks(inputPattern);
-        expect(result.map(r => r.text)).toEqual(expectedChunks);
+        it.each([
+            // [inputPattern,       expectedChunks]
+            ['ld {reg}, val', ['ld', ' ', '{reg}', ', ', 'val']],
+            ['r{num}x', ['r{num}x']],
+            ['', []],
+            ['abc123', ['abc123']],    // Only placeholder-class chars
+            [', ', [', ']],        // Only separators
+        ])('should split "%s" correctly', (inputPattern, expectedChunks) => {
+            const result = splitToChunks(inputPattern);
+            expect(result.map(r => r.text)).toEqual(expectedChunks);
+        });
     });
 });
-});
 
+describe('compareChunks', () => {
+	describe('various scenarios (simple)', () => {
+		it.each([
+			// [chunkA,		chunkB,				expected]
+			['+@',          '+@',               true],      // Both separators
+			['+@',          '  +@',             true],      // Both separators (ignore tabs)
+			['+@',          ' +@',              true],      // Both separators (ignore leading spaces)
+			['+ @',         '+   @',            true],      // Both separators (ignore multiple spaces)
+			['@+!',         '@+',               false],     // Both separators
+			['abc',         'abc',              true],      // Both litterals
+			['abc',         'abd',              false],     // Both litterals
+			['abc',         'dbc',              false],     // Both litterals
+			['abc',         'atc',              false],     // Both litterals
+			['abc',         '+@',                false],     // One litteral vs one separator
+			['+@',           'abc',              false],     // One litteral vs one separator
+			['{}',          '+@',                false],      // placeholder+litteral vs separator
+			['a{}',         '+@',                false],      // placeholder+litteral vs separator
+			['{}b',         '+@',                false],      // placeholder+litteral vs separator
+			['a{}b',        '+@',                false],      // placeholder+litteral vs separator
+			// Just placeholder
+			['{}',	        'ab',                true],
+			['{}',        	'{}',                true],
+			// Placeholder w/ prefix
+			['a{}',	        'a',                false],
+			['a{}',	        'b',                false],
+			['a{}',	        'ab',                true],
+			['a{}',	        'ba',                false],
+			// Placeholder w/ prefix
+			['{}b',	        'b',                false],
+			['{}b',	        'a',                false],
+			['{}b',	        'ab',                true],
+			['{}b',	        'ba',                false],
+			// Placeholder w/ prefix and suffix
+			['a{}b',	     'ab',                false],
+			['a{}b',	        'ba',                false],
+			['a{}b',	        'b_a',                false],
+			['a{}b',	        'a_b',                true],
+			['a{}b',	        'b_a',                false],
+			['a{}b',	        'a_c',                false],
+			['a{}b',	        'c_a',                false],
+			// Placeholder w/ prefix vs placeholder
+			['a{}',	     	'{}',                	true],
+			['a{}',	        'a{}',                	true],
+			['a{}',	        'b{}',                	false],
+			['a{}',	        '{}a',                	true],
+			['a{}',	        '{}b',                	true],
+			['a{}',	        'a{}b',                	true],
+			['a{}',	        'c{}b',                	false],
+			['a{}',	        'a{}c',                	true],
+			// Placeholder w/ suffix vs placeholder
+			['{}b',	     	'{}',                	true],
+			['{}b',	        'a{}',                	true],
+			['{}b',	        'b{}',                	true],
+			['{}b',	        '{}a',                	false],
+			['{}b',	        '{}b',                	true],
+			['{}b',	        'a{}b',                	true],
+			['{}b',	        'c{}b',                	true],
+			['{}b',	        'a{}c',                	false],
+			// Placeholder w/ suffix vs placeholder
+			['a{}b',	     	'{}',                	true],
+			['a{}b',	        'a{}',                	true],
+			['a{}b',	        'b{}',                	false],
+			['a{}b',	        '{}a',                	false],
+			['a{}b',	        '{}b',                	true],
+			['a{}b',	        'a{}b',                	true],
+			['a{}b',	        'c{}b',                	false],
+			['a{}b',	        'a{}c',                	false],
+			['a{}b',	        'c{}c',                	false],
+	
+		])('should compare "%s" and "%s" correctly', (chunkA, chunkB, expected) => {
+			const a = splitToChunks(chunkA);
+			const b = splitToChunks(chunkB);
+			
+			// Ensure we are dealing w/ single chunk strings
+			expect(a.length).toBe(1);
+			expect(b.length).toBe(1);
+	
+			expect(compareChunks(a[0], b[0])).toBe(expected);
+		});
+	});
+	
+	
+	describe('various scenarios (complex)', () => {
+		it.each([
+			// [chunkA,		chunkB,			expected]
+			['abc{}de',		'abcadede',		true],
+			['ab{}',		'{}b',			true],
+			['a{}',			'ab',			true],
+			['a{}a',		'aa',			false],
+			['ab{}b',		'a{}b',			true],
+			['{}c',			'b',			false],
+		])('should compare "%s" and "%s" correctly', (chunkA, chunkB, expected) => {
+			const a = splitToChunks(chunkA);
+			const b = splitToChunks(chunkB);
+			
+			// Ensure we are dealing w/ single chunk strings
+			expect(a.length).toBe(1);
+			expect(b.length).toBe(1);
+	
+			expect(compareChunks(a[0], b[0])).toBe(expected);
+		});
+	});
+});
