@@ -8,7 +8,7 @@
     "build": "vite build",
     "start": "electron .",
     "clean": "npx rimraf dist dist-electron out release",
-    "test": "vitest",
+    "test": "vitest --watch=false",
     "test:watch": "vitest --watch"
   },
   "author": "Riccardo Cecchi",

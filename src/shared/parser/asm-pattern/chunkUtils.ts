@@ -1,4 +1,4 @@
-import { isPlaceholderMatch, isValidPlaceholderName } from "./patternUtils";
+import { isPlaceholderMatch, isValidPlaceholderName, normalizePattern } from "./patternUtils";
 
 /**
  * A SimplePattern is a pattern with no branching (ie. no unsecaped '|' nor '[' and ']')
@@ -112,4 +112,90 @@ export function splitToChunks(pattern: string): SimplePatternChunk[] {
 
     const chunks: SimplePatternChunk[] = runs.map(r => createChunk(r.text));
     return chunks;
+}
+
+export function compareChunks(c1: SimplePatternChunk, c2: SimplePatternChunk): boolean {
+    // 1. Separator vs non-separator -> not equal
+    if (c1.isSeparator !== c2.isSeparator) return false;
+
+    const t1 = normalizePattern(c1.text);
+    const t2 = normalizePattern(c2.text);
+
+    // 2. If both separators, must match exactly
+    if (c1.isSeparator && c2.isSeparator) return t1 === t2;
+
+    // 3. Neither is separator now
+    // If neither has placeholder -> exact match
+    if (!c1.hasPlaceholder && !c2.hasPlaceholder) return t1 === t2;
+
+	// 4. At least one has a placeholder now
+    // If one or both is a pure placeholder -> match
+	const c1IsPlaceholder = c1.hasPlaceholder && !(c1.hasPrefix || c1.hasSuffix);
+	const c2IsPlaceholder = c2.hasPlaceholder && !(c2.hasPrefix || c2.hasSuffix); 
+    if (c1IsPlaceholder || c2IsPlaceholder) return true;
+
+    // 5. At least one has prefix/duffix now -> compare prefixes and suffixes
+    
+    // Prefix (forward comparison)
+    let i = 0;
+    let j = 0;
+    while (true) {
+        const char1 = t1[i]; // Might be undefined
+        const char2 = t2[j]; // Might be undefined
+
+        // None inside placeholder -> compare characters
+        if ((char1 !== '{') && (char2 !== '{')) {
+            if (char1 !== char2) return false;
+            i++; j++;
+            continue; // Keep going
+        }
+
+        // At least one inside placeholder
+        
+        let ptrn1InsidePlaceholder = (char1 === '{');
+        let ptrn2InsidePlaceholder = (char2 === '{');
+
+        // pattern1 has placeholder, pattern2 has literal
+        if (ptrn1InsidePlaceholder && !ptrn2InsidePlaceholder) {
+            // Check if there is at least a character to match the placeholder
+            if (!char2) return false;
+            break; // Start backward comparison
+        }
+
+        // pattern2 has placeholder, pattern1 has literal
+        if (ptrn2InsidePlaceholder && !ptrn1InsidePlaceholder) {
+            // Check if there is at least a character to match the placeholder
+            if (!char1) return false;
+            break; // Start backward comparison
+        }
+        
+        // Both have placeholders -> always match
+        break; // Start backward comparison
+
+    }
+
+    // Suffix (backward comparison)
+    let b_i = t1.length - 1;
+    let b_j = t2.length - 1;
+    while (true) {
+
+		
+		const char1 = t1[b_i]; // Might be undefined
+        const char2 = t2[b_j]; // Might be undefined
+		
+        // Either one or the other is inside placeholder
+        if ((char1 === '}') || (char2 === '}')) {
+			break;
+        }
+		
+		
+        // None inside placeholder -> compare characters
+		if ((i >= b_i) || (j >= b_j)) return false;
+        if (char1 !== char2) return false;
+
+        // Keep going
+        b_i--; b_j--;
+    }
+
+    return true;
 }
