@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { splitToChunks, compareChunks } from '../chunkUtils';
+import { checkChunkOverlap, splitToChunks } from '../asmPatternChunk';
 
 describe('splitToChunks', () => {
     describe('basic delimiter-based splitting', () => {
@@ -412,7 +412,7 @@ describe('compareChunks', () => {
 			expect(a.length).toBe(1);
 			expect(b.length).toBe(1);
 	
-			expect(compareChunks(a[0], b[0])).toBe(expected);
+			expect(checkChunkOverlap(a[0], b[0])).toBe(expected);
 		});
 	});
 	
@@ -434,7 +434,7 @@ describe('compareChunks', () => {
 			expect(a.length).toBe(1);
 			expect(b.length).toBe(1);
 	
-			expect(compareChunks(a[0], b[0])).toBe(expected);
+			expect(checkChunkOverlap(a[0], b[0])).toBe(expected);
 		});
 	});
 });

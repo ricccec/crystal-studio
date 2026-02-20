@@ -3,7 +3,7 @@ import { isPlaceholderMatch, isValidPlaceholderName, normalizePattern } from "./
 /**
  * A SimplePattern is a pattern with no branching (ie. no unsecaped '|' nor '[' and ']')
  */
-export type SimplePatternChunk = {
+export type AsmPatternChunk = {
     text: string;
     hasPlaceholder: boolean;
     hasPrefix: boolean;
@@ -13,7 +13,7 @@ export type SimplePatternChunk = {
     suffix: string; // Text after placeholder
 };
 
-function createChunk(text: string): SimplePatternChunk {
+function createChunk(text: string): AsmPatternChunk {
     // Validation: ensure placeholders (if present) are well-formed and unique within this chunk
     const openCount = (text.match(/\{/g) || []).length;
     const closeCount = (text.match(/\}/g) || []).length;
@@ -66,7 +66,7 @@ function createChunk(text: string): SimplePatternChunk {
  *   2. A *second* placeholder is encountered.
  * - Characters outside the placeholder class form their own chunks.
  */
-export function splitToChunks(pattern: string): SimplePatternChunk[] {
+export function splitToChunks(pattern: string): AsmPatternChunk[] {
      // Consume pattern sequentially. Split when the `isPlaceholderMatch` class
     // flips; however, if we encounter a '{' we atomically consume until the
     // matching '}' and treat that substring as a single run.
@@ -110,11 +110,15 @@ export function splitToChunks(pattern: string): SimplePatternChunk[] {
 
     if (currentText.length > 0) runs.push({ text: currentText, isPlaceholderClass: currentIsPlaceholder });
 
-    const chunks: SimplePatternChunk[] = runs.map(r => createChunk(r.text));
+    const chunks: AsmPatternChunk[] = runs.map(r => createChunk(r.text));
     return chunks;
 }
 
-export function compareChunks(c1: SimplePatternChunk, c2: SimplePatternChunk): boolean {
+/**
+ * Returns true iff there exists at least one assembly chunk that would be
+ * matched by both chunks
+ */
+export function checkChunkOverlap(c1: AsmPatternChunk, c2: AsmPatternChunk): boolean {
     // 1. Separator vs non-separator -> not equal
     if (c1.isSeparator !== c2.isSeparator) return false;
 

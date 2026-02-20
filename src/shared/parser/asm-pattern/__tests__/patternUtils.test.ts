@@ -4,7 +4,6 @@ import {
     checkPlaceholderUniqueness, 
     hasUnnamedPlaceholder, 
     hasConsecutivePlaceholders,
-    hasBranching,
     normalizePlaceholderNames,
     isValidPlaceholderName,
     isPlaceholderMatch,
@@ -174,48 +173,6 @@ describe('normalizePlaceholderNames', () => {
 
     it('should handle placeholder with underscores and numbers', () => {
         expect(normalizePlaceholderNames('ld { reg_1 }, { val2 }')).toBe('ld {reg_1}, {val2}');
-    });
-});
-
-describe('hasBranching', () => {
-    it('should return true for simple literal pattern', () => {
-        expect(hasBranching('ld a, b')).toBe(false);
-    });
-
-    it('should return true for pattern with placeholders', () => {
-        expect(hasBranching('ld {reg}, {val}')).toBe(false);
-    });
-
-    it('should return true for pattern with escaped brackets', () => {
-        expect(hasBranching('ld \\[hl\\]')).toBe(false);
-    });
-
-    it('should return true for pattern with escaped pipe', () => {
-        expect(hasBranching('ld a\\|b')).toBe(false);
-    });
-
-    it('should return false for pattern with unescaped pipe', () => {
-        expect(hasBranching('ld a|b')).toBe(true);
-    });
-
-    it('should return false for pattern with unescaped opening bracket', () => {
-        expect(hasBranching('ld [hl]')).toBe(true);
-    });
-
-    it('should return false for pattern with unescaped closing bracket', () => {
-        expect(hasBranching('ld hl]')).toBe(true);
-    });
-
-    it('should return false for pattern with multiple unescaped special chars', () => {
-        expect(hasBranching('[a|b]')).toBe(true);
-    });
-
-    it('should return true for empty string', () => {
-        expect(hasBranching('')).toBe(false);
-    });
-
-    it('should return true for complex simple pattern', () => {
-        expect(hasBranching('ldi {reg1}, \\[hl+{offset}\\]')).toBe(false);
     });
 });
 

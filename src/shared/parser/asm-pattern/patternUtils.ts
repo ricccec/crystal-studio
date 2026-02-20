@@ -1,14 +1,14 @@
 // Character class that placeholders can match (single character)
-const PLACEHOLDER_CHAR_CLASS = /^[a-zA-Z0-9_]$/;
+export const PLACEHOLDER_CHAR_CLASS = /^[a-zA-Z0-9_]$/;
 
 // Character class for valid placeholder names (any length, including empty)
-const PLACEHOLDER_NAME_CHARS = '[a-zA-Z0-9_]*';
+export const PLACEHOLDER_NAME_CHARS = '[a-zA-Z0-9_]*';
 
 // Full regex for validating placeholder names (with anchors)
-const PLACEHOLDER_VALID_NAME = new RegExp(`^${PLACEHOLDER_NAME_CHARS}$`);
+export const PLACEHOLDER_VALID_NAME = new RegExp(`^${PLACEHOLDER_NAME_CHARS}$`);
 
 // Pattern for matching placeholder syntax in strings
-const PLACEHOLDER_NAME_PATTERN = `\\{\\s*${PLACEHOLDER_NAME_CHARS}\\s*\\}`;
+export const PLACEHOLDER_NAME_PATTERN = `\\{\\s*${PLACEHOLDER_NAME_CHARS}\\s*\\}`;
 
 function getPlaceholderNameRegex() {
     return new RegExp(PLACEHOLDER_NAME_PATTERN, 'g');
@@ -94,21 +94,8 @@ export function hasConsecutivePlaceholders(pattern: string): boolean {
     // Match a placeholder followed by zero or more PLACEHOLDER_CHAR_CLASS characters, then another placeholder
     const regex = new RegExp(
         PLACEHOLDER_NAME_PATTERN + // First placeholder
-        `[a-zA-Z0-9_]*` + // Zero or more chars in PLACEHOLDER_CHAR_CLASS
+        PLACEHOLDER_NAME_CHARS + // Zero or more chars in PLACEHOLDER_CHAR_CLASS
         PLACEHOLDER_NAME_PATTERN // Second placeholder
     );
     return regex.test(pattern);
-}
-
-/**
- * Checks if a pattern contains branching (unescaped |, [, or ]).
- * Valid patterns contain only literals and placeholders, no branching or bracketed alternatives.
- * 
- * @param pattern The pattern to check
- * @returns true if the pattern is simple, false otherwise
- */
-export function hasBranching(pattern: string): boolean {
-    // Check for unescaped |, [, or ]
-    // Using negative lookbehind to ensure not preceded by \
-    return /(?<!\\)\||(?<!\\)\[|(?<!\\)\]/.test(pattern);
 }
