@@ -197,6 +197,9 @@ describe('compareSimplePatterns', () => {
                 ['{}ptrn1@', '{}ptrn1@', true],
                 ['ptrn2{}@', '{}ptrn1@', true],
                 ['ptrn2{}ptrn1@', '{}ptrn1@', true],
+				['{}',			'a ',			true],	// Spaces don't matter
+				['{} {}',		'a b',			true],	// Spaces don't matter
+				['{},{}',		'a, b',			true]	// Spaces don't matter
             ])('%s vs %s => %s', (pattern1, pattern2, expected) => {
                 expect(comparePatterns(pattern1, pattern2)).toBe(expected);
             });

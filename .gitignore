@@ -33,3 +33,6 @@ release/
 
 # Miscellaneous
 .vite/
+
+# Crystal Studio – reference codebases (local shallow clones, not part of this repo)
+references/

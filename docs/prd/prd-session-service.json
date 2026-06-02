@@ -1,0 +1,164 @@
+[
+  {
+    "category": "functional",
+    "description": "New workspace data is stored in the app data folder (per-workspace subdirectory) before Save Workspace is triggered",
+    "steps": [
+      "Open Crystal Studio and open or create a new workspace",
+      "Verify that the four session artifacts (parser config, base file snapshots, parser metadata JSON, current HLR intermediate JSON) are written to the app data folder under a subdirectory keyed to the workspace path",
+      "Confirm that no .crystal-studio/ folder exists in the workspace root"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Auto-save runs periodically and writes all four artifacts to the currently active storage target",
+    "steps": [
+      "Open a workspace in pre-Save-Workspace state (data lives in app data folder)",
+      "Wait for the auto-save interval to elapse",
+      "Verify that parser config, base file snapshots, parser metadata JSON, and current HLR intermediate JSON are written to the app data folder",
+      "Trigger Save Workspace from the UI",
+      "Wait for the auto-save interval to elapse again",
+      "Verify that the same four artifacts are now written to .crystal-studio/ in the workspace root instead of app data"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Triggering Save Workspace migrates project data from app data to .crystal-studio/ in the workspace root",
+    "steps": [
+      "Open a workspace with project data persisted in app data folder",
+      "Trigger Save Workspace from the UI",
+      "Verify that a .crystal-studio/ folder is created in the workspace root",
+      "Verify that all four session artifacts are present and correct inside .crystal-studio/",
+      "Verify that the app-data per-workspace subdirectory is deleted after successful migration"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "The first patch or build triggers the same data migration as an explicit Save Workspace",
+    "steps": [
+      "Open a workspace in pre-Save-Workspace state (data in app data)",
+      "Trigger a patch or build without explicitly clicking Save Workspace",
+      "Verify that .crystal-studio/ is created in the workspace root",
+      "Verify that all four session artifacts are migrated from app data to .crystal-studio/",
+      "Verify that the app-data per-workspace subdirectory is removed after migration"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": ".crystal-studio/ is added to .gitignore when the folder is first created",
+    "steps": [
+      "Open a workspace whose root already contains a .gitignore file",
+      "Trigger Save Workspace",
+      "Open .gitignore and verify that .crystal-studio/ appears as an entry",
+      "Repeat the test with a workspace that has no .gitignore; verify the file is created containing .crystal-studio/"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Once .crystal-studio/ exists it becomes the sole auto-save target; app data folder is never written to again",
+    "steps": [
+      "Open a workspace that already has a .crystal-studio/ folder",
+      "Perform an HLR edit to mark the session as dirty",
+      "Wait for the auto-save interval to elapse",
+      "Verify that updated artifacts are written to .crystal-studio/ only",
+      "Verify that no new write occurred in the app data folder for this workspace"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "On startup, the session is restored from .crystal-studio/ when that folder exists",
+    "steps": [
+      "Open a workspace that has a .crystal-studio/ folder containing all four saved artifacts",
+      "Restart Crystal Studio",
+      "Verify that the project config and parser config are loaded from .crystal-studio/",
+      "Verify that the HLR is reconstructed by the HLR factory from the saved intermediate JSON (not by re-parsing ASM files from disk)",
+      "Verify that no re-parse dialog appears if no parsed file has changed on disk"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "On startup, the session is restored from the app data folder when .crystal-studio/ does not exist",
+    "steps": [
+      "Open a workspace that has no .crystal-studio/ folder but has artifacts stored in app data",
+      "Restart Crystal Studio",
+      "Verify that the project config and parser config are loaded from the app data folder",
+      "Verify that the HLR is reconstructed from the saved intermediate JSON in app data"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User is prompted to re-parse when a previously parsed ASM file has changed on disk since the last snapshot",
+    "steps": [
+      "Open a workspace and let Crystal Studio restore its session normally",
+      "Using an external editor, modify an ASM file that was captured in the last base file snapshot",
+      "Restart Crystal Studio",
+      "Verify that a dialog appears informing the user that a parsed file has changed on disk, offering Re-parse or Keep HLR",
+      "Choose Re-parse and verify the HLR is rebuilt from the current disk content",
+      "Repeat the scenario, choose Keep HLR, and verify the session HLR is unchanged and the on-disk modification is effectively ignored"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Stale project entries are flagged on startup when the associated workspace path no longer exists on disk",
+    "steps": [
+      "Register a project by opening a workspace at a specific path",
+      "Delete or rename the workspace directory on disk while Crystal Studio is closed",
+      "Start Crystal Studio",
+      "Verify that the stale project entry is shown in the project list with a warning indicator",
+      "Verify that an action is offered to delete the stale entry"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "User can manually forget a project from the UI; the action removes the entry from the list",
+    "steps": [
+      "Open Crystal Studio with at least one project registered in the project list",
+      "Trigger the Forget / Remove action on a chosen project entry",
+      "Verify that the project entry disappears from the list",
+      "Verify that the .crystal-studio/ folder (or app data artifacts) for that project are NOT automatically deleted from disk — the user owns those files"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "SessionService is instantiated in the service container and its IPC channels are registered and reachable from the renderer",
+    "steps": [
+      "Inspect serviceContainer.ts and confirm a SessionService instance is created and included in the ServiceContainer type",
+      "Inspect registerIpc.ts and confirm that the session-related IPC channels (save workspace, get session state) are registered",
+      "Invoke the save-workspace IPC channel from the renderer and verify that the migration from app data to .crystal-studio/ is triggered",
+      "Invoke the auto-save channel and confirm that the correct set of four artifacts is written to the active storage target"
+    ],
+    "passes": false
+  },
+  {
+    "category": "non-functional",
+    "description": "Auto-save writes are atomic: a crash or forced kill during a save does not leave partially-written or corrupted artifact files",
+    "steps": [
+      "Simulate a crash mid-write using a mock that interrupts the I/O operation after the first artifact is written",
+      "Restart Crystal Studio",
+      "Verify that the last fully committed artifact set loads intact",
+      "Verify that no partially-written artifact files are present in the save directory"
+    ],
+    "passes": false
+  },
+  {
+    "category": "non-functional",
+    "description": "App data folder artifacts are deleted only after .crystal-studio/ artifacts have been fully and successfully written",
+    "steps": [
+      "Trigger Save Workspace in a workspace where app data artifacts exist",
+      "Simulate a failure mid-migration (e.g. disk full or permission error when writing .crystal-studio/)",
+      "Verify that the app data folder artifacts are still intact and have not been deleted",
+      "Verify that Crystal Studio can still restore the session from app data on the next startup"
+    ],
+    "passes": false
+  }
+]

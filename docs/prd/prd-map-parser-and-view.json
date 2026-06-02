@@ -1,0 +1,231 @@
+[
+  {
+    "category": "functional",
+    "description": "Parser config contains an entity descriptor for MapGroup that reads the newgroup / endgroup blocks in constants/map_constants.asm",
+    "steps": [
+      "Open the project parser config",
+      "Verify that a MapGroup entity descriptor exists targeting constants/map_constants.asm",
+      "Verify the descriptor uses a table type with the newgroup macro as the header pattern and endgroup as the footer pattern",
+      "Run the parser against the reference pokecrystal codebase",
+      "Verify that the intermediate JSON contains a MapGroup array with one entry per group (OLIVINE, MAHOGANY, DUNGEONS … 26 total in vanilla pokecrystal)",
+      "Verify each MapGroup entry carries group_name (e.g. OLIVINE) and group_id (numeric index from const_value)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser config contains an entity descriptor for GameMap (dimensions) that reads map_const rows from constants/map_constants.asm",
+    "steps": [
+      "Verify that a GameMap entity descriptor exists targeting constants/map_constants.asm",
+      "Verify the descriptor uses a row pattern matching the map_const macro, capturing map_name, width, and height",
+      "Run the parser against the reference codebase",
+      "Verify the intermediate JSON GameMap entries include map_name (e.g. OLIVINE_GYM), width, and height",
+      "Verify the group association is captured so each map is linked to its enclosing newgroup block"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser config contains an entity descriptor for GameMap (data properties) that reads map macro calls from data/maps/maps.asm",
+    "steps": [
+      "Verify that a GameMap entity descriptor exists targeting data/maps/maps.asm",
+      "Verify the descriptor uses the map macro pattern capturing: display_name (PascalCase), tileset, environment, landmark, music, phone_service, palette, fish_group",
+      "Run the parser",
+      "Verify the intermediate JSON merges the maps.asm-sourced properties onto the correct GameMap entities (matched by map name constant, normalised to UPPER_SNAKE_CASE)",
+      "Spot-check: OLIVINE_GYM should have tileset=TILESET_CHAMPIONS_ROOM, environment=INDOOR, music=MUSIC_GYM, palette=PALETTE_DAY"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser config contains an entity descriptor for MapGroupRoofAssignment that reads the MapGroupRoofs table in data/maps/roofs.asm",
+    "steps": [
+      "Verify that a MapGroupRoofAssignment entity descriptor exists targeting data/maps/roofs.asm",
+      "Verify the descriptor reads per-group roof index values from the db rows in the MapGroupRoofs table",
+      "Run the parser",
+      "Verify each MapGroup's roof assignment is captured correctly (e.g. group 1 Olivine → ROOF_OLIVINE, group 3 Dungeons → -1 meaning no roof)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser config contains an entity descriptor for OutdoorSpriteGroup that reads per-group sprite ID lists from data/maps/outdoor_sprites.asm",
+    "steps": [
+      "Verify that an OutdoorSpriteGroup entity descriptor exists targeting data/maps/outdoor_sprites.asm",
+      "Verify the descriptor captures the group label (e.g. PalletGroupSprites) and the list of SPRITE_* constant values that follow it",
+      "Run the parser",
+      "Verify that each MapGroup entry in the intermediate JSON has an associated list of valid outdoor sprite IDs"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser config contains entity descriptors for SpriteConstant, TilesetConstant, MusicConstant, and LandmarkConstant pulled from their respective constants files",
+    "steps": [
+      "Verify a SpriteConstant descriptor targets constants/sprite_constants.asm and captures SPRITE_* names and their ordinal values",
+      "Verify a TilesetConstant descriptor targets constants/tileset_constants.asm and captures TILESET_* names",
+      "Verify a MusicConstant descriptor targets constants/music_constants.asm and captures MUSIC_* names",
+      "Verify a LandmarkConstant descriptor targets constants/landmark_constants.asm and captures LANDMARK_* names",
+      "Run the parser and confirm intermediate JSON contains fully populated arrays for each constant type"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser config contains entity descriptors for environment, palette, and fish-group constants from constants/map_data_constants.asm",
+    "steps": [
+      "Verify an EnvironmentConstant descriptor captures TOWN, ROUTE, INDOOR, CAVE, GATE, DUNGEON values",
+      "Verify a PaletteConstant descriptor captures PALETTE_AUTO, PALETTE_DAY, PALETTE_NITE, PALETTE_MORN, PALETTE_DARK",
+      "Verify a FishGroupConstant descriptor captures FISHGROUP_NONE through FISHGROUP_QWILFISH_NO_SWARM",
+      "Run the parser and confirm correct entries in the intermediate JSON"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser config contains an entity descriptor for MapAttributes that reads the map_attributes macro from data/maps/attributes.asm",
+    "steps": [
+      "Verify a MapAttributes descriptor targets data/maps/attributes.asm",
+      "Verify the descriptor captures: map name, border_block value, and connection flags (north / south / east / west)",
+      "Run the parser",
+      "Spot-check an entry: a map with a south connection should show that connection flag as set in the intermediate JSON"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "HLR factory creates typed MapGroup objects from the intermediate JSON with all expected fields populated",
+    "steps": [
+      "Run the parser to produce intermediate JSON from the reference codebase",
+      "Pass the intermediate JSON to the HLR factory",
+      "Verify the resulting MapGroup objects have: groupId (numeric), groupName (string, e.g. OLIVINE), roofType (ROOF_* constant or null for groups with value -1), outdoorSpriteIds (string array)",
+      "Verify there are 26 MapGroup objects in canonical pokecrystal"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "HLR factory creates typed GameMap objects from the intermediate JSON with all expected fields populated and correctly linked to their parent MapGroup",
+    "steps": [
+      "Pass intermediate JSON to the HLR factory",
+      "Verify each GameMap object has: mapConstant (e.g. OLIVINE_GYM), groupId, mapIndex (position within the group), tileset, environment, landmark, music, phoneServiceEnabled (boolean), palette, fishGroup, width, height",
+      "Verify each GameMap.groupId matches the groupId of exactly one MapGroup object",
+      "Spot-check: OLIVINE_GYM map should be in the OLIVINE group (groupId 1) at index 2"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "HLR factory correctly merges multi-file data: GameMap fields sourced from map_constants.asm and maps.asm are combined into one HLR object",
+    "steps": [
+      "Verify that for each GameMap, properties parsed from constants/map_constants.asm (width, height) and properties parsed from data/maps/maps.asm (tileset, environment, landmark, music, etc.) appear on the same GameMap HLR object",
+      "Verify that the entity_id used for the merge key is the map constant name (e.g. OLIVINE_GYM, normalised to UPPER_SNAKE_CASE)",
+      "Confirm that no duplicate GameMap objects exist for the same map constant after merging"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "IPC channel GET_MAP_HLR_SNAPSHOT returns a fully serializable DTO containing all MapGroup and GameMap data",
+    "steps": [
+      "Register the channel in registerMapIpc.ts and confirm it is wired in registerIpc.ts",
+      "Invoke GET_MAP_HLR_SNAPSHOT from the renderer side",
+      "Verify the returned DTO contains a mapGroups array and a gameMaps array (or gameMaps nested inside each group)",
+      "Verify the DTO contains no class instances or non-serializable values",
+      "Verify the DTO is correctly typed in src/shared/types/"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "Parser metadata JSON for each map-related file contains one entry per extracted property, enabling the patcher to locate and update each value",
+    "steps": [
+      "Parse the reference codebase",
+      "Inspect the parser metadata JSON for data/maps/maps.asm",
+      "Verify that each captured map macro property (tileset, environment, landmark, music, phone_service, palette, fish_group) has its own metadata entry with entity_id, property name, value, pattern, rawLine, and line_num",
+      "Verify the same structure exists for constants/map_constants.asm entries (width, height per map_const row)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "A Map Groups Explorer panel is accessible from the Activity Bar and lists all parsed map groups",
+    "steps": [
+      "Open Crystal Studio with a parsed workspace",
+      "Click the Maps icon in the Activity Bar",
+      "Verify that the Map Groups Explorer panel opens in the sidebar",
+      "Verify that all 26 map groups from the parsed codebase are shown as rows in the panel",
+      "Verify each group row displays the group name (e.g. Olivine, Mahogany)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "Each map group row shows a badge with the number of maps it contains",
+    "steps": [
+      "Open the Map Groups Explorer panel",
+      "Locate the Olivine group row",
+      "Verify a badge shows the count 14 (OLIVINE has 14 maps in vanilla pokecrystal)",
+      "Verify that collapsing the group hides the badge or keeps it visible but the map list is hidden (consistent with VS Code explorer conventions)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "Each map group row is collapsible and expandable, revealing the list of maps it contains",
+    "steps": [
+      "Open the Map Groups Explorer panel",
+      "Click the expand toggle on the Olivine group row",
+      "Verify that the list of maps within Olivine is shown beneath the group row",
+      "Verify that map entries show their display name (e.g. Olivine Pokecenter 1F)",
+      "Click the collapse toggle and verify the map list is hidden"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "The game start map is visually highlighted with a distinct indicator in the Map Groups Explorer",
+    "steps": [
+      "Open Crystal Studio with a parsed pokecrystal workspace",
+      "Open the Map Groups Explorer panel",
+      "Expand the map group that contains the map designated as the game start map (controlled by the startMap project config field)",
+      "Verify that the start map row carries a distinct visual indicator (e.g. a home icon or accent colour) not shown on other maps",
+      "Verify that only one map visible in the explorer carries the start indicator at any given time"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "The start map designation is read from a configurable field in the project config and defaults to NEW_BARK_TOWN for new pokecrystal projects",
+    "steps": [
+      "Inspect the project config Zod schema and verify a startMap string field exists (defaulting to NEW_BARK_TOWN)",
+      "Open Crystal Studio with a new pokecrystal workspace",
+      "Verify that NEW_BARK_TOWN is highlighted as the start map in the Map Groups Explorer",
+      "Change startMap to PLAYERS_HOUSE_2F in the project config",
+      "Reload the session and verify PLAYERS_HOUSE_2F is now highlighted instead"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "Selecting a map group in the explorer populates the Properties Panel with group-level details",
+    "steps": [
+      "Open the Map Groups Explorer panel and expand any group",
+      "Click the group header row (not a child map)",
+      "Verify the Properties Panel shows: group name, roof type (or None if -1), outdoor sprite count",
+      "Verify the Properties Panel updates when a different group is selected"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "Selecting a map in the explorer populates the Properties Panel with map-level details",
+    "steps": [
+      "Open the Map Groups Explorer panel, expand a group, and click a map row",
+      "Verify the Properties Panel shows: map constant name, display name, tileset, environment type, landmark / location, music track, time-of-day palette, fishing group, and map dimensions (width × height in blocks)",
+      "Verify the Properties Panel updates correctly when a different map is selected",
+      "Verify selecting a map in a different group also works correctly after switching groups"
+    ],
+    "passes": false
+  }
+]
