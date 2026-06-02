@@ -4,7 +4,7 @@
     "description": "New workspace data is stored in the app data folder (per-workspace subdirectory) before Save Workspace is triggered",
     "steps": [
       "Open Crystal Studio and open or create a new workspace",
-      "Verify that the four session artifacts (parser config, base file snapshots, parser metadata JSON, current HLR intermediate JSON) are written to the app data folder under a subdirectory keyed to the workspace path",
+      "Verify that the four session artifacts (selected target profile id, base file snapshots, parser metadata JSON, current HLR intermediate JSON) are written to the app data folder under a subdirectory keyed to the workspace path",
       "Confirm that no .crystal-studio/ folder exists in the workspace root"
     ],
     "passes": false
@@ -15,7 +15,7 @@
     "steps": [
       "Open a workspace in pre-Save-Workspace state (data lives in app data folder)",
       "Wait for the auto-save interval to elapse",
-      "Verify that parser config, base file snapshots, parser metadata JSON, and current HLR intermediate JSON are written to the app data folder",
+      "Verify that selected target profile id, base file snapshots, parser metadata JSON, and current HLR intermediate JSON are written to the app data folder",
       "Trigger Save Workspace from the UI",
       "Wait for the auto-save interval to elapse again",
       "Verify that the same four artifacts are now written to .crystal-studio/ in the workspace root instead of app data"
@@ -75,7 +75,7 @@
     "steps": [
       "Open a workspace that has a .crystal-studio/ folder containing all four saved artifacts",
       "Restart Crystal Studio",
-      "Verify that the project config and parser config are loaded from .crystal-studio/",
+      "Verify that the project config and selected target profile id are loaded from .crystal-studio/",
       "Verify that the HLR is reconstructed by the HLR factory from the saved intermediate JSON (not by re-parsing ASM files from disk)",
       "Verify that no re-parse dialog appears if no parsed file has changed on disk"
     ],
@@ -87,7 +87,7 @@
     "steps": [
       "Open a workspace that has no .crystal-studio/ folder but has artifacts stored in app data",
       "Restart Crystal Studio",
-      "Verify that the project config and parser config are loaded from the app data folder",
+      "Verify that the project config and selected target profile id are loaded from the app data folder",
       "Verify that the HLR is reconstructed from the saved intermediate JSON in app data"
     ],
     "passes": false

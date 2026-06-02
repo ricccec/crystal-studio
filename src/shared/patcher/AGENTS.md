@@ -14,13 +14,14 @@ state* of that representation and writes it back into the original ASM files —
 preserving all formatting, comments, and lines that were not touched.
 
 ```
-Parser:   ASM files  ──(config)──►  Intermediate JSON + Parser Metadata
-Patcher:  Entity diff ──(config + Parser Metadata + base files)──►  Patched ASM files
+Parser:   ASM files  ──(target profile)──►  Intermediate JSON + Parser Metadata
+Patcher:  Entity diff ──(target profile + Parser Metadata + base files)──►  Patched ASM files
 ```
 
-The parser and patcher share the **same config format**. A config entry that
-teaches the parser how to *read* a macro also teaches the patcher how to *write*
-it back.
+The parser and patcher are **two halves of the same hardcoded target profile**
+(`pokecrystal` | `prism`). The same per-target logic that teaches the parser how to *read* a
+macro teaches the patcher how to *write* it back. There is no JSON config in v1; see
+`src/shared/parser/AGENTS.md` (and its "Future Direction" note).
 
 ---
 
@@ -90,7 +91,7 @@ The generic patcher engine (this package) receives:
    `rawLine`, `line_num`)
 2. The **base file snapshots** (most recent version of each parsed file, retrieved
    from the command stack by the patcher service)
-3. The **parser/patcher config** (for generating new lines)
+3. The **target profile** (for generating new lines and resolving insertion anchors)
 4. The **entity diff** (changed / removed / added buckets)
 
 For each affected file it applies low-level operations to an in-memory copy of
@@ -120,33 +121,52 @@ All surrounding whitespace, tabs, and inline comments are kept verbatim.
 1. Collect all metadata entries with the removed `entity_id` across all files.
 2. For each entry, delete line `line_num` from the corresponding `AsmCodeBuffer`.
 
-For `table`-type config entries the header/footer lines of the table are **not**
-automatically deleted — the config must specify whether they belong to a
+For table-type entities the header/footer lines of the table are **not**
+automatically deleted — the target profile decides whether they belong to a
 particular entity or are shared structure.
 
 ### Case C – New Property on an Existing Entity
 
 *A property was added to an entity that already exists on disk.*
 
-1. Use the config to locate the correct file and position anchor for this
+1. Use the target profile to locate the correct file and position anchor for this
    entity type / property.
-2. Generate the new ASM line from the config template and the new value.
+2. Generate the new ASM line from the profile's template and the new value.
 3. Insert the line at the resolved position.
 
 ### Case D – New Entity
 
 *An entity has been added to the HLR that does not exist on disk yet.*
 
-1. Use the config to determine:
-   - Which file the entity belongs to (file name pattern from config)
+1. Use the target profile to determine:
+   - Which file the entity belongs to
    - Where to insert within that file (insertion anchor — e.g. before a
-     `table` footer, or at the end of a `single_line` block)
-2. Generate all required ASM lines from config templates and entity property values.
+     table footer, or at the end of a single-line block)
+2. Generate all required ASM lines from the profile's templates and entity property values.
 3. If the target file does **not exist** on disk:
-   - Generate the complete file content from the config template.
+   - Generate the complete file content from the profile's template.
    - Mark the file for creation (the patcher service handles the actual `fs.writeFile`).
    - The user may be shown a confirmation dialog before the new file is written.
 4. If the target file exists, insert the generated lines at the anchor position.
+
+#### ROM allocation for new sections
+
+Some new entities introduce a brand-new ROM `SECTION` — chiefly a **new map** (its
+`maps/Name.asm` script section, and related data). A section must live in a bank that has
+room (banks are 16 KiB and most hacks are space-tight). In **v1 placement is manual**: the
+target bank is **chosen by the user** in the ROM View and passed to the patcher as part of the
+entity's placement data. The patcher does not pick a bank itself (auto-banking is future work).
+
+Emitting the section into the chosen bank is **profile-specific**:
+
+| Profile | Mechanic |
+|---|---|
+| `prism` | Banking is explicit in the linkerscript `contents/romx.link` (a `ROMX $xx` block lists the section names in bank `$xx`). The patcher emits the `SECTION` in the `.asm` **and** inserts the section name under the chosen bank's block in `romx.link`. |
+| `pokecrystal` | Vanilla relies on rgblink auto-banking. To force the chosen bank, the patcher emits a pinned `SECTION "…", ROMX, BANK[$xx]`. (Confirm exact vanilla convention against the reference clone when implementing.) |
+
+The free-space figures the user relies on when picking a bank come from the **ROM map
+service** (parses the rgblink `.map`); see `src/main/services/AGENTS.md`. ROM-allocation
+features require a prior successful build — without a `.map` there is no free-space data.
 
 ---
 
@@ -182,19 +202,19 @@ Patches are grouped **per file** and applied atomically:
    the command stack, then triggers `make` as a side effect.
 
 ---
-## Config Symmetry
+## Profile Symmetry
 
-The patcher reads the same JSON config that drives the parser. A config entry
-describes both how to *read* and how to *write* a given assembly construct.
+The patcher and parser are the read/write halves of the **same hardcoded target profile**.
+The per-target logic that knows how to *read* a construct also knows how to *write* it back.
 
-Config authors must ensure:
-- Patterns unambiguously identify the region to replace.
-- Insertion anchor fields are present for every entity type that can be added
-  (e.g. `insert_before: "footer"` for table types).
-- New-entity file templates are provided for entity types that may require a
-  new file to be created on disk.
-- Formatting for generated lines is explicit in the config (the patcher does
-  not infer formatting from adjacent lines).
+Each target profile must, for every entity type it supports, provide:
+- Patterns that unambiguously identify the region to replace.
+- Insertion anchors for every entity type that can be added (e.g. "before the table footer").
+- New-entity file templates for entity types that may require a new file on disk.
+- Explicit formatting for generated lines (the patcher does not infer formatting from
+  adjacent lines).
+- For entity types that introduce a new ROM `SECTION` (new maps): how to place the section in
+  the user-chosen bank (Prism → linkerscript edit; vanilla → pinned `BANK[$xx]`).
 
 ---
 
@@ -206,15 +226,15 @@ src/shared/patcher/
   asmPatcher.ts             ← core patcher engine (apply patch ops to AsmCodeBuffer)
   entityDiff.ts             ← diff(oldIntermediateJSON, newIntermediateJSON) → EntityDiff
   patchOperation.ts         ← PatchOperation type definitions
-  patcherConfig.ts          ← config type definitions (shared with parser)
   __tests__/
     asmPatcher.test.ts
     entityDiff.test.ts
 ```
 
-Shared config and metadata types (used by both parser and patcher) may be
-extracted to `src/shared/parser/` or a dedicated `src/shared/asm-config/` module
-to avoid duplication. TBD when implementation begins.
+The per-target write logic (mirror of the parser's `targets/<profile>/`) lives alongside the
+parser's target modules, not in this engine directory. Shared metadata types (used by both
+parser and patcher) may be extracted to `src/shared/parser/` or a dedicated
+`src/shared/asm-config/` module to avoid duplication. TBD when implementation begins.
 
 ---
 
@@ -228,11 +248,13 @@ The generic patcher engine (this directory) must remain:
 It accepts:
 - **Parser metadata** (per-file flat property lists with `entity_id`, `pattern`, `rawLine`, `line_num`)
 - **Base file buffers** (`AsmCodeBuffer` per file, provided by the patcher service)
-- **Parser/patcher config** (for generating new lines and resolving insertion anchors)
+- **Target profile** write logic (for generating new lines and resolving insertion anchors)
 - **Entity diff** (`{ changed, removed, added }` buckets computed from old vs new intermediate JSON)
+- **Placement input** for new sections (the user-chosen target bank, for Case D map additions)
 
 It returns:
-- A map of `filePath → AsmCodeBuffer` (patched in-memory buffers)
+- A map of `filePath → AsmCodeBuffer` (patched in-memory buffers) — including the linkerscript
+  for profiles that bank via a linkerscript (e.g. Prism's `romx.link`)
 - A list of new files to create (`filePath → content`) for Case D additions
 - A list of `PatchOperation` records describing every low-level change made
 
@@ -261,4 +283,4 @@ assert(HLR_before_patch === HLR_after_parse)
 
 If this assertion fails, there is a bug in either the parser or the patcher.
 Crystal Studio may optionally run this verification after each build to detect
-config errors early.
+profile bugs early.

@@ -1,15 +1,27 @@
 # Parser Subsystem – Agent Context
 
-This directory contains the **generic ASM parser engine**.
-It is a candidate for extraction into a standalone npm package.
-Keep it **completely free of Crystal Studio-specific imports**.
+This directory contains the **generic ASM matching engine** (`asm-pattern/`,
+`asmCodeBuffer`, `asmLine`, pattern branch-expansion) **plus the hardcoded per-target
+parsers** that use it (`targets/<profile>/`).
+
+The generic engine is a candidate for extraction into a standalone npm package — keep it
+**completely free of Crystal Studio-specific imports**. The per-target parsers may depend on
+the engine but must still avoid HLR/command-stack/file-I/O imports (they take buffers in,
+return intermediate JSON + metadata out).
+
+> **v1 scope note:** the parsing rules are **hardcoded**, not user-configurable. There is no
+> JSON config, no config templates, no in-app config editor. The user selects one of the
+> shipped **target profiles** (`pokecrystal` | `prism`); that's it. A user-customizable
+> JSON-configurable parser is the documented *future* direction (see the end of this file) —
+> a generic config interpreter is essentially that future parser and is deliberately out of
+> v1 scope.
 
 ---
 
 ## Purpose
 
-The parser reads assembly files from a pokecrystal-based codebase (guided by a
-JSON config) and produces two outputs:
+The parser reads assembly files from a pokecrystal-based codebase (using the hardcoded rules
+of the selected **target profile**) and produces two outputs:
 
 1. **Intermediate JSON** – a domain-agnostic collection of entity/property bags.
 2. **Parser metadata JSON** – per-property record of the matched pattern and the
@@ -17,6 +29,10 @@ JSON config) and produces two outputs:
 
 Crystal Studio's **HLR factory** (lives in `src/main/`, not here) consumes the
 intermediate JSON and builds typed HLR objects.
+
+These two outputs are the **stable contract** between parser and patcher. The contract is
+identical no matter how the parse rules are authored (hardcoded today, JSON-configured in the
+future), so the patcher and the round-trip guarantee are unaffected by this v1 simplification.
 
 ---
 
@@ -32,12 +48,19 @@ asm-pattern/
   asmPattern.ts         ← AsmPattern type + parseAsmPattern() validator
   asmPatternChunk.ts    ← Internal: splits a pattern into literal/placeholder chunks
   patternUtils.ts       ← Internal: placeholder extraction, normalization, overlap
-  parser-config/
+  parser-config/        ← (legacy name) pattern-string parsing utilities, not JSON config
     pattern-parser/
       patternParser.ts  ← Expands branching patterns ([a|b]) into AsmPattern[]
       patternBranching.ts
       patternSplitter.ts
+
+targets/                ← (planned) hardcoded per-target parsers — NOT yet created
+  pokecrystal/          ← vanilla pret/pokecrystal parse logic
+  prism/                ← Pokémon Prism parse logic
 ```
+
+Everything above `targets/` is the **generic engine** (domain- and profile-agnostic).
+Everything under `targets/` is **per-profile parse logic** that calls the engine.
 
 ---
 
@@ -62,122 +85,58 @@ Patterns are strings that match assembly lines. They use a custom syntax:
 it back. A pattern with a named placeholder `{value}` can both extract `value`
 from a line and reconstruct the line given a new `value`.
 
+The pattern strings themselves remain the workhorse of the hardcoded parsers — a per-target
+parse function holds its pattern strings inline and feeds them to the engine. What is gone in
+v1 is the *external descriptor format* that used to wrap these patterns in JSON.
+
 ---
 
-## Parser Configuration Format
+## Target Profiles (Hardcoded)
 
-The parser is driven by a JSON config supplied by the project. A config is an
-array of **entity descriptors**. Each descriptor tells the parser:
-- What entity type this produces (must match a known HLR entity name)
-- Which files to read (path or glob)
-- How to extract entities from those files
+Instead of a JSON config of entity descriptors, v1 ships **hardcoded per-target parsers**.
+Each target profile knows, in code, which files to read, how to slice them into entities, and
+which `AsmPattern` strings extract each property.
 
-### Config Schema (conceptual)
+### Authoring model: imperative, not a spec interpreter
 
-```jsonc
-[
-  {
-	"entity": "PokemonBase",
-	"files": [
-	  {
-		"file_name": "constants/pokemon_constants.asm",  // glob / regex
-		"type": "table",  // one entity per ROW between header and footer
-		"header": "const_def 1",  // regex
-		"footer": "DEF NUM_POKEMON EQU const_value - 1",  // regex
-		"regex": "const {pkmn_id}\t;{pkmn_num}", // eg. const IVYSAUR    ; 02
-	  },
-	  {
-        "file_name": "data/pokemon/base_stats.asm",
-        "type": "table",
-		"header": "\ttable_width BASE_DATA_SIZE",
-		"footer": "\tassert_table_length NUM_POKEMON",
-        "regex": ["INCLUDE \"data/pokemon/base_stats/{name}.asm\""], // an array means OR
-      }
-	],
-	"required": ["name"] // If missing, parser throws error 
-  },
-  {
-    "entity": "PokemonBaseStats",
-    "files": [
-	  {
-		"file_name": "data/pokemon/base_stats/{name}.asm",  // when the filename depends on a property the patcher is allowed to rename/create/delete the file
-		"type": "multi_line",   // one entity per sequence of matching lines)
-		"anchor": "start_of_file", // start_of_file | none | end_of_file 
-		"regex": [
-			"db {pkmn_id} ; {pkmn_num}"
-			"db {hp},{atk},{def},{spd},{spc}",
-			";   hp  atk  def  spd  sat  sdf",
-			"", // We need at least an empty line before the next match
-			"db {type1_id}, {type2_id}",
-			"db {catch_rate}",
-			"db {base_exp}",
-			{ "regex": "db {} ; gender ratio", "ignore_comment": "false" }, // Comments w/o placeholders are ignored by  default by the parser
-			"INCBIN \"gfx/pokemon/{name}/front.dimensions\"", // Multiple appearences of {name} -> warn the user
-		],
-		"mappings": {
-			// If placeholder name != property name, remap here
-			"spd": "speed",
-			"spc": "special"
-		}
-      },
-	  {
-		"file_name": "data/pokemon/base_stats/{name}.asm",
-		"type": "table",
-		"anchor": "end_of_file",
-		"header": { "regex": "\t; tm/hm leanset", "ignore_comment": "false" },
-		"footer": { "regex": "\t; end", "ignore_comment": "false"},
-		"regex": "tmhm {{tm_hm}}", // {{name}} means a list of comma separated values (0 or more)
-	  }
-	],
-	"required": ["name"],
-  },
-  {
-    "entity": "UnknownForms",
-    "files": [
-      {
-        "file_name": "constants/pokemon_constants.asm",
-        "type": "single_line",   // one entity per matching line (default)
-		"regex": "const UNOWN_{form}",
-      }
-    ]
-  }
-]
+Each entity is parsed by a **small hand-written function** that uses the generic engine
+directly. We deliberately do **not** build a generic descriptor interpreter (handling
+arbitrary `type`/`anchor`/`header`/`footer`/glob/`mappings`) — that interpreter *is*
+substantially the future configurable parser, and building it now is the overkill v1 avoids.
+
+```ts
+// illustrative — targets/pokecrystal/baseStats.ts
+function parseBaseStats(file: AsmCodeBuffer): EntityRecord[] {
+  // walk the buffer, match inline AsmPattern strings, emit one record per Pokémon
+  // e.g. matchPattern('db {hp},{atk},{def},{spd},{spc},{spc2}', line)
+  // each matched property becomes a metadata entry (entity_id, property, value,
+  // pattern, rawLine, line_num) — the same contract the patcher consumes
+}
 ```
 
-### Supported `type` values
+A profile is a collection of such functions plus a manifest of the files it reads. The two
+v1 profiles:
 
-| type | Description |
-|---|---|
-| `single_line` | Matches every line in the file that matches `regex`; each match = one entity |
-| `table` | Matches a block between `header` and `footer`; each `row` match = one entity |
-| `multi_line` | (Planned) For macros spanning multiple lines |
+| Profile id | Codebase | Notes |
+|---|---|---|
+| `pokecrystal` | vanilla pret/pokecrystal | the canonical baseline |
+| `prism` | Pokémon Prism | substantially diverged (different macros, split files, six regions, added abilities, different map-event format) — see `references/pokeprism/AGENTS.md` |
 
-### `mappings` field
+Two heavily divergent targets ⇒ **two parser modules** under `targets/`, sharing the engine
+but with separate bespoke logic. Do not try to parametrize one parser to cover both.
 
-Optional. Maps placeholder names (as they appear in the pattern) to property names
-on the HLR entity. If a placeholder name already matches the property name exactly,
-no mapping entry is needed.
+### Profile selection (not editing)
 
-### `file_name` Field — Glob & Regex Syntax
-
-The `file_name` field supports:
-
-| Syntax | Meaning |
-|---|---|
-| `*` | Matches any sequence of characters within a path segment (not `/`) |
-| `{}` (curly braces without content) | Matches any path segment (one level only) |
-| `{name}` (curly braces w/ content) | Matches any path segment and capture |
-| `[a\|b\|c]` | Matches one of the listed segments |
-| Any other string | Must match literally (case-sensitive on Linux, case-insensitive on Windows) |
-
-Linux-compatible regex syntax is also accepted for the glob string if a more precise
-match is needed. Users can hand-edit the config to use regex patterns when the
-standard glob syntax is insufficient.
-
-Examples:
-- `data/pokemon/base_stats/*.asm` — all `.asm` files in that directory
-- `constants/[pokemon_constants|move_constants].asm` — one of two specific files
-- `maps/{}.asm` — all `.asm` files one level inside `maps/`
+- The user **selects** a target profile for the project. They cannot edit the rules.
+- Selection is stored in the project config as a profile **id** (`pokecrystal` | `prism`).
+- There is **no automatic fork detection** — Crystal Studio does not guess. (A default may be
+  offered when opening a fresh repo, but the user confirms.)
+- Changing the selected profile triggers a **non-undoable full re-parse** (the command stack
+  is wiped). The user is warned before proceeding.
+- The parser remains **fault-tolerant**: if the selected profile does not perfectly match the
+  user's exact checkout, it parses what it can and logs warnings for the rest (see Fault
+  Tolerance Rules). There is no in-app way to fix coverage gaps in v1 other than the fix
+  arriving in a future profile update.
 
 ---
 
@@ -265,86 +224,15 @@ The HLR factory is responsible for:
   the correct per-file JSON objects (with the original `entity_id`s preserved)
   so the patcher can locate the right metadata entries.
 
-This design keeps the generic parser/patcher package completely unaware of
-Crystal Studio’s domain model.
-
----
-
-## Parser Configuration Lifecycle
-
-The parser config is a JSON document that is **embedded directly in the project
-config file** (not referenced by path). This means:
-- Each project carries its own self-contained parser config.
-- The shipped template configs are never modified by user actions.
-
-### Shipped Configs (Templates)
-- Live in the **app data folder** under a dedicated `parser-configs/` subdirectory.
-- Ship with Crystal Studio for known codebases: vanilla pokecrystal, Polished Crystal, Pokemon Prism, etc.
-- The app reads this folder at runtime and allows the user to select a config template.
-- When the user opens a new pret repo folder, the app automatically attempt to parse the codebase using the default parser config
-
-### Loading a Template
-- The user selects a new shipped config.
-- This copies the template config into the project config (embedded).
-- It triggers a **non-undoable full re-parse** of the workspace (the command stack
-  is wiped). The user is warned about this before proceeding.
-
-### Editing a Config
-- The user edits the embedded config in the project config file.
-- Any change triggers a **non-undoable full re-parse** (same as loading a template).
-- The original shipped template is unaffected.
-
-### Exporting a Config
-- The user can export the current embedded config to the `parser-configs/` folder
-  to create a new reusable template.
-- This does NOT trigger a re-parse.
-
----
-
-## Fork Compatibility & User Workflow
-
-Crystal Studio ships with pre-built parser config templates for known pokecrystal
-forks (vanilla pokecrystal, Polished Crystal, etc.). Because the assembly data layout
-diverges between forks — macros renamed, table structures changed, extra columns added
-— **no single config works for all forks**.
-
-### User Responsibility
-
-- The user selects the parser config template that best matches their codebase.
-- **No automatic fork detection** is attempted. Crystal Studio does not guess.
-- If the selected template does not fully match the user's fork, the parser will still
-  run — it is fault-tolerant and will parse what it can, skipping lines it does not
-  recognise. This is by design (fault-tolerant rules, see below).
-
-### Iterative Config Refinement
-
-Because the parser is fault-tolerant, partial configs are valid. The user workflow is:
-
-1. Open the project and select the closest matching template.
-2. Parse the workspace.
-3. Review the Issues Panel for unresolved parser warnings (lines skipped, entities
-   not fully populated).
-4. Edit the embedded config in the project settings to add new patterns or adjust
-   existing ones.
-5. Re-parse (non-undoable when config changes; user is warned).
-6. Repeat until the Issues Panel is clear (or the user accepts the remaining issues).
-
-This iterative process means that users can gradually improve coverage of their
-fork-specific codebase without needing a perfect config from day one.
-
-### Exporting Improved Configs
-
-Once a user has a working config for their specific fork, they can export it back
-to the templates folder, making it available as a reusable starting point for other
-projects on the same fork. See the Parser Config Lifecycle section for details.
+This design keeps the generic engine completely unaware of Crystal Studio's domain model.
 
 ---
 
 ## Fault Tolerance Rules
 
-- File not found → skip that file descriptor, log a warning.
-- No line matches expected pattern → skip that pattern, log a missing property warning (if any).
-- Unknown entity name in config → skip, log an error.
+- File not found → skip that file, log a warning.
+- No line matches an expected pattern → skip that pattern, log a missing-property warning (if any).
+- Unknown / unrecognized lines in a parsed region → leave untouched, log nothing or a debug note.
 - **Never throw** due to malformed input. The parser must always return the best
   partial result it can produce.
 
@@ -356,7 +244,23 @@ The following live in `src/main/` and are NOT part of this package:
 - HLR class definitions (`PokemonSpecies`, `GameMap`, etc.)
 - HLR factory (intermediate JSON → typed HLR objects)
 - Patcher implementation
-- Parser config loading / project config integration
+- Target-profile selection / project config integration
+- ROM map service (rgblink `.map` parsing → bank/free-space model)
+
+---
+
+## Future Direction: JSON-configurable parser
+
+The long-term plan is to replace the hardcoded `targets/<profile>/` modules with a generic,
+**JSON-configurable parser**: profiles become data (an array of entity descriptors with
+file globs, table/multi-line/single-line extraction, header/footer anchors, placeholder→
+property mappings) loaded at runtime, so users can author or refine profiles for arbitrary
+rom hacks without a code change. The big known rom hacks would ship as JSON profiles.
+
+When that lands, the generic engine in this directory (`asm-pattern/`, `asmCodeBuffer`, …) and
+the parser↔patcher **metadata contract** stay exactly as they are — only the `targets/`
+modules are superseded by the config interpreter. v1 hardcodes precisely so this engine and
+contract get battle-tested first.
 
 ---
 

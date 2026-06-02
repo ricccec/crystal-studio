@@ -18,8 +18,9 @@ All services are instantiated and wired in `serviceContainer.ts`.
 | `toolsService.ts` | Done | Detects/validates external tools (make, rgbds, cygwin, emulator…) |
 | `emulatorService.ts` | Done | Launches the configured emulator with the ROM path |
 | `commandStack.ts` | **NOT YET CREATED** | Global undo/redo stack |
-| `parserService.ts` | **NOT YET CREATED** | Orchestrates parsing; wraps parser engine; manages base file snapshots |
+| `parserService.ts` | **NOT YET CREATED** | Orchestrates parsing; runs the selected target profile's parser; manages base file snapshots |
 | `patcherService.ts` | **NOT YET CREATED** | Converts HLR deltas into ASM patches; writes files to disk |
+| `romMapService.ts` | **NOT YET CREATED** | Parses the rgblink `.map` into a bank/free-space model for the ROM View + placement |
 | `hlrFactory.ts` | **NOT YET CREATED** | Maps intermediate parser JSON → typed HLR objects |
 | `hlrValidationService.ts` | **NOT YET CREATED** | Validates HLR referential integrity + codebase grep validator |
 | `sessionService.ts` | **NOT YET CREATED** | Manages `.crystal-studio/` folder; auto-save; session restore |
@@ -64,7 +65,7 @@ Pushed when the parser runs (user-triggered or file-change-triggered).
 - Stores: snapshot of every base file that was (re-)parsed (`baseFiles: Map<filePath, string>`)
 - Also stores: the HLR state produced by this parse
 - **Undoable**: restores the previous base file snapshots and HLR state
-- **NOT undoable** if triggered by a parser config change — in that case the stack
+- **NOT undoable** if triggered by a target profile change — in that case the stack
   is wiped and a fresh non-undoable parse is performed
 
 #### `HlrEditCommand`
@@ -86,7 +87,7 @@ Pushed when the user triggers a build (patch files → run make).
 
 ### Stack Rules
 - Stack is **reset on app start** (no cross-session undo)
-- Re-parsing always pushes a `ParseCommand` (except parser-config-driven re-parse)
+- Re-parsing always pushes a `ParseCommand` (except a profile-change-driven re-parse)
 - **Patching failure** (a file write fails mid-patch): all written files are rolled back
   automatically before the error is surfaced to the user. No `PatchCommand` is pushed.
   No user action is required — this rollback is transparent.
@@ -115,18 +116,19 @@ parser metadata.
 ## Parser Service (NOT YET CREATED)
 
 Responsibilities:
-- Load the parser config from the project settings
-- Invoke the generic parser engine (`src/shared/parser/`) on **all** configured workspace files
+- Read the **selected target profile id** (`pokecrystal` | `prism`) from the project settings
+- Run that profile's hardcoded parser (`src/shared/parser/targets/<profile>/`) over **all**
+  of the files the profile reads
 - Store resulting base file snapshots + metadata JSON in a new `ParseCommand`
 - Pass the intermediate JSON to `hlrFactory` to build typed HLR objects
 - Watch for external file changes; prompt user to re-parse if a parsed file changes on disk
 
-**No partial re-parsing.** Every parse is a full rebuild of all configured files.
+**No partial re-parsing.** Every parse is a full rebuild of all of the profile's files.
 The user is warned that pending HLR edits (not yet patched to disk) will be lost.
 A re-parse is always undoable (the `ParseCommand` stores the previous base files,
 metadata, and intermediate JSON so the previous HLR state can be fully restored).
 
-**Exception:** a re-parse triggered by a parser config change is **not undoable**.
+**Exception:** a re-parse triggered by a **target profile change** is **not undoable**.
 The command stack is wiped and a fresh non-undoable parse is performed.
 
 ---
@@ -143,15 +145,20 @@ Responsibilities:
    - `removed`: entity_id in metadata but absent from new JSON
    - `added`: entity_id in new JSON but absent from metadata
 3. **Retrieve base file snapshots** from the command stack (most recent per file)
-4. **Call the generic patcher engine** (`src/shared/patcher/`) with:
+4. **Resolve ROM placement** for any added entity that introduces a new section (e.g. a new
+   map): take the **user-chosen target bank** (from the ROM View) and pass it as placement
+   input. v1 does not auto-pick a bank. (See `romMapService` and the patcher's Case D.)
+5. **Call the generic patcher engine** (`src/shared/patcher/`) with:
    - Parser metadata (per-file property lists)
-   - Base file buffers
-   - Parser/patcher config
-   - Entity diff
-5. **Write patched buffers to disk** atomically (rollback all on any write failure)
-6. **Create new files** required by new entities (with user confirmation dialog)
-7. **Push a `PatchCommand`** onto the command stack (stores pre-patch snapshots)
-8. **Trigger `make`** as a side effect
+   - Base file buffers (including the linkerscript for linkerscript-banked profiles)
+   - The selected target profile's write logic
+   - Entity diff + placement input
+6. **Write patched buffers to disk** atomically (rollback all on any write failure). For
+   profiles that bank via a linkerscript (Prism's `romx.link`), the edited linkerscript is one
+   of the written buffers.
+7. **Create new files** required by new entities (with user confirmation dialog)
+8. **Push a `PatchCommand`** onto the command stack (stores pre-patch snapshots)
+9. **Trigger `make`** as a side effect
 
 **Patcher only touches lines that the parser has recognized.**
 All unrecognized lines pass through verbatim (opaque preservation), ensuring
@@ -160,6 +167,32 @@ partially-parsed files are never silently corrupted.
 > For multi-file HLR entities: the HLR factory is responsible for splitting a
 > single HLR entity back into per-file intermediate JSON objects (preserving
 > entity_ids) before the diff is computed.
+
+---
+
+## ROM Map Service (NOT YET CREATED)
+
+Builds the **bank / free-space model** that powers the renderer's ROM View and the manual
+bank-placement flow.
+
+Responsibilities:
+- Locate the project's rgblink **`.map`** file (the filename varies per project, e.g.
+  `pokeprism_nodebug.map`; discover it or read it from settings).
+- Parse it into a structured model: per-bank list of sections (`name`, start/end, size) plus
+  `EMPTY` ranges and `TOTAL EMPTY` (free) bytes, and the ROMX header totals
+  (`used / free / bank count`).
+- Expose this model over IPC for the ROM View, and provide free-space lookups to the
+  patcher/placement flow when the user adds a map.
+
+**Requires a prior successful build.** The `.map` is a build artifact — until the project has
+been built at least once there is no free-space data, and ROM-banking features are
+unavailable (the ROM View shows a "build required" state).
+
+This service only **reads** the `.map`; it does not run builds (that is `makeService`) and it
+does not write banking changes (the patcher does that, per the selected profile).
+
+> **Future:** an auto-banking allocator that consumes this model to pick a bank
+> automatically. Out of scope for v1 (placement is manual).
 
 ---
 
@@ -227,7 +260,7 @@ Manages workspace persistence across sessions.
 
 | Artifact | Why |
 |---|---|
-| **Parser config** | Embedded in project config file; also the active config for re-parsing |
+| **Selected target profile id** | `pokecrystal` \| `prism`, stored in the project config; selects which hardcoded parser/patcher runs on re-parse |
 | **Base file snapshots** | Full raw content of each parsed ASM file as of last parse; used as patcher input |
 | **Parser metadata JSON** | Per-file flat property lists (`entity_id`, `value`, `pattern`, `rawLine`, `line_num`); used as patcher input and for diff computation |
 | **Intermediate JSON from current HLR** | HLR serialized to intermediate JSON at auto-save time; reflects user edits not yet patched to disk; this is what restores the HLR on next startup |
@@ -241,7 +274,7 @@ Manages workspace persistence across sessions.
 > to perform this HLR → intermediate JSON serialization at auto-save time.
 
 ### On Startup
-1. Load project config (parser config, settings) from app-data or `.crystal-studio/`.
+1. Load project config (selected target profile id, settings) from app-data or `.crystal-studio/`.
 2. Restore base file snapshots and metadata JSON from the stored copies.
 3. Reconstruct the HLR using `hlrFactory` from the **saved intermediate JSON**
    (not by re-parsing — this preserves user edits made since the last parse).

@@ -1,0 +1,98 @@
+[
+  {
+    "category": "functional",
+    "description": "romMapService parses the rgblink .map build artifact into a structured bank/free-space model",
+    "steps": [
+      "Build the project at least once so a rgblink .map file exists (e.g. pokeprism_nodebug.map)",
+      "Point romMapService at the .map file (discovered automatically or read from settings)",
+      "Invoke the parse and inspect the resulting model",
+      "Verify the model has a per-bank list of ROMX banks, each with bank number, the sections it contains (name, start, end, size), the EMPTY ranges, and the TOTAL EMPTY (free) bytes",
+      "Verify the model exposes the ROMX header totals (bytes used, bytes free, number of banks)",
+      "Spot-check a known bank against the raw .map text (e.g. ROMX bank #1 sections and TOTAL EMPTY match)"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "ROM-banking features are unavailable until a successful build has produced a .map",
+    "steps": [
+      "Open a freshly cloned project that has never been built",
+      "Confirm that no rgblink .map file exists in the workspace",
+      "Open the ROM View",
+      "Verify the ROM View shows a 'build required' empty state (no bank data) rather than erroring",
+      "Verify the empty state offers an action to start a build",
+      "Run a build, then reopen the ROM View and verify it now renders the bank model"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "An IPC channel returns the bank/free-space DTO for the renderer; the DTO is fully serializable",
+    "steps": [
+      "Register the ROM IPC channel (registerRomIpc.ts) and confirm it is wired in registerIpc.ts",
+      "Invoke the get-rom-map channel from the renderer side",
+      "Verify the returned DTO contains the banks array and ROMX totals, or a 'build required' status when no .map exists",
+      "Verify the DTO contains no class instances or non-serializable values and is typed in src/shared/types/"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "The ROM View lists banks with their used/free bytes, fill indicator, and contained sections",
+    "steps": [
+      "Open a built project and open the ROM View",
+      "Verify each ROMX bank row shows the bank number and bytes used / free with a fill indicator",
+      "Expand a bank and verify its sections are listed with names and sizes, plus the free/EMPTY space",
+      "Verify the header shows the ROMX totals (used / free / bank count)",
+      "Verify the figures match the parsed .map model for at least one spot-checked bank"
+    ],
+    "passes": false
+  },
+  {
+    "category": "ui",
+    "description": "Adding a new map presents the ROM View as a manual bank picker; v1 does not auto-pick a bank",
+    "steps": [
+      "Open a built project and start the 'add a new map' flow",
+      "Verify the user is prompted to choose a target bank, with per-bank free space shown to inform the choice",
+      "Verify no bank is pre-selected automatically (v1 placement is manual)",
+      "Choose a bank with sufficient free space and confirm the map creation",
+      "Verify the chosen bank id is carried with the create-map command to the main process as placement data"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "The patcher emits a new map's section into the user-chosen bank using the pokecrystal profile mechanic (pinned BANK)",
+    "steps": [
+      "Use a pokecrystal-profile project and add a new map, choosing a specific target bank",
+      "Trigger a patch",
+      "Verify the patched ASM declares the new map's section pinned to the chosen bank (e.g. SECTION \"...\", ROMX, BANK[$xx])",
+      "Verify the new maps/Name.asm file is created (after the confirmation dialog)",
+      "Build and verify rgblink places the section in the chosen bank"
+    ],
+    "passes": false
+  },
+  {
+    "category": "functional",
+    "description": "The patcher emits a new map's section into the user-chosen bank using the prism profile mechanic (linkerscript edit)",
+    "steps": [
+      "Use a prism-profile project and add a new map, choosing a specific target bank $xx",
+      "Trigger a patch",
+      "Verify the patched ASM declares the new map's SECTION",
+      "Verify the section name is inserted under the chosen ROMX $xx block in the linkerscript contents/romx.link",
+      "Verify the edited romx.link is one of the buffers written atomically with the rest of the patch",
+      "Build and verify the section lands in bank $xx"
+    ],
+    "passes": false
+  },
+  {
+    "category": "non-functional",
+    "description": "romMapService only reads the .map; it never runs builds or writes banking changes",
+    "steps": [
+      "Inspect romMapService and confirm it performs no build invocation (builds are makeService's responsibility)",
+      "Confirm it performs no writes to ASM files or the linkerscript (banking writes are the patcher's responsibility)",
+      "Confirm the service degrades gracefully (returns a 'build required' status) when the .map is missing or unparseable rather than throwing"
+    ],
+    "passes": false
+  }
+]

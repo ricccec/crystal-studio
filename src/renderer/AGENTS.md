@@ -73,6 +73,7 @@ Key UI areas (planned, not all implemented yet):
 - **Entity Editors** – tab-based editors for Pokémon, Maps, Moves, TMs, etc.
 - **Properties Panel** – context-sensitive properties for selected entity
 - **Issues Panel** – see detailed spec below
+- **ROM View** – banks, sections, and free space (see detailed spec below)
 - **Console Panel** – streams stdout/stderr from running tasks (make, git clone, etc.)
 - **Task Manager View** – lists running/completed tasks; allows cancellation
 
@@ -87,8 +88,8 @@ errors, and codebase grep hits (from rename/delete workflows).
 
 | Source | When raised |
 |---|---|
-| **Parser warning** | An ASM line matched nothing in the config for an expected entity |
-| **Parser error** | A configured file was missing, or a required block was malformed |
+| **Parser warning** | An ASM line matched nothing the target profile expected for an entity |
+| **Parser error** | A file the target profile reads was missing, or a required block was malformed |
 | **HLR validation** | An HLR entity holds a reference to an unknown constant (e.g., deleted Pokémon) |
 | **Codebase grep** | An unparsed file references an old constant (after rename/delete) |
 
@@ -108,6 +109,35 @@ errors, and codebase grep hits (from rename/delete workflows).
   Expanding an entity row shows all files it was parsed from, each with their individual issues.
 - **Inline resolution:** Where possible, issues surface an action (e.g.
   "Auto fix: replace old constant in this file"). Clicking it triggers the relevant service call.
+
+---
+
+## ROM View — Detailed Spec
+
+The ROM View surfaces the **bank / free-space budget** of the project so the user understands
+where new content can go, and acts as the **bank picker** when adding a new map.
+
+### Data source
+- Fed by `romMapService`, which parses the rgblink **`.map`** build artifact.
+- **Requires a prior successful build.** If no `.map` exists yet, the ROM View renders a
+  **"build required"** empty state (with a button to start a build) — banking features are
+  unavailable until then.
+
+### What it shows
+- A list of ROMX **banks**, each with: bank number, bytes used / free, and a fill indicator.
+- Per bank, the **sections** it contains (name + size) and the `EMPTY`/free ranges.
+- The ROMX header totals (total used / free / number of banks).
+
+### Manual placement flow (v1)
+- When the user **adds a new map** (which introduces a new ROM `SECTION`), the ROM View is
+  presented as a **bank picker**: the user explicitly chooses the target bank.
+- v1 does **not** auto-pick a bank. The chosen bank is sent to the main process as placement
+  input alongside the create-map command; the patcher emits the section into that bank
+  (profile-specific mechanics — see `src/shared/patcher/AGENTS.md`).
+- **Future:** an "auto-banking" mode that suggests/auto-selects a bank with enough room.
+
+Like every other panel, the ROM View is purely presentational — it renders the DTO from the
+ROM IPC channel and emits the user's bank choice back as a command.
 
 ---
 

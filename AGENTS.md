@@ -71,13 +71,22 @@ The renderer receives a **plain DTO snapshot** of the HLR over IPC.
 
 ### Parser
 
-A configurable, fault-tolerant engine that reads ASM files and produces:
-1. **Intermediate JSON** – generic entity/property bags (domain-agnostic, parser-package output)
-2. **Parser metadata JSON** – per-property matched regex + matched ASM line (used by the patcher)
+A **hardcoded**, fault-tolerant engine that reads ASM files and produces:
+1. **Intermediate JSON** – generic entity/property bags (domain-agnostic)
+2. **Parser metadata JSON** – per-property matched pattern + matched ASM line (used by the patcher)
 The Crystal Studio **HLR factory** consumes the intermediate JSON and constructs typed HLR objects.
 
-Parser config lives in the project config. The generic parser engine lives in `src/shared/parser/`
-and is a candidate for extraction into a standalone npm package.
+For v1 the parsing rules are **not user-configurable**. Crystal Studio ships hardcoded
+parser/patcher implementations selected via a fixed **target profile**
+(`pokecrystal` | `prism`). The user *selects* a profile; they do not edit it. The generic
+matching engine (`AsmPattern`, chunking, branch expansion, `AsmCodeBuffer`) lives in
+`src/shared/parser/` and is reused by every profile; the per-profile parse logic lives in
+`src/shared/parser/targets/<profile>/`.
+
+> **Future direction:** a user-customizable, JSON-configurable parser. The shipped profiles
+> for major rom hacks would then be authored as JSON configs rather than code. v1 deliberately
+> hardcodes instead — a generic config interpreter is essentially that future parser, and is
+> out of scope here. See `src/shared/parser/AGENTS.md`.
 
 ### Patcher
 
@@ -87,8 +96,11 @@ Converts the *current HLR state* back into ASM file edits using a **state-diff s
 3. Apply targeted line-level operations to in-memory base file snapshots
 4. Write patched files to disk atomically
 
-Uses the **same config** as the parser (symmetric design). Preserves all formatting,
-comments, and unrecognized lines verbatim. See `src/shared/patcher/AGENTS.md` for details.
+Mirrors the parser's **hardcoded target profile** (symmetric design — the same profile that
+teaches the parser how to read a construct teaches the patcher how to write it). Preserves all
+formatting, comments, and unrecognized lines verbatim. When a new entity introduces a new ROM
+section (chiefly a new map), the patcher places it in a user-chosen bank — see **ROM
+Allocation & Banking** below and `src/shared/patcher/AGENTS.md`.
 
 ### Command Stack
 
@@ -103,7 +115,7 @@ A **single global undo/redo stack** (like VS Code). Every user action is a `Comm
 
 Rules:
 - Undo does **not** cross session boundaries (stack is reset on app start).
-- Re-parsing always pushes a new `ParseCommand` (undoable), **except** when triggered by a parser config change (which is destructive and not undoable).
+- Re-parsing always pushes a new `ParseCommand` (undoable), **except** when triggered by a target profile change (which is destructive and not undoable).
 - Only one `PatchCommand` at a time; a new patch collapses the previous one.
 - A build is a `PatchCommand` followed by `make`; `make` failure does not auto-rollback — the user undoes the patch manually (with a confirmation dialog that explains the consequence).
 
@@ -114,7 +126,7 @@ Rules:
   `.crystal-studio/` folder is created in the repo root, the app-data backup is removed,
   and `.crystal-studio/` is added to `.gitignore`.
 - **Auto-save** runs periodically and stores four artifacts:
-  1. **Parser config** (embedded in project config file)
+  1. **Selected target profile id** (`pokecrystal` | `prism`, stored in the project config)
   2. **Base file snapshots** – full content of each parsed ASM file as of last parse
   3. **Parser metadata JSON** – per-file property lists with `entity_id`, `pattern`, `rawLine`, `line_num`
   4. **Intermediate JSON from current HLR** – the HLR serialized to intermediate JSON at auto-save time (this is what allows HLR state to be restored across sessions — it reflects user edits, not just the last parse)
@@ -137,6 +149,28 @@ Rules:
 - Auto-manage `.gitignore` (add `.crystal-studio/` and ROM output).
 - Commit from UI.
 - Optionally: branch management.
+
+### ROM Allocation & Banking
+
+A pokecrystal ROM is split into 16 KiB **banks**, and most rom hacks run on a tight free-space
+budget. Placing **new** content — chiefly a new map and the ROM `SECTION`s it introduces — means
+choosing a bank that has room. Crystal Studio must understand this budget.
+
+- **Free-space model** is derived by parsing the **rgblink `.map` file** produced by a build
+  (e.g. `pokeprism_nodebug.map`): per-bank `SECTION`/`EMPTY` ranges and `TOTAL EMPTY` bytes.
+  This is authoritative but **requires a prior successful build** — ROM-banking features are
+  unavailable until the project has been built at least once.
+- **v1 = manual placement.** The renderer's **ROM View** shows banks, their sections, and free
+  space. When the user adds a map, they pick the target bank; the patcher emits the new section
+  into that bank.
+- **Placement mechanics are profile-specific:**
+  - **Prism** banks sections explicitly via a linkerscript (`contents/romx.link`: a `ROMX $xx`
+    block lists the section names in bank `$xx`). Placing a section = emit the `SECTION` in the
+    `.asm` **and** add its name under the chosen bank block in the linkerscript.
+  - **Vanilla pokecrystal** relies on rgblink auto-banking; forcing a bank = emit a pinned
+    `SECTION "…", ROMX, BANK[$xx]`.
+- **Future:** an "auto-banking" allocator that picks a bank with enough free space
+  automatically (bin-packing). Out of scope for v1.
 
 ---
 
@@ -213,7 +247,7 @@ difference:
 - IPC channels are defined in `src/shared/ipc.ts` and registered in `src/main/ipc/`.
 - Tests live in `__tests__/` subdirectories alongside the code they test (Vitest).
 - The parser engine (`src/shared/parser/`) is designed to be domain-agnostic and is a candidate for extraction as a standalone npm package — keep it free of Crystal Studio–specific imports.
-- The patcher mirrors the parser's config format; changes to parser config types must be reflected in patcher types.
+- The patcher mirrors the parser per target profile; the read/write logic for a profile must stay in sync (a change to how a construct is parsed must be reflected in how it is patched).
 
 ---
 
@@ -221,7 +255,10 @@ difference:
 
 - HLR class definitions (Pokemon, Map, etc.) — not yet created
 - HLR factory (intermediate JSON → typed HLR objects) — not yet created
+- Target-profile parsers (`pokecrystal`, `prism`) under `src/shared/parser/targets/` — not yet created
 - Patcher implementation — not yet created
+- ROM map service (rgblink `.map` parsing → bank/free-space model) — not yet created
+- ROM View panel + manual bank-placement flow — not yet created
 - Command stack / undo system — not yet created
 - Renderer UI beyond scaffolding — not yet created
 - Session persistence (`.crystal-studio/` folder logic) — not yet created

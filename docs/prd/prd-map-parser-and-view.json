@@ -1,11 +1,11 @@
 [
   {
     "category": "functional",
-    "description": "Parser config contains an entity descriptor for MapGroup that reads the newgroup / endgroup blocks in constants/map_constants.asm",
+    "description": "The hardcoded pokecrystal parser extracts MapGroup entities by reading the newgroup / endgroup blocks in constants/map_constants.asm",
     "steps": [
-      "Open the project parser config",
-      "Verify that a MapGroup entity descriptor exists targeting constants/map_constants.asm",
-      "Verify the descriptor uses a table type with the newgroup macro as the header pattern and endgroup as the footer pattern",
+      "Open a project whose target profile is pokecrystal",
+      "Confirm the pokecrystal parser has parse logic for MapGroup targeting constants/map_constants.asm",
+      "Confirm it treats each newgroup/endgroup block as a table (newgroup as the header, endgroup as the footer)",
       "Run the parser against the reference pokecrystal codebase",
       "Verify that the intermediate JSON contains a MapGroup array with one entry per group (OLIVINE, MAHOGANY, DUNGEONS … 26 total in vanilla pokecrystal)",
       "Verify each MapGroup entry carries group_name (e.g. OLIVINE) and group_id (numeric index from const_value)"
@@ -14,10 +14,10 @@
   },
   {
     "category": "functional",
-    "description": "Parser config contains an entity descriptor for GameMap (dimensions) that reads map_const rows from constants/map_constants.asm",
+    "description": "The hardcoded pokecrystal parser extracts GameMap dimensions by reading map_const rows from constants/map_constants.asm",
     "steps": [
-      "Verify that a GameMap entity descriptor exists targeting constants/map_constants.asm",
-      "Verify the descriptor uses a row pattern matching the map_const macro, capturing map_name, width, and height",
+      "Confirm the pokecrystal parser has parse logic for GameMap targeting constants/map_constants.asm",
+      "Confirm it matches the map_const macro row, capturing map_name, width, and height",
       "Run the parser against the reference codebase",
       "Verify the intermediate JSON GameMap entries include map_name (e.g. OLIVINE_GYM), width, and height",
       "Verify the group association is captured so each map is linked to its enclosing newgroup block"
@@ -26,10 +26,10 @@
   },
   {
     "category": "functional",
-    "description": "Parser config contains an entity descriptor for GameMap (data properties) that reads map macro calls from data/maps/maps.asm",
+    "description": "The hardcoded pokecrystal parser extracts GameMap data properties by reading map macro calls from data/maps/maps.asm",
     "steps": [
-      "Verify that a GameMap entity descriptor exists targeting data/maps/maps.asm",
-      "Verify the descriptor uses the map macro pattern capturing: display_name (PascalCase), tileset, environment, landmark, music, phone_service, palette, fish_group",
+      "Confirm the pokecrystal parser has parse logic for GameMap targeting data/maps/maps.asm",
+      "Confirm it matches the map macro, capturing: display_name (PascalCase), tileset, environment, landmark, music, phone_service, palette, fish_group",
       "Run the parser",
       "Verify the intermediate JSON merges the maps.asm-sourced properties onto the correct GameMap entities (matched by map name constant, normalised to UPPER_SNAKE_CASE)",
       "Spot-check: OLIVINE_GYM should have tileset=TILESET_CHAMPIONS_ROOM, environment=INDOOR, music=MUSIC_GYM, palette=PALETTE_DAY"
@@ -38,10 +38,10 @@
   },
   {
     "category": "functional",
-    "description": "Parser config contains an entity descriptor for MapGroupRoofAssignment that reads the MapGroupRoofs table in data/maps/roofs.asm",
+    "description": "The hardcoded pokecrystal parser extracts MapGroupRoofAssignment entities by reading the MapGroupRoofs table in data/maps/roofs.asm",
     "steps": [
-      "Verify that a MapGroupRoofAssignment entity descriptor exists targeting data/maps/roofs.asm",
-      "Verify the descriptor reads per-group roof index values from the db rows in the MapGroupRoofs table",
+      "Confirm the pokecrystal parser has parse logic for MapGroupRoofAssignment targeting data/maps/roofs.asm",
+      "Confirm it reads per-group roof index values from the db rows in the MapGroupRoofs table",
       "Run the parser",
       "Verify each MapGroup's roof assignment is captured correctly (e.g. group 1 Olivine → ROOF_OLIVINE, group 3 Dungeons → -1 meaning no roof)"
     ],
@@ -49,10 +49,10 @@
   },
   {
     "category": "functional",
-    "description": "Parser config contains an entity descriptor for OutdoorSpriteGroup that reads per-group sprite ID lists from data/maps/outdoor_sprites.asm",
+    "description": "The hardcoded pokecrystal parser extracts OutdoorSpriteGroup entities by reading per-group sprite ID lists from data/maps/outdoor_sprites.asm",
     "steps": [
-      "Verify that an OutdoorSpriteGroup entity descriptor exists targeting data/maps/outdoor_sprites.asm",
-      "Verify the descriptor captures the group label (e.g. PalletGroupSprites) and the list of SPRITE_* constant values that follow it",
+      "Confirm the pokecrystal parser has parse logic for OutdoorSpriteGroup targeting data/maps/outdoor_sprites.asm",
+      "Confirm it captures the group label (e.g. PalletGroupSprites) and the list of SPRITE_* constant values that follow it",
       "Run the parser",
       "Verify that each MapGroup entry in the intermediate JSON has an associated list of valid outdoor sprite IDs"
     ],
@@ -60,33 +60,33 @@
   },
   {
     "category": "functional",
-    "description": "Parser config contains entity descriptors for SpriteConstant, TilesetConstant, MusicConstant, and LandmarkConstant pulled from their respective constants files",
+    "description": "The hardcoded pokecrystal parser extracts SpriteConstant, TilesetConstant, MusicConstant, and LandmarkConstant entities from their respective constants files",
     "steps": [
-      "Verify a SpriteConstant descriptor targets constants/sprite_constants.asm and captures SPRITE_* names and their ordinal values",
-      "Verify a TilesetConstant descriptor targets constants/tileset_constants.asm and captures TILESET_* names",
-      "Verify a MusicConstant descriptor targets constants/music_constants.asm and captures MUSIC_* names",
-      "Verify a LandmarkConstant descriptor targets constants/landmark_constants.asm and captures LANDMARK_* names",
+      "Confirm the pokecrystal parser reads constants/sprite_constants.asm and captures SPRITE_* names and their ordinal values",
+      "Confirm it reads constants/tileset_constants.asm and captures TILESET_* names",
+      "Confirm it reads constants/music_constants.asm and captures MUSIC_* names",
+      "Confirm it reads constants/landmark_constants.asm and captures LANDMARK_* names",
       "Run the parser and confirm intermediate JSON contains fully populated arrays for each constant type"
     ],
     "passes": false
   },
   {
     "category": "functional",
-    "description": "Parser config contains entity descriptors for environment, palette, and fish-group constants from constants/map_data_constants.asm",
+    "description": "The hardcoded pokecrystal parser extracts environment, palette, and fish-group constants from constants/map_data_constants.asm",
     "steps": [
-      "Verify an EnvironmentConstant descriptor captures TOWN, ROUTE, INDOOR, CAVE, GATE, DUNGEON values",
-      "Verify a PaletteConstant descriptor captures PALETTE_AUTO, PALETTE_DAY, PALETTE_NITE, PALETTE_MORN, PALETTE_DARK",
-      "Verify a FishGroupConstant descriptor captures FISHGROUP_NONE through FISHGROUP_QWILFISH_NO_SWARM",
+      "Confirm the parser captures EnvironmentConstant values TOWN, ROUTE, INDOOR, CAVE, GATE, DUNGEON",
+      "Confirm it captures PaletteConstant values PALETTE_AUTO, PALETTE_DAY, PALETTE_NITE, PALETTE_MORN, PALETTE_DARK",
+      "Confirm it captures FishGroupConstant values FISHGROUP_NONE through FISHGROUP_QWILFISH_NO_SWARM",
       "Run the parser and confirm correct entries in the intermediate JSON"
     ],
     "passes": false
   },
   {
     "category": "functional",
-    "description": "Parser config contains an entity descriptor for MapAttributes that reads the map_attributes macro from data/maps/attributes.asm",
+    "description": "The hardcoded pokecrystal parser extracts MapAttributes by reading the map_attributes macro from data/maps/attributes.asm",
     "steps": [
-      "Verify a MapAttributes descriptor targets data/maps/attributes.asm",
-      "Verify the descriptor captures: map name, border_block value, and connection flags (north / south / east / west)",
+      "Confirm the pokecrystal parser has parse logic for MapAttributes targeting data/maps/attributes.asm",
+      "Confirm it captures: map name, border_block value, and connection flags (north / south / east / west)",
       "Run the parser",
       "Spot-check an entry: a map with a south connection should show that connection flag as set in the intermediate JSON"
     ],

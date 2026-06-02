@@ -37,11 +37,15 @@ Renderer  ──(invoke/send)──►  preload (contextBridge)  ──►  ipcM
 | `registerToolsIpc.ts` | Tool path configuration channels |
 
 **Not yet created (planned):**
-- `registerParserIpc.ts` — trigger parse, get HLR snapshot, get parse issues
-- `registerPatcherIpc.ts` — trigger patch/build, undo patch
+- `registerParserIpc.ts` — select target profile, trigger parse, get HLR snapshot, get parse issues
+- `registerPatcherIpc.ts` — trigger patch/build, undo patch (carries placement input for new maps)
 - `registerHlrIpc.ts` — CRUD operations on HLR entities
+- `registerRomIpc.ts` — get the bank/free-space model for the ROM View (from `romMapService`); reports the "build required" state when no `.map` exists yet
 - `registerGitIpc.ts` — commit, status, branch (git channels exist in `ipc.ts` but handler is not registered)
 - `registerCommandStackIpc.ts` — undo, redo, get stack state
+
+> Target-profile selection is a simple enum setter (one of `pokecrystal` | `prism`); there is
+> no parser-config channel in v1. Changing the profile triggers a non-undoable re-parse.
 
 ---
 

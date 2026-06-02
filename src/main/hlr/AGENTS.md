@@ -11,8 +11,8 @@ through it.
 
 ## What the HLR Is (and Is Not)
 
-- **Static**: defined in code, not configurable. The parser config may vary per fork,
-  but the HLR classes are fixed in the Crystal Studio codebase.
+- **Static**: defined in code, not configurable. The selected target profile may vary
+  (`pokecrystal` | `prism`), but the HLR classes are fixed in the Crystal Studio codebase.
 - **Domain-typed**: strings from the parser are coerced to proper types here.
 - **Main-process only**: HLR class instances never cross to the renderer. A plain
   DTO snapshot is sent over IPC instead.
@@ -82,6 +82,11 @@ When a species is renamed or deleted, every reference site must be updated.
    - Creates a new file in `data/pokemon/base_stats/[name].asm`
    - The user is shown a confirmation dialog before the new file is created.
 
+> **ROM note:** adding a Pokémon grows **existing** sections/tables — there is no per-entity
+> bank choice in v1. If a bank overflows at build time the ROM View surfaces the budget so the
+> user can rebalance. Only entities that introduce a **new section** require a bank pick — in
+> the v1 entity set that is adding a **map** (below).
+
 ### Renaming a Pokémon
 
 1. User renames the species in the HLR.
@@ -104,6 +109,29 @@ When a species is renamed or deleted, every reference site must be updated.
 5. The user resolves issues manually or via auto-fix.
 6. At patch time, the patcher removes the species constant and all associated data
    rows from every parsed file.
+
+---
+
+## Maps Domain — ROM Placement (v1)
+
+Adding a **new map** is the one routine v1 action that introduces a new ROM `SECTION` (the
+map's script/event data in `maps/Name.asm`), so it is subject to the **bank budget**.
+
+### Adding a Map
+1. User creates the map in the HLR (`GameMap`, plus its group association, warps, etc.).
+2. **The user picks a target bank** in the ROM View (manual placement; v1 does not auto-pick).
+   The chosen bank travels with the create-map command as **placement data** on the new map.
+3. At patch time, the patcher:
+   - Appends the map's constant / `map` macro entries to the relevant data files.
+   - Emits the new `SECTION` into the chosen bank — **profile-specific**: for `prism` it also
+     adds the section name under the chosen `ROMX $xx` block in the linkerscript
+     (`contents/romx.link`); for vanilla `pokecrystal` it pins the section with `BANK[$xx]`.
+   - Creates `maps/Name.asm` (confirmation dialog before the new file is written).
+
+The free-space figures shown in the ROM View come from `romMapService` (parses the rgblink
+`.map`) and therefore **require a prior successful build**. See
+`src/main/services/AGENTS.md`, `src/shared/patcher/AGENTS.md`, and the root **ROM Allocation
+& Banking** concept. Auto-banking is future work.
 
 ---
 
