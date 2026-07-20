@@ -26,7 +26,8 @@ from . import events, swatches
 
 _ATTR = re.compile(r"^\s*map_attributes\s+(\w+)\s*,\s*(\w+)\s*,\s*(\$\w+|\d+)")
 _CONN = re.compile(r"^\s*connection\s+(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*,\s*(-?\d+)")
-_GROUP = re.compile(r"^\s*newgroup\s+(\w+)")
+#: Vanilla names its groups, polished's `newgroup` is bare — both count.
+_GROUP = re.compile(r"^\s*newgroup\b")
 _MAP_CONST = re.compile(r"^\s*map_const\s+(\w+)\s*,\s*(\d+)\s*,\s*(\d+)")
 _MAP = re.compile(r"^\s*map\s+(\w+)\s*,\s*(.+)")
 _BLOCKS_LABEL = re.compile(r"^(\w+)_Blocks:")
@@ -50,18 +51,18 @@ class Reader:
     def maps(self) -> dict[str, str]:
         """label -> const, in `attributes.asm` order — the file that says a
         map exists at all."""
-        return {label: a.const for label, a in _attrs(self.root).items()}
+        return {label: a.const for label, a in attrs(self.root).items()}
 
     def parses(self, const: str) -> bool:
-        label = _label_of(self.root).get(const)
+        label = label_of(self.root).get(const)
         return label is not None and (self.root / f"maps/{label}.asm").exists()
 
     def connections(self, const: str) -> list[panels.Link]:
         """The modern `connection` macro declares only the offset and lets
         the assembler compute the rest, so the computed columns cross empty
         and the table above the seam narrows to match."""
-        label = _label_of(self.root).get(const)
-        a = _attrs(self.root).get(label or "")
+        label = label_of(self.root).get(const)
+        a = attrs(self.root).get(label or "")
         return [panels.Link(direction=d, target=target, offset=offset)
                 for d, target, offset in (a.connections if a else [])]
 
@@ -70,9 +71,9 @@ class Reader:
         return events.tables(self.root / f"maps/{label}.asm")
 
     def attributes(self, label: str, const: str) -> panels.Attributes:
-        d = _dims(self.root).get(const)
+        d = dims(self.root).get(const)
         m = _styles(self.root).get(label)
-        a = _attrs(self.root).get(label)
+        a = attrs(self.root).get(label)
         return panels.Attributes(
             label=label, const=const,
             group=d.group if d else 0, map_id=d.map_id if d else 0,
@@ -88,8 +89,8 @@ class Reader:
             border_block=a.border if a else "—")
 
     def geometry(self, label: str) -> panels.Blocks:
-        const = _attrs(self.root).get(label)
-        d = _dims(self.root).get(const.const) if const else None
+        const = attrs(self.root).get(label)
+        d = dims(self.root).get(const.const) if const else None
         rel = _blk(self.root).get(label)
         if d is None or rel is None:
             raise panels.Unreadable(
@@ -132,7 +133,7 @@ class Reader:
         """The roof this map's group loads. Vanilla's `MapGroupRoofs` covers
         every group and its comments agree with its engine, so the pathology
         fields prism fills stay empty — absence, not luck."""
-        d = _dims(self.root).get(const)
+        d = dims(self.root).get(const)
         if d is None:
             return None
         names, values, files = _roof_table(self.root)
@@ -156,14 +157,14 @@ class Reader:
 # --------------------------------------------------------------------------- #
 
 @dataclass(frozen=True)
-class _Attr:
+class Attr:
     const: str
     border: str
     connections: tuple[tuple[str, str, int], ...]   # direction, target, offset
 
 
 @dataclass(frozen=True)
-class _Dims:
+class Dims:
     group: int
     map_id: int
     width: int
@@ -182,16 +183,16 @@ class _Style:
 
 
 @lru_cache(maxsize=None)
-def _attrs(root: Path) -> dict[str, _Attr]:
+def attrs(root: Path) -> dict[str, _Attr]:
     out: dict[str, _Attr] = {}
     label, const, border = "", "", ""
     conns: list[tuple[str, str, int]] = []
 
     def flush() -> None:
         if label:
-            out[label] = _Attr(const, border, tuple(conns))
+            out[label] = Attr(const, border, tuple(conns))
 
-    for raw in _lines(root / "data/maps/attributes.asm"):
+    for raw in lines(root / "data/maps/attributes.asm"):
         if m := _ATTR.match(raw):
             flush()
             label, const, border = m.group(1), m.group(2), m.group(3)
@@ -203,21 +204,21 @@ def _attrs(root: Path) -> dict[str, _Attr]:
 
 
 @lru_cache(maxsize=None)
-def _label_of(root: Path) -> dict[str, str]:
-    return {a.const: label for label, a in _attrs(root).items()}
+def label_of(root: Path) -> dict[str, str]:
+    return {a.const: label for label, a in attrs(root).items()}
 
 
 @lru_cache(maxsize=None)
-def _dims(root: Path) -> dict[str, _Dims]:
+def dims(root: Path) -> dict[str, _Dims]:
     out: dict[str, _Dims] = {}
     group = map_id = 0
-    for raw in _lines(root / "constants/map_constants.asm"):
+    for raw in lines(root / "constants/map_constants.asm"):
         if _GROUP.match(raw):
             group += 1
             map_id = 0
         elif m := _MAP_CONST.match(raw):
             map_id += 1
-            out[m.group(1)] = _Dims(group, map_id,
+            out[m.group(1)] = Dims(group, map_id,
                                     int(m.group(2)), int(m.group(3)))
     return out
 
@@ -225,7 +226,7 @@ def _dims(root: Path) -> dict[str, _Dims]:
 @lru_cache(maxsize=None)
 def _styles(root: Path) -> dict[str, _Style]:
     out: dict[str, _Style] = {}
-    for raw in _lines(root / "data/maps/maps.asm"):
+    for raw in lines(root / "data/maps/maps.asm"):
         if m := _MAP.match(raw):
             args = [a.strip() for a in m.group(2).split(";")[0].split(",")]
             if len(args) >= 7:
@@ -239,7 +240,7 @@ def _blk(root: Path) -> dict[str, str]:
     one INCBIN — maps that share a shape — so pending labels drain together."""
     out: dict[str, str] = {}
     pending: list[str] = []
-    for raw in _lines(root / "data/maps/blocks.asm"):
+    for raw in lines(root / "data/maps/blocks.asm"):
         if m := _BLOCKS_LABEL.match(raw):
             pending.append(m.group(1))
         elif m := _INCBIN.search(raw):
@@ -255,7 +256,7 @@ def _wild_file(root: Path, rel: str) -> dict[str, list[panels.WildMon]]:
     also matches `db N, M` shapes, so it is skipped by its `percent` word."""
     out: dict[str, list[panels.WildMon]] = {}
     current: list[panels.WildMon] | None = None
-    for raw in _lines(root / rel):
+    for raw in lines(root / rel):
         s = raw.split(";")[0]
         if "wildmons" in s:
             if s.strip().startswith("def_"):
@@ -276,7 +277,7 @@ def _roof_table(root: Path) -> tuple[list[str], list[str], list[str]]:
     values: list[str] = []
     files: list[str] = []
     in_groups = False
-    for raw in _lines(root / "data/maps/roofs.asm"):
+    for raw in lines(root / "data/maps/roofs.asm"):
         if m := _ROOF_CONST.match(raw):
             names.append(m.group(1))
         elif raw.startswith("MapGroupRoofs"):
@@ -295,7 +296,7 @@ def _roof_pal(root: Path) -> list[tuple[str, ...]]:
     """One (morn/day ×2, nite ×2) tuple per map group, in file order —
     `roofs.pal` is indexed by *group*, unlike the tiles."""
     colors: list[str] = []
-    for raw in _lines(root / "gfx/tilesets/roofs.pal"):
+    for raw in lines(root / "gfx/tilesets/roofs.pal"):
         if m := _RGB.match(raw):
             vals = [int(v) for v in m.group(1).replace(",", " ").split()]
             colors += ["#{:02x}{:02x}{:02x}".format(*(v * 255 // 31 for v in vals[i:i + 3]))
@@ -308,7 +309,7 @@ def _roof_colors(root: Path, group: int) -> tuple[str, str, str, str] | None:
     return pals[group] if group < len(pals) else None
 
 
-def _lines(path: Path) -> list[str]:
+def lines(path: Path) -> list[str]:
     try:
         return path.read_text(encoding="utf-8").splitlines()
     except FileNotFoundError:
