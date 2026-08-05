@@ -510,7 +510,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     try:
-        root = args.root or paths.repo_root()
+        root = args.root or paths.find_repo_root()
         # Mounted once here for the *error*: an unrecognisable tree should be
         # refused on stderr, before a full-screen TUI has repainted the
         # terminal. The session mounts its own, through the same override.
