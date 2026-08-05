@@ -246,10 +246,10 @@ def test_falsified() -> None:
     if not (VANILLA / "maps").exists():
         check("vanilla tree is present", False, str(VANILLA))
         return
-    from pokeprism_devtools.asmedit import regions
+    from pokeprism_devtools.hacks.vanilla import shapes
 
     wrong = type("Wrong", (fa.VANILLA_ADDERS["object"][0],),
-                 {"layout": regions.POLISHED})
+                 {"layout": shapes.POLISHED_LAYOUT})
     result = wrong("ROUTE_29", y="1", x="1", item="POTION").run(VANILLA)
     text = next(e.new_text for e in result.edits if e.path.startswith("maps/"))
     at = text.find("\nRoute29Potion2:")

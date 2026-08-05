@@ -15,6 +15,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from ...asmedit import regions
 from ...contract import ActionError
 
 if TYPE_CHECKING:                      # pragma: no cover
@@ -85,6 +86,15 @@ POLISHED_OBJECT = ObjectShape(
               "palette": "PAL_NPC_RED", "type": "OBJECTTYPE_SCRIPT",
               "sight": "0", "flag": "-1"},
 )
+
+
+#: Which part of a map file comes first, per tree. `asmedit/regions.py` holds
+#: the mechanism that locates the three parts; which order they come in is a
+#: fact about a tree, so it is declared here with the object shapes above and
+#: for the same reason. Measured: 331/331 vanilla maps put their texts before
+#: the event header, 461/461 polished maps put them after.
+VANILLA_LAYOUT = regions.Layout((regions.SCRIPTS, regions.TEXTS, regions.EVENTS))
+POLISHED_LAYOUT = regions.Layout((regions.EVENTS, regions.SCRIPTS, regions.TEXTS))
 
 
 def prefill(block: EventBlock, kind: str, index: int,

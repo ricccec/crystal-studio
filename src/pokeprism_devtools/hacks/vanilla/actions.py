@@ -59,7 +59,8 @@ from .fruittree import AddFruittree
 from .hiddenitem import AddHiddenitem
 from .itemball import AddItemball
 from .polisheditem import AddPolishedHiddenitem, AddPolishedItemball
-from .shapes import POLISHED_OBJECT, VANILLA_OBJECT, ObjectShape, prefill
+from .shapes import (POLISHED_LAYOUT, POLISHED_OBJECT, VANILLA_LAYOUT,
+                     VANILLA_OBJECT, ObjectShape, prefill)
 from .trainer import GenericTrainer, Trainer
 
 
@@ -429,7 +430,7 @@ EDITORS: dict[str, type[_Edit]] = {
 
 
 def fork(anchor: str, shape: ObjectShape, tag: str, *,
-         layout: regions.Layout = regions.VANILLA,
+         layout: regions.Layout = VANILLA_LAYOUT,
          extra: dict[str, tuple[type[_Entry], ...]] | None = None,
          ) -> tuple[dict, dict]:
     """This dialect's actions: the same classes, stamped with its two forks.
@@ -460,11 +461,11 @@ def fork(anchor: str, shape: ObjectShape, tag: str, *,
 #: subclass here rather than a shared entry in :data:`ADDERS`. Keyed "trainer",
 #: the word the Trainers tab carries in `Tab.adds`.
 VANILLA_ADDERS, VANILLA_EDITORS = fork("_MapEvents", VANILLA_OBJECT, "Vanilla",
-                                       layout=regions.VANILLA,
+                                       layout=VANILLA_LAYOUT,
                                        extra={**VANILLA_ONLY,
                                               "trainer": (Trainer,)})
 POLISHED_ADDERS, POLISHED_EDITORS = fork("_MapScriptHeader", POLISHED_OBJECT,
-                                         "Polished", layout=regions.POLISHED,
+                                         "Polished", layout=POLISHED_LAYOUT,
                                          extra={**POLISHED_ONLY,
                                                 "trainer": (GenericTrainer,)})
 

@@ -18,7 +18,7 @@ from ...contract import (FLAGS, MOVEMENTS, PALETTES, SPRITES, Action,
                                ActionError, Field, Result)
 from ...asmedit import regions
 from . import eventblock as eb
-from .shapes import VANILLA_OBJECT
+from .shapes import VANILLA_LAYOUT, VANILLA_OBJECT
 
 
 #: The boxes an `object_event` slot gets, by slot name. Built into a form in
@@ -69,7 +69,7 @@ class Entry(Action):
     #: two trees put their scripts on opposite sides of the event header, and a
     #: block appended on the wrong side lands inside the warp list, which
     #: assembles and gives the map the wrong doors. See `asmedit/regions.py`.
-    layout = regions.VANILLA
+    layout = VANILLA_LAYOUT
     #: Which of the four lists this action's line lives in.
     list_kind = "object"
 
