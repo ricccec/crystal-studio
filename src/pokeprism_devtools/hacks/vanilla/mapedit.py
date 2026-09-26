@@ -1,4 +1,4 @@
-"""Editing a family map's own header — the mirror of `hacks/prism/mapedit.py`.
+"""Editing a family map's own header — the mirror of `hacks/prism/maps/mapedit.py`.
 
 Prism keeps a map's header in one `map_header`/`map_header_2` pair; the family
 **splits it across two files**, and this module writes both, argument by
@@ -17,7 +17,7 @@ this module the same `FamilyNewMap` dialect it hands `form("newmap")`. So one
 module serves both trees; only the dialect it is called with differs.
 
 **What is not editable is the interesting part**, and it is prism's list unchanged
-(see `hacks/prism/mapedit.py` for the full argument):
+(see `hacks/prism/maps/mapedit.py` for the full argument):
 
 * *the label and the map id* (`map_attributes`'s CONST, argument 0) are read-only:
   a rename touches every reference and a renumber drops every `.sav` onto the

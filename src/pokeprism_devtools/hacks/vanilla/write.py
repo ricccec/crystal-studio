@@ -271,7 +271,7 @@ class Writer:
 
         Prism's one rule fills the sprite and palette a trainer class usually
         wears, and it does that by *counting* every trainer in the repo — see
-        `hacks/prism/trainerstats.py`, which exists because no rule was ever
+        `hacks/prism/battles/trainerstats.py`, which exists because no rule was ever
         going to produce `SPRITE_BUENA` for a `SKIER`. The family's forms have
         no class field to hang that off, so there is nothing to suggest, and an
         invented suggestion would be worse than an empty one.

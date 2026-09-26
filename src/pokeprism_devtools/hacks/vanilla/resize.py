@@ -1,6 +1,6 @@
 """How the pokecrystal family answers a resize.
 
-The mirror of `hacks/prism/resize.py`, and the same shape: no arithmetic, only
+The mirror of `hacks/prism/maps/resize.py`, and the same shape: no arithmetic, only
 this family's answers to the questions `asmedit/mapresize.py` asks. Two of those
 answers are transpositions of prism's, and both are the kind that assembles
 perfectly while being wrong:
@@ -180,7 +180,7 @@ class ResizeMap(Action):
     Reached by its own binding, not by pointing at a row: a map's shape is not a
     thing you select on the grid, it is the grid.
 
-    Prism's copy is `hacks/prism/resize.py`, and the two are deliberate
+    Prism's copy is `hacks/prism/maps/resize.py`, and the two are deliberate
     near-duplicates. They shared one class in `studio/` until prism importing it
     made prism depend on the IDE; the form is four fields and one call, and the
     plan's rule for adapters holds here — never compare across them.

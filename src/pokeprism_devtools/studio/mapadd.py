@@ -22,7 +22,7 @@ for its blocks, so there is no placement to choose and the form simply does not
 have the field. A field offering exactly one answer is worse than no field: it
 implies a decision that was never available.
 
-**This form sketches**, the way `hacks/prism/newmap.py` does: the grid you
+**This form sketches**, the way `hacks/prism/maps/newmap.py` does: the grid you
 pointed at, at the height and width you typed, drawn on the studio's grid while
 the form is still open. The mistake worth seeing is the one that otherwise
 builds — a grid that is not `height x width` — and `asmedit/mapnew.read_grid`

@@ -6,7 +6,7 @@ id, and how far the neighbour slides along the shared edge. Everything the engin
 reads is computed *by the macro* from those: where the strip is copied from, how
 long it is, the player's crossing shift, and the map's connection-flag nibble
 (`MAP_CONNECTIONS_<id>`). So this module is a fraction of prism's
-`hacks/prism/connections.py`, which has to derive all of that by hand into a
+`hacks/prism/maps/connections.py`, which has to derive all of that by hand into a
 seven-argument macro and rewrite a flag nibble on each side. Here there is one
 number to write and rgbds does the rest.
 

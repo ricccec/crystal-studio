@@ -1,6 +1,6 @@
 """A stock-Gen-2 save, patched to stand you somewhere — vanilla's save format.
 
-This is deliberately *not* `hacks/prism/savefile.py`. Prism's save is four SRAM
+This is deliberately *not* `hacks/prism/save/savefile.py`. Prism's save is four SRAM
 banks with a 48-byte RTC trailer and prism's own field layout; a stock pokecrystal
 save is the vanilla Gen-2 one, and its `sGameData`/`sChecksum`/check-value layout
 (`ram/sram.asm`) is different enough that sharing the offsets would be sharing a
