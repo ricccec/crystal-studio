@@ -683,9 +683,14 @@ def test_the_base_imports_no_adapter() -> None:
     package; this check stays as the static half.
     """
     import ast
+    import inspect
+    from pokeprism_devtools.contract import action as action_module
     print("\nthe neutral base stays neutral")
-    src = Path(__file__).resolve().parent.parent / "src/pokeprism_devtools"
-    tree = ast.parse((src / "contract/action.py").read_text())
+    # Asked of the module Python will actually import, not of a file at a path
+    # this repo happens to contain: `contract/` belongs to another product, and a
+    # repo-relative read finds nothing once the products are separate
+    # distributions. `inspect.getsource` follows the import instead.
+    tree = ast.parse(inspect.getsource(action_module))
     deps = []
     for n in ast.walk(tree):
         if isinstance(n, ast.ImportFrom):
