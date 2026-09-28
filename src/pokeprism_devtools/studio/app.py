@@ -1,4 +1,4 @@
-"""prism-studio — the shell.
+"""crystal-studio — the shell.
 
 You pick a map, you see its shape, you see what has been placed on it and what the
 linter thinks of it. Then you point at one of those things and act on it: `e` edits
@@ -83,7 +83,7 @@ class Studio(Flow, App):
     """The shell. `Flow` is the other half of it — see :mod:`.flow`: everything
     from agreeing to a preview to putting the map back on screen."""
 
-    TITLE = "prism-studio"
+    TITLE = "crystal-studio"
 
     #: Textual puts its command palette on ctrl+p. VSCode's terminal takes that key
     #: before we ever see it, and this is mostly run inside VSCode.
@@ -501,7 +501,7 @@ class Studio(Flow, App):
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
-        prog="prism-studio",
+        prog="crystal-studio",
         description="Author a map: see it, see what's on it, see what's wrong with it.")
     ap.add_argument("--root", type=Path, default=None, help="the pokeprism repo")
     ap.add_argument("--hack-path", type=Path, default=None, dest="hack_path",
@@ -516,7 +516,7 @@ def main(argv: list[str] | None = None) -> int:
         # terminal. The session mounts its own, through the same override.
         hackmount.mount(root, args.hack_path)
     except (paths.RepoNotFound, hackmount.UnknownTree) as exc:
-        print(f"prism-studio: {exc}", file=sys.stderr)
+        print(f"crystal-studio: {exc}", file=sys.stderr)
         return 2
 
     Studio(root, args.hack_path).run()

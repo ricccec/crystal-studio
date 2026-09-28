@@ -1,4 +1,4 @@
-"""prism-studio — author a map without hand-editing the four files it lives in.
+"""crystal-studio — author a map without hand-editing the four files it lives in.
 
 An NPC is one thing to a person and four to the repo: a `person_event` in the
 map's event header, the text it points at, an event flag allocated in the middle
@@ -25,7 +25,7 @@ __all__ = ["Applied", "MapData", "MapGeometry", "MapRef", "Preview", "Session",
 
 
 def main(argv: list[str] | None = None) -> int:
-    """The `prism-studio` entry point.
+    """The `crystal-studio` entry point.
 
     Imports the TUI lazily so that this module — the model — stays usable, and
     importable, without a widget library installed. `textual` is an optional
@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     except ModuleNotFoundError as exc:
         if exc.name != "textual":
             raise
-        print("prism-studio needs textual, which is an optional extra:\n"
+        print("crystal-studio needs textual, which is an optional extra:\n"
               "    pip install 'pokeprism-devtools[studio]'\n"
               "The other prism-* tools work without it.", file=sys.stderr)
         return 2
