@@ -221,10 +221,12 @@ def test_replace() -> None:
 def test_real_trees() -> None:
     for rel, anchor in (("../pokecrystal", "_MapEvents"),
                         ("../polishedcrystal", "_MapScriptHeader")):
-        root = Path(__file__).resolve().parent.parent.parent / rel.lstrip("./")
-        root = (Path(__file__).resolve().parent.parent / rel).resolve()
+        # Absolute, not relative to this repo: a walk above it answers
+        # differently depending on where the repo sits, and an absent tree here
+        # is a silent skip rather than a failure.
+        root = Path.home() / "code" / rel.lstrip("./")
         if not (root / "maps").is_dir():
-            print(f"\n({root.name} is not checked out next door — skipped)")
+            print(f"\n(no {root.name} checkout at {root} — skipped)")
             continue
         print(f"\nevery map in {root.name} round-trips byte-identical")
         total = skipped = broken = 0
