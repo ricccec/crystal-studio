@@ -9,6 +9,14 @@
 > plan** — now down to that one question and one permanent absence — read
 > `family-lint-plan.md`. Neither needs this file loaded.
 
+> **The SHAs in this document are pre-carve.** They resolve in the repo that kept
+> the full history — the integration repo — and **not** in this one: `filter-repo`
+> rewrites every commit id it copies, and the two repos' identifiers are
+> permanently unrelatable. Each citation carries its subject line for that reason.
+> To find one here, search the subject rather than the id:
+>
+>     git log --grep='count objects past convenience macros'
+
 ## Phase index
 
 | Phase | What crossed | Status |
@@ -411,25 +419,29 @@ did not claim is byte-identical, across 2,463 and 2,790 `.asm` files.
   sees; then the four blocks, smallest first, each with the trap that reading a
   generated diff caught:
 
-  * **Item ball** (`a6c3e5e`) — `wiring/blocks.py` for the three names that have
+  * **Item ball** (`a6c3e5e` "feat(8): vanilla's itemball — three names that have to
+    agree") — `wiring/blocks.py` for the three names that have
     to agree, `hacks/vanilla/itemball.py` for the composition. The label is
     `<file stem><item camelised>` 178/178 but `HP_UP` is `HPUp` (four acronyms
     stay upper); the const takes the **file stem** (`ROUTE29`), not the map
     constant (`ROUTE_29`), and getting it wrong mints a name unique *because* it
     is wrong.
-  * **Fruit tree** (`be67605`) — the block points *out of the map*:
+  * **Fruit tree** (`be67605` "feat(fruittree): the tree whose id lives two files away")
+    — the block points *out of the map*:
     `fruittree FRUITTREE_ROUTE_29`'s 1-based ordinal in `script_constants.asm`
     **is** the row index into `data/items/fruit_trees.asm`, so the id lives
     across two files that must stay in step; `wiring/fruittrees.py` appends
     const and row together or refuses. Flag is `-1` — a tree regrows, there is
     no event to allocate.
-  * **Hidden item** (`213a2ac`) — the first adder whose *line* splices into a
+  * **Hidden item** (`213a2ac` "feat(hiddenitem): the item whose flag lives inside its
+    block") — the first adder whose *line* splices into a
     list other than the one it reads onto: it shows on the Objects tab as a Prop
     but its line is a `bg_event`. The `hiddenitem` macro is `dwb \2, \1`
     (flag,item transposed to ROM) while the source is `hiddenitem ITEM, FLAG`
     item-first, on all 85 — copying the byte order hands the engine an item id
     where the flag belongs.
-  * **Trainer** (`016b1b4`) — the first block adder real in **both** trees, and
+  * **Trainer** (`016b1b4` "feat(trainer): add a trainer, one block writer per dialect")
+    — the first block adder real in **both** trees, and
     the `generictrainer` blocker that stalled it is cleared. A 593-call polished
     sweep and a 333-call vanilla sweep found the two dialects want **different**
     shapes: vanilla names its three texts globally with a local `.AfterScript`
@@ -447,7 +459,8 @@ did not claim is byte-identical, across 2,463 and 2,790 `.asm` files.
   Then the two writes the enumeration did *not* foresee, both polished-side and
   both forced by the shorthand idiom the item-ball census named:
 
-  * **The splicer counted objects wrong** (`fix(eventblock)`, `f2ab585`).
+  * **The splicer counted objects wrong** (`f2ab585` "fix(eventblock): count objects
+    past convenience macros").
     `eventblock._entries_after` read the object list as *consecutive*
     `object_event` lines and stopped at the first convenience macro, so on **89
     of 607 polished maps** the writer saw fewer objects than the reader — a
@@ -457,7 +470,8 @@ did not claim is byte-identical, across 2,463 and 2,790 `.asm` files.
     on the object_event-only view. Phase 10 moved both parsers to the whole-object
     view instead: `_entries_after` now *counts* the shorthands rather than
     skipping them, in step with a reader that expands them.
-  * **Polished item and hidden-item line-adders** (`feat(itemball)`, `5c3069e`,
+  * **Polished item and hidden-item line-adders** (`5c3069e` "feat(itemball): polished's
+    ball and hidden item, line-only",
     in `hacks/vanilla/polisheditem.py`). Polished spells these on the object line
     itself — no block — so the adders splice a line and nothing else: the ball is
     a raw 13-argument `object_event … OBJECTTYPE_ITEMBALL, PLAYEREVENT_ITEMBALL,
@@ -712,7 +726,8 @@ did not claim is byte-identical, across 2,463 and 2,790 `.asm` files.
   Phase 8 fix.
 
   **The writer had to move with the reader, and this was the trap.** `f2ab585`
-  taught `eventblock._entries_after` to *skip* shorthands so the splicer's object
+  "fix(eventblock): count objects past convenience macros" taught
+  `eventblock._entries_after` to *skip* shorthands so the splicer's object
   count matched a reader that dropped them — the two agreed on a count that was
   wrong by 657. Now that the reader expands them, the writer counts them: each
   shorthand is one object entry, held under its own macro so `replace_entry`
@@ -860,7 +875,8 @@ Phase 11 closed with a roadmap of deferred capabilities, each its own phase, non
 blocking another. All but one have since landed; the survivors live in
 `family-lint-plan.md`. What was on it, and where each went:
 
-- **Connection *adding* (both trees).** Done 2026-07-30 (`a51d92d`). The bullet
+- **Connection *adding* (both trees).** Done 2026-07-30 (`a51d92d` "feat(family):
+  connect and disconnect neighbours"). The bullet
   had said adding "needs its own survey of how each tree wires the reciprocal
   connection before it is scoped" — the survey found the family's modern
   `connection` macro is the *easy* half of prism's: four args, and the assembler
@@ -870,7 +886,8 @@ blocking another. All but one have since landed; the survivors live in
   sides — the bullet's "deletion already refuses on the neighbour's side" is no
   longer true. See `STATE.md`, "Landed — family connections, both sides on one
   splice".
-- **`EditMap` / attributes-tab editing.** Done 2026-07-30 (`2ee3bbd`), both trees
+- **`EditMap` / attributes-tab editing.** Done 2026-07-30 (`2ee3bbd` "feat(family): edit
+  the map header on the Attributes tab"), both trees
   off one `hacks/vanilla/mapedit.py`, on the neutral `wiring/macroline` splicer
   prism was repointed to byte-identically. See `STATE.md`, "Landed — the family
   header editor, on a shared splicer".
