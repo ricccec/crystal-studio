@@ -24,6 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.hacks.vanilla import savefile  # noqa: E402
 from pokeprism_devtools.shared.symfile import Symbol, SymFile  # noqa: E402
 
@@ -267,7 +268,7 @@ def test_targets_are_read_from_the_makefile() -> None:
 
 # -- the one thing only a real build can show ------------------------------ #
 def test_a_real_sym_carries_these_symbols() -> None:
-    root = Path.home() / "code/pokecrystal"
+    root = paths.find_checkout("pokecrystal")
     sym = root / "pokecrystal.sym"
     print("\nthe real pokecrystal.sym (if built next door) carries the layout")
     if not sym.exists():
@@ -299,7 +300,7 @@ def test_real_map_resolution() -> None:
     spells in its own trailing comments."""
     from pokeprism_devtools.hacks.vanilla import play  # noqa: PLC0415
 
-    root = Path.home() / "code/pokecrystal"
+    root = paths.find_checkout("pokecrystal")
     print("\na real pokecrystal checkout resolves maps to the group/number it comments")
     if not root.exists():
         print(f"  --   no checkout at {root} — skipping")
@@ -329,7 +330,7 @@ def test_the_boot_rebuilds_the_whole_map() -> None:
     from pokeprism_devtools.hacks.vanilla import play  # noqa: PLC0415
     from pokeprism_devtools.shared.overworld import blockdata, people  # noqa: PLC0415
 
-    root = Path.home() / "code/pokecrystal"
+    root = paths.find_checkout("pokecrystal")
     rom = root / "pokecrystal11_debug.gbc"
     sym = root / "pokecrystal11_debug.sym"
     template = root / "pokecrystal11_debug.sav"
@@ -433,7 +434,7 @@ def test_the_boot_rebuilds_the_whole_map() -> None:
 #: runs both `LoadMapGraphics` (rebuilding the VRAM allocation) and
 #: `LoadMapObjects` (writing the structs), so nothing the patcher wrote survives —
 #: then saving in-game.
-_GENUINE_SAVES = Path.home() / "code/pokecrystal/.devtools/sav-backups"
+_GENUINE_SAVES = paths.find_checkout("pokecrystal") / ".devtools/sav-backups"
 _FIXTURES = (
     # file, the map it stands on, and what only this one reaches
     ("GENUINE-route-32.sav", "ROUTE_32",
@@ -504,7 +505,7 @@ def test_visible_sprites_get_the_right_vram_tile() -> None:
     """
     from pokeprism_devtools.shared.overworld import blockdata, people, spritevram  # noqa: PLC0415
 
-    root = Path.home() / "code/pokecrystal"
+    root = paths.find_checkout("pokecrystal")
     rom = root / "pokecrystal11_debug.gbc"
     sym = root / "pokecrystal11_debug.sym"
     print("\nvisible objects get the game's VRAM tile (saves the game wrote)")

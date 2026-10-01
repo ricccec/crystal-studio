@@ -28,14 +28,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.hacks.vanilla import actions as fa  # noqa: E402
 from pokeprism_devtools.hacks.vanilla import eventblock as eb  # noqa: E402
 from pokeprism_devtools.hacks.vanilla.read import label_of  # noqa: E402
 from pokeprism_devtools.contract import ActionError  # noqa: E402
 from pokeprism_devtools.asmedit import blocks as B  # noqa: E402
 
-VANILLA = Path.home() / "code/pokecrystal"
-POLISHED = Path.home() / "code/polishedcrystal"
+VANILLA = paths.find_checkout("pokecrystal")
+POLISHED = paths.find_checkout("polishedcrystal")
 
 _failures = 0
 

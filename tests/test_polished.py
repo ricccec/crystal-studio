@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.contract import mount as hackmount  # noqa: E402
 from pokeprism_devtools import contract  # noqa: E402
 from pokeprism_devtools.studio import tables  # noqa: E402
@@ -390,9 +391,9 @@ def test_polished_offers_the_item_adders(root: Path) -> None:
 
 
 def test_real_item_adders() -> None:
-    root = Path.home() / "code/polishedcrystal"
+    root = paths.find_checkout("polishedcrystal")
     if not (root / "data/maps/maps.asm").exists():
-        print("\n(no polishedcrystal checkout — skipping the item-adder round-trip)")
+        print(f"\n(skipping the item-adder round-trip: {paths.explain_missing_checkout('polishedcrystal')})")
         return
     print("\nthe polished item ball and hidden item round-trip on the real tree")
     import shutil
@@ -466,9 +467,9 @@ def test_reader_sees_every_item_ball() -> None:
     reader, so a dropped ball moved no number anyone checked. This cross-check
     counts the raw source, independent of the reader, so it stays honest whether
     the reader over- or under-counts."""
-    root = Path.home() / "code/polishedcrystal"
+    root = paths.find_checkout("polishedcrystal")
     if not (root / "data/maps/maps.asm").exists():
-        print("\n(no polishedcrystal checkout — skipping the item-ball census)")
+        print(f"\n(skipping the item-ball census: {paths.explain_missing_checkout('polishedcrystal')})")
         return
     print("\nthe reader sees every item ball the source spells out")
     r = hackmount.mount(root).reads
@@ -500,9 +501,9 @@ def test_reader_sees_every_item_ball() -> None:
 
 
 def test_real_tree() -> None:
-    root = Path.home() / "code/polishedcrystal"
+    root = paths.find_checkout("polishedcrystal")
     if not (root / "data/maps/maps.asm").exists():
-        print("\n(no polishedcrystal checkout next door — skipping the real tree)")
+        print(f"\n(skipping the real tree: {paths.explain_missing_checkout('polishedcrystal')})")
         return
     print("\nthe real polishedcrystal answers the same questions")
     hack = hackmount.mount(root)

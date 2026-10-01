@@ -31,11 +31,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.hacks.vanilla import box, dialogue, events, text  # noqa: E402
 from pokeprism_devtools.contract import ActionError  # noqa: E402
 
-VANILLA = Path.home() / "code/pokecrystal"
-POLISHED = Path.home() / "code/polishedcrystal"
+VANILLA = paths.find_checkout("pokecrystal")
+POLISHED = paths.find_checkout("polishedcrystal")
 FAILED = 0
 
 #: One map's worth of the shapes that matter, written against a real tree's box.
@@ -373,7 +374,7 @@ def main() -> int:
 
     trees = [(r, r.name) for r in (VANILLA, POLISHED) if r.exists()]
     if not trees:
-        print("\n(no family checkout next door — skipping every box-backed test)")
+        print(f"\n(skipping every box-backed test: {paths.explain_missing_checkout('pokecrystal')})")
         return 1 if FAILED else 0
 
     # The box comes off a real engine rather than a fixture, so the row

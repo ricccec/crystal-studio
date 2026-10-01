@@ -22,9 +22,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.hacks.polished import lzp  # noqa: E402
 
-POLISHED = Path.home() / "code/polishedcrystal"
+POLISHED = paths.find_checkout("polishedcrystal")
 
 _failures = 0
 

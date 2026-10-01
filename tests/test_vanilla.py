@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.contract import mount as hackmount  # noqa: E402
 from pokeprism_devtools.shared.coords import Tile  # noqa: E402
 from pokeprism_devtools import contract  # noqa: E402
@@ -757,7 +758,7 @@ def test_real_choices(root: Path, name: str) -> None:
     """
     import re
     if not (root / "data/maps/maps.asm").exists():
-        print(f"\n(no {name} checkout next door — skipping its choices)")
+        print(f"\n(skipping its choices: {paths.explain_missing_checkout(name)})")
         return
     print(f"\n{name}: every constant its maps use is a constant it offers")
     from pokeprism_devtools import contract as actions
@@ -809,9 +810,9 @@ def test_real_choices(root: Path, name: str) -> None:
 
 
 def test_real_tree() -> None:
-    root = Path.home() / "code/pokecrystal"
+    root = paths.find_checkout("pokecrystal")
     if not (root / "data/maps/maps.asm").exists():
-        print("\n(no pokecrystal checkout next door — skipping the real tree)")
+        print(f"\n(skipping the real tree: {paths.explain_missing_checkout('pokecrystal')})")
         return
     print("\nthe real pokecrystal answers the same questions")
     hack = hackmount.mount(root)
@@ -852,7 +853,7 @@ def test_real_warp_deletion(root: Path, name: str, anchor: str, grammar,
     byte-identical.
     """
     if not (root / "data/maps/maps.asm").exists():
-        print(f"\n(no {name} checkout next door — skipping its real warps)")
+        print(f"\n(skipping its real warps: {paths.explain_missing_checkout(name)})")
         return
     print(f"\na warp comes out of the real {name}, and nothing else moves")
     import shutil
@@ -1223,7 +1224,7 @@ def test_real_resize(name: str, dialect) -> None:
     fit inside it. They do under the declared order and mostly do not under the
     transposed one, which is the whole argument for `MapShape` in one number.
     """
-    root = Path.home() / "code" / name
+    root = paths.find_checkout(name)
     if not root.exists():
         print(f"\n({name} not checked out — skipping)")
         return
@@ -1297,14 +1298,14 @@ def main() -> int:
     test_the_base_imports_no_adapter()
     test_reading_a_declared_const_set()
     test_real_tree()
-    test_real_choices(Path.home() / "code/pokecrystal", "pokecrystal")
-    test_real_choices(Path.home() / "code/polishedcrystal",
+    test_real_choices(paths.find_checkout("pokecrystal"), "pokecrystal")
+    test_real_choices(paths.find_checkout("polishedcrystal"),
                       "polishedcrystal")
 
     from pokeprism_devtools.hacks.vanilla import actions as FA
-    test_editing_round_trips(Path.home() / "code/pokecrystal",
+    test_editing_round_trips(paths.find_checkout("pokecrystal"),
                              "pokecrystal", "_MapEvents", FA.VANILLA_OBJECT)
-    test_editing_round_trips(Path.home() / "code/polishedcrystal",
+    test_editing_round_trips(paths.find_checkout("polishedcrystal"),
                              "polishedcrystal", "_MapScriptHeader",
                              FA.POLISHED_OBJECT)
 
@@ -1313,9 +1314,9 @@ def main() -> int:
     test_real_resize("polishedcrystal", polished())
 
     from pokeprism_devtools.hacks.vanilla import write as VW
-    test_real_warp_deletion(Path.home() / "code/pokecrystal", "pokecrystal",
+    test_real_warp_deletion(paths.find_checkout("pokecrystal"), "pokecrystal",
                             "_MapEvents", VW.WARPS, "AzaleaTown", "AZALEA_TOWN")
-    test_real_warp_deletion(Path.home() / "code/polishedcrystal",
+    test_real_warp_deletion(paths.find_checkout("polishedcrystal"),
                             "polishedcrystal", "_MapScriptHeader",
                             VW.POLISHED_WARPS, "AzaleaTown", "AZALEA_TOWN")
 

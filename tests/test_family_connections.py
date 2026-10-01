@@ -32,13 +32,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.contract import mount as m  # noqa: E402
 from pokeprism_devtools.hacks.vanilla import connections as c  # noqa: E402
 from pokeprism_devtools.contract import Ref  # noqa: E402
 
 TREES = {
-    "vanilla": Path.home() / "code/pokecrystal",
-    "polished": Path.home() / "code/polishedcrystal",
+    "vanilla": paths.find_checkout("pokecrystal"),
+    "polished": paths.find_checkout("polishedcrystal"),
 }
 
 _failures = 0

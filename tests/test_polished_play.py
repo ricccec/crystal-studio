@@ -25,12 +25,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.hacks.polished import mapread, objects, savefile  # noqa: E402
 from pokeprism_devtools.hacks.vanilla.read import dims, label_of  # noqa: E402
 from pokeprism_devtools.shared.overworld import blockdata  # noqa: E402
 from pokeprism_devtools.shared.symfile import SymFile  # noqa: E402
 
-POLISHED = Path.home() / "code/polishedcrystal"
+POLISHED = paths.find_checkout("polishedcrystal")
 ROM = POLISHED / "polishedcrystal-3.2.3.gbc"
 SYM = POLISHED / "polishedcrystal-3.2.3.sym"
 

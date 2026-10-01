@@ -27,13 +27,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.hacks.vanilla import newmap as NM  # noqa: E402
 from pokeprism_devtools.shared.edits import apply_edits  # noqa: E402
 from pokeprism_devtools.asmedit import mapnew as MN  # noqa: E402
 from pokeprism_devtools.asmedit.editvocab import EditError  # noqa: E402
 
-VANILLA = Path.home() / "code/pokecrystal"
-POLISHED = Path.home() / "code/polishedcrystal"
+VANILLA = paths.find_checkout("pokecrystal")
+POLISHED = paths.find_checkout("polishedcrystal")
 
 #: Enough of a tree to wire a map into. Everything else a real checkout has is
 #: irrelevant to these six files.
@@ -257,7 +258,7 @@ def test_falsify(tmp: Path) -> None:
     """The consistency check, shown to fail before it is believed."""
     print("\n== falsifying the invariant check ==")
     if not VANILLA.exists():
-        print("  (no pokecrystal checkout, skipped)")
+        print(f"  (skipped: {paths.explain_missing_checkout('pokecrystal')})")
         return
     root = clone(VANILLA, tmp / "falsify")
     check("clean tree: no disagreement", not agree(root))

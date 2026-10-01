@@ -27,6 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.contract import mount as m  # noqa: E402
 from pokeprism_devtools.contract import ActionError  # noqa: E402
 from pokeprism_devtools.asmedit import mapnew  # noqa: E402
@@ -35,8 +36,8 @@ from pokeprism_devtools.asmedit import mapnew  # noqa: E402
 #: from. Borrowed rather than invented so the sizes are a tree's own: a grid
 #: that the tree itself ships at these dimensions cannot be wrong about them.
 TREES = {
-    "vanilla": (Path.home() / "code/pokecrystal", "Route36"),
-    "polished": (Path.home() / "code/polishedcrystal", None),
+    "vanilla": (paths.find_checkout("pokecrystal"), "Route36"),
+    "polished": (paths.find_checkout("polishedcrystal"), None),
 }
 
 _failures = 0

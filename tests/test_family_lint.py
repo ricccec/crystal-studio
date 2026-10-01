@@ -30,6 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.contract import mount as hackmount  # noqa: E402
 from pokeprism_devtools import contract as seam  # noqa: E402
 from pokeprism_devtools.hacks.polished import lint as polished_lint  # noqa: E402
@@ -39,8 +40,8 @@ from pokeprism_devtools.hacks.vanilla.lint import dialogue, rules  # noqa: E402
 from pokeprism_devtools.contract import Severity  # noqa: E402
 from pokeprism_devtools.contract.suppressions import apply_suppressions  # noqa: E402
 
-VANILLA = Path.home() / "code/pokecrystal"
-POLISHED = Path.home() / "code/polishedcrystal"
+VANILLA = paths.find_checkout("pokecrystal")
+POLISHED = paths.find_checkout("polishedcrystal")
 FAILED = 0
 
 #: One box each: a fitting line and its overflowing twin, the `#` trap, and a
@@ -476,7 +477,7 @@ def test_polished_seam_conformance(root: Path) -> None:
 def main() -> int:
     test_the_channel_loads_no_prism()
     if not VANILLA.exists():
-        print("\n(no pokecrystal checkout next door — skipping the engine-backed tests)")
+        print(f"\n(skipping the engine-backed tests: {paths.explain_missing_checkout('pokecrystal')})")
     else:
         test_metrics_read_from_the_engine(VANILLA)
         test_the_box_from_source(VANILLA)
@@ -489,7 +490,7 @@ def main() -> int:
         test_the_reword_gutter(VANILLA, "vanilla", metrics.load)
 
     if not POLISHED.exists():
-        print("\n(no polishedcrystal checkout next door — skipping the polished tests)")
+        print(f"\n(skipping the polished tests: {paths.explain_missing_checkout('polishedcrystal')})")
     else:
         test_polished_metrics_read_from_ngrams(POLISHED)
         test_polished_falsification(POLISHED)

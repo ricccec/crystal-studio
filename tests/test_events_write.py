@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from pokeprism_devtools.shared import paths  # noqa: E402
 from pokeprism_devtools.hacks.vanilla import eventblock as eb  # noqa: E402
 
 FAILED = 0
@@ -224,7 +225,7 @@ def test_real_trees() -> None:
         # Absolute, not relative to this repo: a walk above it answers
         # differently depending on where the repo sits, and an absent tree here
         # is a silent skip rather than a failure.
-        root = Path.home() / "code" / rel.lstrip("./")
+        root = paths.find_checkout(rel.lstrip("./"))
         if not (root / "maps").is_dir():
             print(f"\n(no {root.name} checkout at {root} — skipped)")
             continue
