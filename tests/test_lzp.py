@@ -53,7 +53,7 @@ def test_round_trip() -> None:
     """Decompress every built block file back to its tracked plain sibling."""
     print("lzp — decompress every map's blocks back to its plain .ablk")
     if not (POLISHED / "maps").exists():
-        check("polished tree is present", False, str(POLISHED))
+        print(f"  --   skipping: {paths.explain_missing_checkout('polishedcrystal')}")
         return
     pairs = _pairs()
     if not pairs:
@@ -87,7 +87,8 @@ def test_falsified() -> None:
     print("falsification — a decode checked against the wrong map fails")
     pairs = _pairs()
     if len(pairs) < 2:
-        check("two map pairs are present", False, f"{len(pairs)} found")
+        print(f"  --   skipping: needs two built block/plain pairs under "
+              f"{POLISHED}, found {len(pairs)} — run `make` there")
         return
     (comp, _plain), (_comp2, other_plain) = pairs[0], pairs[1]
     got, _ = lzp.decompress(comp.read_bytes())

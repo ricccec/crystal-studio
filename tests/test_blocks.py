@@ -147,7 +147,7 @@ def test_real() -> None:
     """
     print("vanilla — an item ball into all 388 maps")
     if not (VANILLA / "maps").exists():
-        check("vanilla tree is present", False, str(VANILLA))
+        print(f"  --   skipping: {paths.explain_missing_checkout('pokecrystal')}")
         return
     add = fa.VANILLA_ADDERS["object"][0]
     ok = refused = 0
@@ -212,7 +212,8 @@ def test_second_ball() -> None:
     three collision paths at once — the label, the const and the flag."""
     print("a second ball of the same item — every name collides at once")
     if not (VANILLA / "maps/BurnedTower1F.asm").exists():
-        check("BurnedTower1F is present", False)
+        print(f"  --   skipping: no BurnedTower1F.asm under {VANILLA} — "
+              f"{paths.explain_missing_checkout('pokecrystal')}")
         return
     add = fa.VANILLA_ADDERS["object"][0]
     result = add("BURNED_TOWER_1F", y="4", x="6", item="HP_UP").run(VANILLA)
@@ -245,7 +246,7 @@ def test_falsified() -> None:
     should splice into the warps, which is the failure the check exists for."""
     print("falsification — is the layout doing any work?")
     if not (VANILLA / "maps").exists():
-        check("vanilla tree is present", False, str(VANILLA))
+        print(f"  --   skipping: {paths.explain_missing_checkout('pokecrystal')}")
         return
     from pretkit.hacks.vanilla import shapes
 
@@ -346,7 +347,8 @@ def test_trainer_round_trip() -> None:
     for root, add, reader, anchor in cases:
         rel = "maps/AzaleaGym.asm"
         if not (root / rel).exists():
-            check(f"{root.name} present", False, str(root))
+            print(f"  --   skipping {root.name}: no {rel} under {root} — "
+                  f"{paths.explain_missing_checkout(root.name)}")
             continue
         result = add("AZALEA_GYM", cls="BUG_CATCHER", party="AL",
                      sprite="SPRITE_BUG_CATCHER", y="4", x="5",
@@ -383,7 +385,8 @@ def test_trainer_reuse_only() -> None:
     rather than silently writing a `trainer` line the assembler would reject."""
     print("reuse-only — a party that isn't the class's is refused")
     if not (VANILLA / "maps/AzaleaGym.asm").exists():
-        check("vanilla present", False, str(VANILLA))
+        print(f"  --   skipping: no maps/AzaleaGym.asm under {VANILLA} — "
+              f"{paths.explain_missing_checkout('pokecrystal')}")
         return
     add = fa.VANILLA_ADDERS["trainer"][0]
     try:

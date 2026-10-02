@@ -930,6 +930,9 @@ def test_editing_round_trips(root: Path, name: str, anchor: str, shape) -> None:
     stopped, so the slice was always empty), and polished's five-argument
     `BGEVENT_JUMPSTD` losing its grotto id.
     """
+    if not (root / "maps").is_dir():
+        print(f"  --   skipping: {paths.explain_missing_checkout(root.name)}")
+        return
     from pretkit.hacks.vanilla import actions as fa
     from pretkit.hacks.vanilla import eventblock as EB
     print(f"\nevery entry in {name} survives being edited into itself")
