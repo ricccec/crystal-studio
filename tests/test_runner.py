@@ -315,7 +315,10 @@ def test_tree_resolution_matches_the_library(runner) -> None:
               "case this duplication exists to survive")
         return
 
-    for folder in ("pokeprism", "pokecrystal", "polishedcrystal"):
+    # Folder names no tree is called, on purpose: what is being compared is
+    # that two resolvers agree for *any* name, not that they agree about the
+    # three this project happens to read.
+    for folder in ("alpha-tree", "beta_tree", "gamma"):
         mine: Path = runner.find_game_tree(folder)
         theirs: Path = paths.find_checkout(folder)
         check(f"{folder}: the runner and the library resolve the same path",
