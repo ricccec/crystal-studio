@@ -6,15 +6,15 @@ Two ways a tree can be wrong, and the same invariant covers both:
   * **no tree** — run from somewhere with no `Makefile` beside a `main.asm` in
     any parent. `RepoNotFound` subclasses `RuntimeError`, so an
     `except FileNotFoundError` does not catch it.
-  * **the wrong tree** — run inside a *valid* pret tree belonging to another
-    hack. The root resolves, and a file only that hack has is missing three
-    frames later.
+  * **a real tree** — run inside a *valid* pret tree. The root resolves, so a
+    file the tree does not have goes missing three frames later, where an
+    `except` around the lookup no longer covers it.
 
-The second case is why the exit code is asserted only for the first. A
-hack-neutral command **should** work in any pret tree; a hack's own command
-should refuse one that is not its hack's. Both satisfy *no traceback*, which is
-the invariant — and asserting a shared exit code would force one of the two
-groups to be wrong.
+The second case is why the exit code is asserted only for the first. A command
+that supports a tree should handle it rather than refuse it, where a hack's own
+command should refuse a tree that is not its hack's; both satisfy *no
+traceback*, which is the invariant, and a shared exit code would force one of
+the two to be wrong.
 
 The check is strict about tracebacks and loose about wording: some scripts are
 gated by argparse before they reach the lookup, and those that do reach it print
@@ -41,10 +41,12 @@ from pretkit.shared import paths
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-#: A real pret tree that this repository's commands do not own, used for the
-#: wrong-tree half. Its absence skips that half rather than failing it — a game
-#: tree is a developer's checkout, not a fixture this repo can ship.
-FOREIGN_TREE = paths.find_checkout("pokecrystal")
+#: Vanilla's tree, which the plugins in this repo support — so it is a tree
+#: these commands should handle, not refuse. Its absence skips that half rather
+#: than failing it — a game tree is a developer's checkout, not a fixture this
+#: repo can ship.
+STOCK_FOLDER = "pokecrystal"
+STOCK_TREE = paths.find_checkout(STOCK_FOLDER)
 
 #: The studio is a full-screen TUI: it takes the terminal rather than returning,
 #: so it cannot answer this question in a subprocess. Named, not silently
@@ -126,25 +128,25 @@ def test_outside_any_tree(tmp: Path) -> None:
               code != 0, f"exit {code}")
 
 
-def test_inside_another_hacks_tree() -> None:
-    if not (FOREIGN_TREE / "main.asm").exists():
-        print(f"  skip the wrong-tree half — no checkout at {FOREIGN_TREE}")
+def test_inside_a_real_pret_tree() -> None:
+    if not (STOCK_TREE / "main.asm").exists():
+        print(f"  --   skipping: {paths.explain_missing_checkout(STOCK_FOLDER)}")
         return
     for name in find_console_scripts():
         if name in INTERACTIVE:
             continue
-        _, out = run_in(name, FOREIGN_TREE)
-        check(f"{name} does not traceback inside a foreign pret tree",
+        _, out = run_in(name, STOCK_TREE)
+        check(f"{name} does not traceback inside a real pret tree",
               TRACEBACK not in out, last_line(out))
 
 
 def test_the_check_can_fail(tmp: Path) -> None:
     """A check that cannot fail is not checking.
 
-    `find_repo_root()` raises from a directory with no tree above it, and
-    prism's reader raises inside a tree that is not prism's. Both are the
-    traceback this file exists to detect; if either stops producing one, the
-    detector is looking for the wrong string.
+    `find_repo_root()` raises from a directory with no tree above it, which is
+    the traceback this file exists to detect. If it stops producing one, the
+    detector is looking for the wrong string and every check above it is
+    vacuous.
     """
     def traceback_from(code: str, cwd: Path) -> str:
         return subprocess.run([sys.executable, "-c", code], cwd=cwd,
@@ -164,7 +166,7 @@ if __name__ == "__main__":
         print(f"no tree at all: {tmp}")
         test_the_check_can_fail(tmp)
         test_outside_any_tree(tmp)
-        print(f"\na valid pret tree that is not prism's: {FOREIGN_TREE}")
-        test_inside_another_hacks_tree()
+        print(f"\na real pret tree: {STOCK_TREE}")
+        test_inside_a_real_pret_tree()
     print(f"\n{'FAILURES: ' + str(_failures) if _failures else 'all ok'}")
     sys.exit(1 if _failures else 0)
