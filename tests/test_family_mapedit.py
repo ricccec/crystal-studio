@@ -26,11 +26,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.contract import mount as m  # noqa: E402
-from pokeprism_devtools.hacks.vanilla import mapedit  # noqa: E402
-from pokeprism_devtools.contract import ActionError  # noqa: E402
-from pokeprism_devtools.contract import Ref  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.contract import mount as m  # noqa: E402
+from pretkit.hacks.vanilla import mapedit  # noqa: E402
+from pretkit.contract import ActionError  # noqa: E402
+from pretkit.contract import Ref  # noqa: E402
 
 TREES = {
     "vanilla": paths.find_checkout("pokecrystal"),
@@ -207,7 +207,7 @@ def _args_of_text(text: str, macro: str, label: str) -> list[str]:
 def _drawable_map(hack) -> tuple[str, str]:
     """A map both files describe — most do; pick the first that `values` reads
     cleanly so the test is about the splice, not about a half-wired map."""
-    from pokeprism_devtools.hacks.vanilla import newmap
+    from pretkit.hacks.vanilla import newmap
     dialect = hack.writes._newmap or newmap.VANILLA
     for label, const in hack.reads.maps().items():
         try:

@@ -22,8 +22,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.hacks.polished import lzp  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.hacks.polished import lzp  # noqa: E402
 
 POLISHED = paths.find_checkout("polishedcrystal")
 

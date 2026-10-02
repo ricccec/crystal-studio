@@ -24,9 +24,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.hacks.vanilla import savefile  # noqa: E402
-from pokeprism_devtools.shared.symfile import Symbol, SymFile  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.hacks.vanilla import savefile  # noqa: E402
+from pretkit.shared.symfile import Symbol, SymFile  # noqa: E402
 
 FAILED = 0
 
@@ -182,8 +182,8 @@ def test_build_toolchain_default_and_override() -> None:
     toolchain (`RGBDS=""`) — the difference that closes the live build loop. But
     a caller who knows the machine's `rgbds` better must win. Prove both, without
     running `make`."""
-    from pokeprism_devtools.hacks.vanilla import play  # noqa: PLC0415
-    from pokeprism_devtools.shared import make as make_mod  # noqa: PLC0415
+    from pretkit.hacks.vanilla import play  # noqa: PLC0415
+    from pretkit.shared import make as make_mod  # noqa: PLC0415
 
     print("\nvanilla's build: the rgbds default clears the pin, and a caller can override it")
     seen: dict[str, object] = {}
@@ -221,8 +221,8 @@ def test_targets_are_read_from_the_makefile() -> None:
     checkout, then the validation the parse feeds."""
     import tempfile  # noqa: PLC0415
 
-    from pokeprism_devtools.hacks.vanilla import play  # noqa: PLC0415
-    from pokeprism_devtools.contract import PlayError  # noqa: PLC0415
+    from pretkit.hacks.vanilla import play  # noqa: PLC0415
+    from pretkit.contract import PlayError  # noqa: PLC0415
 
     print("\nvanilla's targets are the Makefile's `roms :=` list, read not guessed")
     makefile = (
@@ -298,7 +298,7 @@ def test_real_map_resolution() -> None:
     the `(group, number)` the save stores. That parse runs against the real tree
     with no build at all, so check it there — against values `map_constants.asm`
     spells in its own trailing comments."""
-    from pokeprism_devtools.hacks.vanilla import play  # noqa: PLC0415
+    from pretkit.hacks.vanilla import play  # noqa: PLC0415
 
     root = paths.find_checkout("pokecrystal")
     print("\na real pokecrystal checkout resolves maps to the group/number it comments")
@@ -327,8 +327,8 @@ def test_the_boot_rebuilds_the_whole_map() -> None:
     with itself but not the game can't pass. Two maps: an outdoor town with
     connections and NPCs, and an indoor lab.
     """
-    from pokeprism_devtools.hacks.vanilla import play  # noqa: PLC0415
-    from pokeprism_devtools.shared.overworld import blockdata, people  # noqa: PLC0415
+    from pretkit.hacks.vanilla import play  # noqa: PLC0415
+    from pretkit.shared.overworld import blockdata, people  # noqa: PLC0415
 
     root = paths.find_checkout("pokecrystal")
     rom = root / "pokecrystal11_debug.gbc"
@@ -464,7 +464,7 @@ def _engine_wrote_the_structs(raw: bytes, syms: SymFile, rom: Path,
     writer rather than listing offsets here means it cannot go stale when the
     writer grows a field.
     """
-    from pokeprism_devtools.shared.overworld import people  # noqa: PLC0415
+    from pretkit.shared.overworld import people  # noqa: PLC0415
 
     ours = savefile.Save(bytearray(raw))
     ours.stand_on(syms, group=group, number=number, y=y, x=x,
@@ -503,7 +503,7 @@ def test_visible_sprites_get_the_right_vram_tile() -> None:
     as a walking one — neither map has a still sprite on screen ahead of its NPCs —
     and a busier outdoor save would close that.
     """
-    from pokeprism_devtools.shared.overworld import blockdata, people, spritevram  # noqa: PLC0415
+    from pretkit.shared.overworld import blockdata, people, spritevram  # noqa: PLC0415
 
     root = paths.find_checkout("pokecrystal")
     rom = root / "pokecrystal11_debug.gbc"

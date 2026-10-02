@@ -32,10 +32,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.contract import mount as m  # noqa: E402
-from pokeprism_devtools.hacks.vanilla import connections as c  # noqa: E402
-from pokeprism_devtools.contract import Ref  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.contract import mount as m  # noqa: E402
+from pretkit.hacks.vanilla import connections as c  # noqa: E402
+from pretkit.contract import Ref  # noqa: E402
 
 TREES = {
     "vanilla": paths.find_checkout("pokecrystal"),

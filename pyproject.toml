@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = ["pret-toolkit", "crystal-studio-plugin-api", "textual>=8.2.8,<9", "rich"]
 
 [project.scripts]
-crystal-studio = "pokeprism_devtools.studio:main"
+crystal-studio = "pretkit.studio:main"
 
 # The mount discovers plugins through this group. The name is the
 # seam's published ABI: every distribution that registers one has to
@@ -18,10 +18,10 @@ crystal-studio = "pokeprism_devtools.studio:main"
 # `contract/mount._GROUP`. Editing this needs a reinstall to take
 # effect — entry points live in the dist metadata, not the source.
 [project.entry-points."crystal_studio.plugins"]
-vanilla  = "pokeprism_devtools.hacks.vanilla.claim"
-polished = "pokeprism_devtools.hacks.polished.claim"
+vanilla  = "pretkit.hacks.vanilla.claim"
+polished = "pretkit.hacks.polished.claim"
 
-# `namespaces = true` is the whole split: `pokeprism_devtools` is a
+# `namespaces = true` is the whole split: `pretkit` is a
 # PEP 420 namespace package with no `__init__.py`, so these
 # distributions install side by side and answer as one package.
 [tool.setuptools.packages.find]

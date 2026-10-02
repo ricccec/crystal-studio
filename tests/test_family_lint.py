@@ -30,15 +30,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.contract import mount as hackmount  # noqa: E402
-from pokeprism_devtools import contract as seam  # noqa: E402
-from pokeprism_devtools.hacks.polished import lint as polished_lint  # noqa: E402
-from pokeprism_devtools.hacks.polished import metrics as polished_metrics  # noqa: E402
-from pokeprism_devtools.hacks.vanilla import box, lint, metrics  # noqa: E402
-from pokeprism_devtools.hacks.vanilla.lint import dialogue, rules  # noqa: E402
-from pokeprism_devtools.contract import Severity  # noqa: E402
-from pokeprism_devtools.contract.suppressions import apply_suppressions  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.contract import mount as hackmount  # noqa: E402
+from pretkit import contract as seam  # noqa: E402
+from pretkit.hacks.polished import lint as polished_lint  # noqa: E402
+from pretkit.hacks.polished import metrics as polished_metrics  # noqa: E402
+from pretkit.hacks.vanilla import box, lint, metrics  # noqa: E402
+from pretkit.hacks.vanilla.lint import dialogue, rules  # noqa: E402
+from pretkit.contract import Severity  # noqa: E402
+from pretkit.contract.suppressions import apply_suppressions  # noqa: E402
 
 VANILLA = paths.find_checkout("pokecrystal")
 POLISHED = paths.find_checkout("polishedcrystal")

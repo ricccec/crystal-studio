@@ -20,8 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.hacks.vanilla import eventblock as eb  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.hacks.vanilla import eventblock as eb  # noqa: E402
 
 FAILED = 0
 

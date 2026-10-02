@@ -28,12 +28,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.hacks.vanilla import actions as fa  # noqa: E402
-from pokeprism_devtools.hacks.vanilla import eventblock as eb  # noqa: E402
-from pokeprism_devtools.hacks.vanilla.read import label_of  # noqa: E402
-from pokeprism_devtools.contract import ActionError  # noqa: E402
-from pokeprism_devtools.asmedit import blocks as B  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.hacks.vanilla import actions as fa  # noqa: E402
+from pretkit.hacks.vanilla import eventblock as eb  # noqa: E402
+from pretkit.hacks.vanilla.read import label_of  # noqa: E402
+from pretkit.contract import ActionError  # noqa: E402
+from pretkit.asmedit import blocks as B  # noqa: E402
 
 VANILLA = paths.find_checkout("pokecrystal")
 POLISHED = paths.find_checkout("polishedcrystal")
@@ -247,7 +247,7 @@ def test_falsified() -> None:
     if not (VANILLA / "maps").exists():
         check("vanilla tree is present", False, str(VANILLA))
         return
-    from pokeprism_devtools.hacks.vanilla import shapes
+    from pretkit.hacks.vanilla import shapes
 
     wrong = type("Wrong", (fa.VANILLA_ADDERS["object"][0],),
                  {"layout": shapes.POLISHED_LAYOUT})
@@ -339,8 +339,8 @@ def test_trainer_round_trip() -> None:
     print("a trainer into a real map, both trees, read back")
     import tempfile
 
-    from pokeprism_devtools.hacks.polished import events as pe
-    from pokeprism_devtools.hacks.vanilla import events as ve
+    from pretkit.hacks.polished import events as pe
+    from pretkit.hacks.vanilla import events as ve
     cases = [(VANILLA, fa.VANILLA_ADDERS["trainer"][0], ve, "_MapEvents"),
              (POLISHED, fa.POLISHED_ADDERS["trainer"][0], pe, "_MapScriptHeader")]
     for root, add, reader, anchor in cases:

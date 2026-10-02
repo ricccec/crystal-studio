@@ -20,12 +20,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.contract import mount as hackmount  # noqa: E402
-from pokeprism_devtools.shared.coords import Tile  # noqa: E402
-from pokeprism_devtools import contract  # noqa: E402
-from pokeprism_devtools.studio import tables  # noqa: E402
-from pokeprism_devtools.studio.session import Session, SessionError  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.contract import mount as hackmount  # noqa: E402
+from pretkit.shared.coords import Tile  # noqa: E402
+from pretkit import contract  # noqa: E402
+from pretkit.studio import tables  # noqa: E402
+from pretkit.studio.session import Session, SessionError  # noqa: E402
 
 FAILED = 0
 
@@ -335,7 +335,7 @@ def test_geometry_and_swatches(root: Path) -> None:
           len(set(g.swatches)) == 3)
 
     (root / "maps/TownA.blk").write_bytes(b"\x00\x01")
-    from pokeprism_devtools.shared import caches
+    from pretkit.shared import caches
     caches.clear()
     try:
         hackmount.mount(root).reads.geometry("TownA")
@@ -558,8 +558,8 @@ def test_warp_deletion_crosses(root: Path) -> None:
     is a record rather than a constant.
     """
     print("\ndeleting a warp: the renumber crosses, the door goes nowhere, two refuse")
-    from pokeprism_devtools.hacks.vanilla import write as VW
-    from pokeprism_devtools.asmedit import warpdel
+    from pretkit.hacks.vanilla import write as VW
+    from pretkit.asmedit import warpdel
 
     house = root / "maps/HouseA.asm"
     town = root / "maps/TownA.asm"
@@ -685,7 +685,7 @@ def test_the_base_imports_no_adapter() -> None:
     """
     import ast
     import inspect
-    from pokeprism_devtools.contract import action as action_module
+    from pretkit.contract import action as action_module
     print("\nthe neutral base stays neutral")
     # Asked of the module Python will actually import, not of a file at a path
     # this repo happens to contain: `contract/` belongs to another product, and a
@@ -702,13 +702,13 @@ def test_the_base_imports_no_adapter() -> None:
     check("contract/action.py imports no adapter and no asm editor", not bad, str(bad))
     check("it still exports what a family action needs",
           all(hasattr(__import__(
-              "pokeprism_devtools.contract", fromlist=["x"]), n)
+              "pretkit.contract", fromlist=["x"]), n)
               for n in ("Action", "ActionError", "Field", "Result", "ITEMS")))
 
 
 def test_reading_a_declared_const_set() -> None:
     """`ConstSet` over the four spellings a gen-2 tree actually uses."""
-    from pokeprism_devtools.shared.constants import ConstSet, read_set
+    from pretkit.shared.constants import ConstSet, read_set
     print("\na declared constant set is read in whatever way it is spelled")
     with tempfile.TemporaryDirectory() as d:
         root = Path(d)
@@ -761,7 +761,7 @@ def test_real_choices(root: Path, name: str) -> None:
         print(f"\n(skipping its choices: {paths.explain_missing_checkout(name)})")
         return
     print(f"\n{name}: every constant its maps use is a constant it offers")
-    from pokeprism_devtools import contract as actions
+    from pretkit import contract as actions
 
     hack = hackmount.mount(root)
     consts = tuple(hack.reads.maps().values())
@@ -857,10 +857,10 @@ def test_real_warp_deletion(root: Path, name: str, anchor: str, grammar,
         return
     print(f"\na warp comes out of the real {name}, and nothing else moves")
     import shutil
-    from pokeprism_devtools.hacks.vanilla import eventblock as EB
-    from pokeprism_devtools.hacks.vanilla import write as VW
-    from pokeprism_devtools.shared.edits import apply_edits
-    from pokeprism_devtools.asmedit import warpdel
+    from pretkit.hacks.vanilla import eventblock as EB
+    from pretkit.hacks.vanilla import write as VW
+    from pretkit.shared.edits import apply_edits
+    from pretkit.asmedit import warpdel
 
     with tempfile.TemporaryDirectory() as d:
         scratch = Path(d) / name
@@ -930,8 +930,8 @@ def test_editing_round_trips(root: Path, name: str, anchor: str, shape) -> None:
     stopped, so the slice was always empty), and polished's five-argument
     `BGEVENT_JUMPSTD` losing its grotto id.
     """
-    from pokeprism_devtools.hacks.vanilla import actions as fa
-    from pokeprism_devtools.hacks.vanilla import eventblock as EB
+    from pretkit.hacks.vanilla import actions as fa
+    from pretkit.hacks.vanilla import eventblock as EB
     print(f"\nevery entry in {name} survives being edited into itself")
     tail = {"warp": ("to_map", "their_warp"), "coord": ("scene", "script"),
             "bg": ("kind", "points_at")}
@@ -991,8 +991,8 @@ def test_a_line_the_editor_will_not_rewrite(root: Path) -> None:
     pointer and a flag. Rewriting one with the twelve-slot shape would slide
     the flag into the quantity, so it refuses and names the line — the same
     choice `read_set` makes about a constant `PURGE` took away."""
-    from pokeprism_devtools.hacks.vanilla import actions as fa
-    from pokeprism_devtools.contract import ActionError
+    from pretkit.hacks.vanilla import actions as fa
+    from pretkit.contract import ActionError
     print("\nan object_event whose trailing args mean something else refuses")
     src = root / "maps/TownA.asm"
     text = src.read_text()
@@ -1020,8 +1020,8 @@ def test_adding_an_entry(root: Path) -> None:
     """The three adders that cross, and the one refusal that keeps a map
     assembling: a name on a partially-named const list would take an ordinal
     that belongs to somebody else."""
-    from pokeprism_devtools.hacks.vanilla import actions as fa
-    from pokeprism_devtools.contract import ActionError
+    from pretkit.hacks.vanilla import actions as fa
+    from pretkit.contract import ActionError
     print("\nadding an entry: three lists cross, and the fourth says why not")
 
     warp = fa.VANILLA_ADDERS["warp"][0]("TOWN_A", y="3", x="4",
@@ -1060,8 +1060,8 @@ def test_adding_an_entry(root: Path) -> None:
 def test_resizing_crosses(root: Path) -> None:
     """TOWN_A is `map_const TOWN_A,  4, 3` — width 4, height 3, twelve blocks."""
     print("\nresizing crosses the seam")
-    from pokeprism_devtools.hacks.vanilla.resize import VANILLA
-    from pokeprism_devtools.asmedit import mapresize as MR
+    from pretkit.hacks.vanilla.resize import VANILLA
+    from pretkit.asmedit import mapresize as MR
 
     DIMS = "constants/map_constants.asm"
     before = (root / DIMS).read_text()
@@ -1138,9 +1138,9 @@ def test_the_resize_form(root: Path) -> None:
     near-duplicates, because the forms are.
     """
     print("\nthe family resize form asks the same thing the mechanism does")
-    from pokeprism_devtools.contract import ActionError
-    from pokeprism_devtools.hacks.vanilla.resize import VANILLA
-    from pokeprism_devtools.asmedit import mapresize as MR
+    from pretkit.contract import ActionError
+    from pretkit.hacks.vanilla.resize import VANILLA
+    from pretkit.asmedit import mapresize as MR
 
     form = Session(root).form("resize")
     check("the write adapter offers a resize form", form is not None)
@@ -1199,13 +1199,13 @@ def test_shared_blocks_refuse(tmp: Path) -> None:
     """The family stacks several labels on one INCBIN constantly — resizing one
     of a pair would corrupt the other, whose dimension constant does not move."""
     print("\ntwo maps sharing one grid refuse to be resized")
-    from pokeprism_devtools.hacks.vanilla.resize import VANILLA
-    from pokeprism_devtools.asmedit import mapresize as MR
+    from pretkit.hacks.vanilla.resize import VANILLA
+    from pretkit.asmedit import mapresize as MR
 
     root = _fixture(tmp / "shared")
     (root / "data/maps/blocks.asm").write_text(
         'TownA_Blocks:\nHouseA_Blocks:\n\tINCBIN "maps/TownA.blk"\n')
-    from pokeprism_devtools.hacks.vanilla import read as r
+    from pretkit.hacks.vanilla import read as r
     r._blk.cache_clear()
     try:
         MR.resize(root, "TOWN_A", "bottom", "grow", 1, dialect=VANILLA)
@@ -1229,8 +1229,8 @@ def test_real_resize(name: str, dialect) -> None:
         print(f"\n({name} not checked out — skipping)")
         return
     print(f"\nevery {name} map, against both readings of its dimension line")
-    from pokeprism_devtools.hacks.vanilla import read as r
-    from pokeprism_devtools.asmedit.mapresize import MapShape
+    from pretkit.hacks.vanilla import read as r
+    from pretkit.asmedit.mapresize import MapShape
 
     flipped = MapShape(dialect.shape.path, dialect.shape.macro, height_first=True)
     fits = flips = maps = 0
@@ -1302,18 +1302,18 @@ def main() -> int:
     test_real_choices(paths.find_checkout("polishedcrystal"),
                       "polishedcrystal")
 
-    from pokeprism_devtools.hacks.vanilla import actions as FA
+    from pretkit.hacks.vanilla import actions as FA
     test_editing_round_trips(paths.find_checkout("pokecrystal"),
                              "pokecrystal", "_MapEvents", FA.VANILLA_OBJECT)
     test_editing_round_trips(paths.find_checkout("polishedcrystal"),
                              "polishedcrystal", "_MapScriptHeader",
                              FA.POLISHED_OBJECT)
 
-    from pokeprism_devtools.hacks.vanilla.resize import VANILLA, polished
+    from pretkit.hacks.vanilla.resize import VANILLA, polished
     test_real_resize("pokecrystal", VANILLA)
     test_real_resize("polishedcrystal", polished())
 
-    from pokeprism_devtools.hacks.vanilla import write as VW
+    from pretkit.hacks.vanilla import write as VW
     test_real_warp_deletion(paths.find_checkout("pokecrystal"), "pokecrystal",
                             "_MapEvents", VW.WARPS, "AzaleaTown", "AZALEA_TOWN")
     test_real_warp_deletion(paths.find_checkout("polishedcrystal"),

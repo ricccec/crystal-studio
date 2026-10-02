@@ -20,11 +20,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pokeprism_devtools.shared import paths  # noqa: E402
-from pokeprism_devtools.contract import mount as hackmount  # noqa: E402
-from pokeprism_devtools import contract  # noqa: E402
-from pokeprism_devtools.studio import tables  # noqa: E402
-from pokeprism_devtools.studio.session import Session  # noqa: E402
+from pretkit.shared import paths  # noqa: E402
+from pretkit.contract import mount as hackmount  # noqa: E402
+from pretkit import contract  # noqa: E402
+from pretkit.studio import tables  # noqa: E402
+from pretkit.studio.session import Session  # noqa: E402
 
 FAILED = 0
 KNOWN_GAP = 0
@@ -252,7 +252,7 @@ def test_floor_shorthands_read_as_props() -> None:
     obstacles land in props; the nurse's `jumpstd pokecenternurse`, a command
     object too, stays a person — the guard that a command is not a prop by type.
     """
-    from pokeprism_devtools.hacks.polished import events as pe
+    from pretkit.hacks.polished import events as pe
     src = (
         "Grove_MapScriptHeader:\n"
         "\tdef_scene_scripts\n\n\tdef_callbacks\n\n\tdef_warp_events\n\n"
@@ -398,9 +398,9 @@ def test_real_item_adders() -> None:
     print("\nthe polished item ball and hidden item round-trip on the real tree")
     import shutil
 
-    from pokeprism_devtools.hacks.polished import events as pe
-    from pokeprism_devtools.hacks.vanilla import actions as fa
-    from pokeprism_devtools.shared.edits import apply_edits
+    from pretkit.hacks.polished import events as pe
+    from pretkit.hacks.vanilla import actions as fa
+    from pretkit.shared.edits import apply_edits
     ball, hidden = fa.POLISHED_ADDERS["object"]
 
     def run_into(mapfile, action, kind, want):
