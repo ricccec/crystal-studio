@@ -49,8 +49,9 @@ STOCK_FOLDER = "pokecrystal"
 STOCK_TREE = paths.find_checkout(STOCK_FOLDER)
 
 #: The studio is a full-screen TUI: it takes the terminal rather than returning,
-#: so it cannot answer this question in a subprocess. Named, not silently
-#: skipped, so that the day it grows a non-interactive path somebody decides.
+#: so a subprocess cannot ask it this question. Named rather than silently
+#: skipped, and announced on every run, so that the day it grows a
+#: non-interactive path somebody decides.
 INTERACTIVE: set[str] = {"crystal-studio"}
 
 #: Long enough that a slow import is not a failure, short enough that a CLI
@@ -112,15 +113,27 @@ def last_line(out: str) -> str:
     return lines[-1][:110] if lines else ""
 
 
-def test_outside_any_tree(tmp: Path) -> None:
+def scripts_to_exercise() -> list[str]:
+    """The scripts this file can hold to the promise, saying what it leaves out.
+
+    A command excluded in silence reads exactly like one that passed: both print
+    nothing, and a half that exercises none of them prints a heading and then an
+    empty line. `INTERACTIVE` records why an exclusion is permanent; this says it
+    where the result is read, on every run.
+    """
     scripts = find_console_scripts()
     if not scripts:
         print(f"  --   skipping: {this_distribution()} declares no console "
               f"scripts, so there is nothing here to hold to this promise")
-        return
-    for name in scripts:
-        if name in INTERACTIVE:
-            continue
+        return []
+    for name in sorted(set(scripts) & INTERACTIVE):
+        print(f"  --   skipping {name}: it takes the terminal rather than "
+              f"returning, so a subprocess cannot ask it this")
+    return [name for name in scripts if name not in INTERACTIVE]
+
+
+def test_outside_any_tree(tmp: Path) -> None:
+    for name in scripts_to_exercise():
         code, out = run_in(name, tmp)
         check(f"{name} does not traceback with no tree at all",
               TRACEBACK not in out, last_line(out))
@@ -132,9 +145,7 @@ def test_inside_a_real_pret_tree() -> None:
     if not (STOCK_TREE / "main.asm").exists():
         print(f"  --   skipping: {paths.explain_missing_checkout(STOCK_FOLDER)}")
         return
-    for name in find_console_scripts():
-        if name in INTERACTIVE:
-            continue
+    for name in scripts_to_exercise():
         _, out = run_in(name, STOCK_TREE)
         check(f"{name} does not traceback inside a real pret tree",
               TRACEBACK not in out, last_line(out))
