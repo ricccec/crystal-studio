@@ -10,7 +10,6 @@ inline into `BGEVENT_ITEM + ITEM`, trainers split into `trainer` and
 `generictrainer`, a wild mon grew a form axis, and tile palettes became a
 binary `*_attributes.bin` beside the metatiles.
 
-`docs/polished-crystal-feasibility.md` picked those differences as the
-proof the seam holds; every one of them crosses as declared data, and the
+Every one of those differences crosses the seam as declared data, and the
 port never hears polished's name.
 """

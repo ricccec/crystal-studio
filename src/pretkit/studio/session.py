@@ -6,8 +6,7 @@ where the markers go, and the tables already reduced to columns and rows. The TU
 opens nothing and parses nothing — it draws what it is given. That is what keeps
 the knowledge of what a `person_event` is (and of the `+4` its macro adds behind
 your back) on this side of the line, where exactly one module has to be right
-about it. `docs/adapter-plan.md` is the longer version of why that line is where
-it is.
+about it.
 
 Everything the app does to the repo goes through :meth:`Session.apply`, one action
 at a time. That is not an accident of implementation, it is the whole design, and

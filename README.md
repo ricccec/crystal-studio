@@ -11,11 +11,16 @@ without leaving the terminal and without hand-editing `.asm` by eye.
 ## Install
 
 ```bash
-pip install crystal-studio
+pip install git+https://github.com/ricccec/pret-toolkit \
+            git+https://github.com/ricccec/crystal-studio-plugin-api \
+            git+https://github.com/ricccec/crystal-studio
 crystal-studio /path/to/pokecrystal
 ```
 
-Requires Python 3.10 or newer. Pulls in `pret-toolkit`, `crystal-studio-plugin-api`,
+Not on PyPI yet. Every dependency in this family is named by URL in the
+same command, which is how pip finds the ones PyPI does not have.
+
+Requires Python 3.11 or newer. Pulls in `pret-toolkit`, `crystal-studio-plugin-api`,
 `textual` and `rich`.
 
 ## What it knows, and what it refuses to know
@@ -68,6 +73,11 @@ somewhere conventional (`~/code/<name>`, `~/src/<name>`, or one grouping
 directory below either). Without a tree those checks are reported as skipped
 rather than passed, and the runner counts them, so a green run cannot hide an
 empty one.
+
+## Disclaimer
+
+Not affiliated with or endorsed by Nintendo, Game Freak, Creatures or The
+Pokémon Company. Pokémon is a trademark of Nintendo.
 
 ## Licence
 

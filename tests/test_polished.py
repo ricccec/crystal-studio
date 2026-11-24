@@ -461,7 +461,7 @@ def _raw_item_balls(text: str) -> tuple[int, int]:
 def test_reader_sees_every_item_ball() -> None:
     """The reader surfaces every item ball that exists — long form and shorthand
     alike. It was blind to the `itemball_event` shorthand the tree overwhelmingly
-    prefers until the parser learned to expand it (Phase 10); no earlier test
+    prefers until the parser learned to expand it; no earlier test
     caught the gap, because the fixtures write balls long (the form the reader
     read) and the real-tree assertions took their expected counts FROM the
     reader, so a dropped ball moved no number anyone checked. This cross-check
@@ -513,7 +513,7 @@ def test_real_tree() -> None:
 
     t = r.tables("AzaleaTown")
     # Eleven long-form objects, plus two `pokemon_event` and one `fruittree_event`
-    # the reader was blind to before Phase 10 — fourteen objects, all on the
+    # the reader was once blind to — fourteen objects, all on the
     # Objects tab. Thirteen are people: three `jumptextfaceplayer` command
     # objects, eight scripted NPCs and the two wild mons a `pokemon_event` reads
     # as. The fruit tree is not a person — it reads as a prop off its `fruittree`

@@ -673,7 +673,7 @@ def _refused(s: Session, label: str, const: str, ref, phrase: str) -> bool:
 # --------------------------------------------------------------------------- #
 
 def test_the_base_imports_no_adapter() -> None:
-    """The rule Phase 6 was carved for: adapters import the base, the base
+    """The rule this split exists for: adapters import the base, the base
     imports no adapter.
 
     Asserted statically, over the module's own import lines. When the base
@@ -1269,7 +1269,7 @@ def test_real_resize(name: str, dialect) -> None:
     # w=33 map, tied to EVENT_BEAT_BLUE). Fifteen maps carry one, up from eight:
     # the seven new ones are *shorthand* objects — a `smashrock_event` off
     # Olivine's east edge, an `itemball_event` past Route 35 Coast's south — that
-    # the reader was blind to until it learned to expand them (Phase 10), and
+    # the reader was blind to until it learned to expand them, and
     # that are as legitimately off-grid as the long-form ones always were.
     check("nearly every map's entries fit inside it as declared",
           fits >= maps - 15, f"{fits}/{maps}")

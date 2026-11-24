@@ -23,8 +23,8 @@ from . import newmap
 from .eventblock import EventBlock, UnparseableEvents, parse_map
 
 #: How the family spells a warp reference, for :mod:`...asmedit.warpdel`. The
-#: survey that produced this record is the reason Phase 5 was a port and not a
-#: copy: prism's two macros are three here, and neither tree has prism's
+#: survey that produced this record is why this is a port and not a copy:
+#: prism's two macros are three here, and neither tree has prism's
 #: `dummy_warp`.
 #:
 #: * ``warp_event x, y, MAP, n`` — the coordinates turn and the seats move, which
@@ -68,7 +68,7 @@ POLISHED_WARPS = WarpGrammar(
 #: answers `[]`, which the form renders as a plain text box.
 #:
 #: Both trees keep all six in the same six files — the survey checked rather
-#: than assumed, since Phase 5's `elevfloor` was exactly this question answered
+#: than assumed, since `elevfloor` was once exactly this question answered
 #: wrong. The event flags are the one set that is a *suggestion* rather than a
 #: bound: see `studio/offers.py` on why holding you to the list would mean the
 #: only NPCs you could gate are the gated ones.
