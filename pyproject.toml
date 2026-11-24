@@ -11,30 +11,26 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "ricccec", email = "65662894+ricccec@users.noreply.github.com"}]
 requires-python = ">=3.11"
-dependencies = ["pret-toolkit", "crystal-studio-plugin-api", "textual>=8.2.8,<9", "rich"]
+dependencies = ["pret-toolkit", "crystal-studio-api", "textual>=8.2.8,<9", "rich"]
 
 [project.scripts]
-crystal-studio = "pretkit.studio:main"
+crystal-studio = "crystal_studio:main"
 
 # The mount discovers plugins through this group. The name is the
 # seam's published ABI: every distribution that registers one has to
 # spell it identically, and it is spelled once in code, in
-# `contract/mount._GROUP`. Editing this needs a reinstall to take
+# `crystal_studio_api/mount._GROUP`. Editing this needs a reinstall to take
 # effect — entry points live in the dist metadata, not the source.
 [project.entry-points."crystal_studio.plugins"]
-vanilla  = "pretkit.hacks.vanilla.claim"
-polished = "pretkit.hacks.polished.claim"
+vanilla  = "crystal_studio.hacks.vanilla.claim"
+polished = "crystal_studio.hacks.polished.claim"
 
-# `namespaces = true` is the whole split: `pretkit` is a
-# PEP 420 namespace package with no `__init__.py`, so these
-# distributions install side by side and answer as one package.
 [project.urls]
 Source = "https://github.com/ricccec/crystal-studio"
 Issues = "https://github.com/ricccec/crystal-studio/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-namespaces = true
 
 [tool.pret-test]
 

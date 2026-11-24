@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Polished's `plays` writer, proven offline against the real build.
 
-Two halves, both falsified-first ([[round-trip-to-verify-writer]]):
+Two halves, each shown failing on a seeded fault before it is trusted:
 
   * the **tiles** — `mapread` resolves a map's `<Label>_BlockData` in the `.sym`,
     decompresses it from the ROM, and computes `wScreenSave`; that must match the
@@ -25,11 +25,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pretkit.shared import paths  # noqa: E402
-from pretkit.hacks.polished import mapread, objects, savefile  # noqa: E402
-from pretkit.hacks.vanilla.read import dims, label_of  # noqa: E402
-from pretkit.shared.overworld import blockdata  # noqa: E402
-from pretkit.shared.symfile import SymFile  # noqa: E402
+from pret_toolkit.shared import paths  # noqa: E402
+from crystal_studio.hacks.polished import mapread, objects, savefile  # noqa: E402
+from crystal_studio.hacks.vanilla.read import dims, label_of  # noqa: E402
+from pret_toolkit.shared.overworld import blockdata  # noqa: E402
+from pret_toolkit.shared.symfile import SymFile  # noqa: E402
 
 POLISHED = paths.find_checkout("polishedcrystal")
 ROM = POLISHED / "polishedcrystal-3.2.3.gbc"

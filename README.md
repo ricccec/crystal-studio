@@ -12,7 +12,7 @@ without leaving the terminal and without hand-editing `.asm` by eye.
 
 ```bash
 pip install git+https://github.com/ricccec/pret-toolkit \
-            git+https://github.com/ricccec/crystal-studio-plugin-api \
+            git+https://github.com/ricccec/crystal-studio-api \
             git+https://github.com/ricccec/crystal-studio
 crystal-studio /path/to/pokecrystal
 ```
@@ -20,7 +20,7 @@ crystal-studio /path/to/pokecrystal
 Not on PyPI yet. Every dependency in this family is named by URL in the
 same command, which is how pip finds the ones PyPI does not have.
 
-Requires Python 3.11 or newer. Pulls in `pret-toolkit`, `crystal-studio-plugin-api`,
+Requires Python 3.11 or newer. Pulls in `pret-toolkit`, `crystal-studio-api`,
 `textual` and `rich`.
 
 ## What it knows, and what it refuses to know
@@ -36,7 +36,7 @@ Pokémon Prism, ships separately as `pokeprism-devtools`.
 ## Teaching it your own hack
 
 You do not fork this. Implement the protocols in
-[`crystal-studio-plugin-api`](https://github.com/ricccec/crystal-studio-plugin-api)
+[`crystal-studio-api`](https://github.com/ricccec/crystal-studio-api)
 and register one entry point:
 
 ```toml
@@ -48,15 +48,12 @@ Install it alongside, and the studio discovers it through the same path the two
 in-tree adapters use — which is the only way to know the seam works before
 someone depends on it.
 
-## The namespace
+## The package
 
-The import name is `pretkit`, a [PEP 420][pep420] namespace package shared with
-`pret-toolkit` and the plugin API. Installing several of these distributions
-gives you one package spanning several source trees. This one imports the toolkit
-and the plugin API, and nothing sideways: `pokeprism-devtools` is a sibling, and
-neither reaches the other.
-
-[pep420]: https://peps.python.org/pep-0420/
+The import name is `crystal_studio`: the IDE at its root, and the two bundled
+adapters under `crystal_studio.hacks`. It imports `pret_toolkit` and
+`crystal_studio_api`, and nothing sideways: `pokeprism-devtools` is a sibling,
+and neither reaches the other.
 
 ## Tests
 
@@ -78,7 +75,7 @@ Each tree is pinned to the one commit the tests were written against, in
 - `polishedcrystal` — [Rangi42/polishedcrystal](https://github.com/Rangi42/polishedcrystal) at `a79dd2a`
 
 `pret-test` checks out a clean copy of each pinned commit into
-`~/.cache/pretkit/` — taken from your own checkout when it has the commit, from
+`~/.cache/pret-toolkit/` — taken from your own checkout when it has the commit, from
 the URL otherwise — so neither your edits nor your branch change the result.
 Your checkout is found the way every command here finds one: `$<NAME>_TREE`
 (`$POKECRYSTAL_TREE`, say), or a conventional place such as `~/code/<name>`.

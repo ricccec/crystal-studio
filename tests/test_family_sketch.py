@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for the family new-map form's picture — `studio/mapadd.AddMap.sketch`
+"""Tests for the family new-map form's picture — `mapadd.AddMap.sketch`
 and the `sketch` each family reader answers it with.
 
 The form draws the *shape* and the adapter puts the *colour* on it, because a
@@ -27,10 +27,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pretkit.shared import paths  # noqa: E402
-from pretkit.contract import mount as m  # noqa: E402
-from pretkit.contract import ActionError  # noqa: E402
-from pretkit.asmedit import mapnew  # noqa: E402
+from pret_toolkit.shared import paths  # noqa: E402
+from crystal_studio_api import mount as m  # noqa: E402
+from crystal_studio_api import ActionError  # noqa: E402
+from pret_toolkit.asmedit import mapnew  # noqa: E402
 
 #: The trees to try, and one real map in each to borrow a grid and a tileset
 #: from. Borrowed rather than invented so the sizes are a tree's own: a grid

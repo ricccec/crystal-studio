@@ -20,8 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pretkit.shared import paths  # noqa: E402
-from pretkit.hacks.vanilla import eventblock as eb  # noqa: E402
+from pret_toolkit.shared import paths  # noqa: E402
+from crystal_studio.hacks.vanilla import eventblock as eb  # noqa: E402
 
 FAILED = 0
 

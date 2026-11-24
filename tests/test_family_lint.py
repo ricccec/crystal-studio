@@ -30,15 +30,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pretkit.shared import paths  # noqa: E402
-from pretkit.contract import mount as hackmount  # noqa: E402
-from pretkit import contract as seam  # noqa: E402
-from pretkit.hacks.polished import lint as polished_lint  # noqa: E402
-from pretkit.hacks.polished import metrics as polished_metrics  # noqa: E402
-from pretkit.hacks.vanilla import box, lint, metrics  # noqa: E402
-from pretkit.hacks.vanilla.lint import dialogue, rules  # noqa: E402
-from pretkit.contract import Severity  # noqa: E402
-from pretkit.contract.suppressions import apply_suppressions  # noqa: E402
+from pret_toolkit.shared import paths  # noqa: E402
+from crystal_studio_api import mount as hackmount  # noqa: E402
+import crystal_studio_api as seam  # noqa: E402
+from crystal_studio.hacks.polished import lint as polished_lint  # noqa: E402
+from crystal_studio.hacks.polished import metrics as polished_metrics  # noqa: E402
+from crystal_studio.hacks.vanilla import box, lint, metrics  # noqa: E402
+from crystal_studio.hacks.vanilla.lint import dialogue, rules  # noqa: E402
+from crystal_studio_api import Severity  # noqa: E402
+from crystal_studio_api.suppressions import apply_suppressions  # noqa: E402
 
 VANILLA = paths.find_checkout("pokecrystal")
 POLISHED = paths.find_checkout("polishedcrystal")

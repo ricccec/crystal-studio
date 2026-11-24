@@ -28,12 +28,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pretkit.shared import paths  # noqa: E402
-from pretkit.hacks.vanilla import actions as fa  # noqa: E402
-from pretkit.hacks.vanilla import eventblock as eb  # noqa: E402
-from pretkit.hacks.vanilla.read import label_of  # noqa: E402
-from pretkit.contract import ActionError  # noqa: E402
-from pretkit.asmedit import blocks as B  # noqa: E402
+from pret_toolkit.shared import paths  # noqa: E402
+from crystal_studio.hacks.vanilla import actions as fa  # noqa: E402
+from crystal_studio.hacks.vanilla import eventblock as eb  # noqa: E402
+from crystal_studio.hacks.vanilla.read import label_of  # noqa: E402
+from crystal_studio_api import ActionError  # noqa: E402
+from pret_toolkit.asmedit import blocks as B  # noqa: E402
 
 VANILLA = paths.find_checkout("pokecrystal")
 POLISHED = paths.find_checkout("polishedcrystal")
@@ -248,7 +248,7 @@ def test_falsified() -> None:
     if not (VANILLA / "maps").exists():
         print(f"  --   skipping: {paths.explain_missing_checkout('pokecrystal')}")
         return
-    from pretkit.hacks.vanilla import shapes
+    from crystal_studio.hacks.vanilla import shapes
 
     wrong = type("Wrong", (fa.VANILLA_ADDERS["object"][0],),
                  {"layout": shapes.POLISHED_LAYOUT})
@@ -340,8 +340,8 @@ def test_trainer_round_trip() -> None:
     print("a trainer into a real map, both trees, read back")
     import tempfile
 
-    from pretkit.hacks.polished import events as pe
-    from pretkit.hacks.vanilla import events as ve
+    from crystal_studio.hacks.polished import events as pe
+    from crystal_studio.hacks.vanilla import events as ve
     cases = [(VANILLA, fa.VANILLA_ADDERS["trainer"][0], ve, "_MapEvents"),
              (POLISHED, fa.POLISHED_ADDERS["trainer"][0], pe, "_MapScriptHeader")]
     for root, add, reader, anchor in cases:

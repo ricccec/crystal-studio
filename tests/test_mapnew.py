@@ -27,11 +27,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pretkit.shared import paths  # noqa: E402
-from pretkit.hacks.vanilla import newmap as NM  # noqa: E402
-from pretkit.shared.edits import apply_edits  # noqa: E402
-from pretkit.asmedit import mapnew as MN  # noqa: E402
-from pretkit.asmedit.editvocab import EditError  # noqa: E402
+from pret_toolkit.shared import paths  # noqa: E402
+from crystal_studio.hacks.vanilla import newmap as NM  # noqa: E402
+from pret_toolkit.shared.edits import apply_edits  # noqa: E402
+from pret_toolkit.asmedit import mapnew as MN  # noqa: E402
+from pret_toolkit.asmedit.editvocab import EditError  # noqa: E402
 
 VANILLA = paths.find_checkout("pokecrystal")
 POLISHED = paths.find_checkout("polishedcrystal")
@@ -282,8 +282,8 @@ def test_seam() -> None:
     macro wants a palette.
     """
     print("\n== the seam ==")
-    from pretkit.contract import mount
-    from pretkit import contract as actions
+    from crystal_studio_api import mount
+    import crystal_studio_api as actions
 
     forms = {}
     for name, root in (("vanilla", VANILLA), ("polished", POLISHED)):

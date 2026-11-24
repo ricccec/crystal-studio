@@ -1,0 +1,285 @@
+"""The tables under the grid, and the one thing they are for: being *selected*.
+
+This is the inversion the studio was rebuilt around. The tables used to be a
+read-out — you could look at a warp and then, to do anything about it, press `a`,
+pick "Remove an object" from a list of nine, and type the label of the thing you
+were already looking at. Now the selection *is* the verb's object: `e` edits what
+is highlighted, `d` deletes it, and the footer only offers the keys that mean
+something for the row you are on.
+
+The widget knows none of that. It is handed a list of :class:`~.tables.Tab`, it
+draws them, and it announces what is highlighted as an opaque :class:`~.tables.
+Ref` — which it hands back to the session without ever looking inside. That is
+the seam holding: `tabs.py` cannot tell a `person_event` from a `signpost`, and
+does not need to, because the thing that can is on the other side of the message.
+
+Two rows are special and neither is a special case in the code:
+
+* the dim **"Add new…"** row at the foot of every tab you can add to is a row
+  like any other, carrying `Ref("add")`. Pressing enter on it is the same code
+  path as pressing enter on an NPC, and the session decides what that means.
+* a row with **no Ref at all** — a wild encounter, a roof colour — is what makes
+  `e` and `d` vanish from the footer, because a key you cannot use should not be
+  advertised.
+
+**The panes are mounted once and never again.** Every tab this app can show
+exists from startup; loading a map refills the tables and hides the tabs that map
+hasn't got. The obvious alternative — throw the panes away and mount the new
+ones — measured at nearly two seconds per map, on a widget you move through by
+holding down an arrow key. Mounting is the expensive part of a Textual widget and
+a map does not change the *shape* of the tab strip, only its contents.
+"""
+
+from __future__ import annotations
+
+from rich.text import Text
+from textual import on
+from textual.app import ComposeResult
+from textual.containers import Vertical
+from textual.message import Message
+from textual.widgets import DataTable, Static, TabbedContent, TabPane
+
+# ADD is re-exported for callers that assert on it; this file never reads it.
+# The Ref an "Add new…" row carries is minted by `contract.add_ref`, on the port
+# side of the seam — the view draws the dim row because `Tab.adds` told it to,
+# and hands back a Ref it never assembled itself.
+from crystal_studio_api import ADD, Ref, add_ref  # noqa: F401
+from .tables import Tab, prompt_column
+
+#: Every tab the studio can show, in the order it shows them. A map gets the ones
+#: it has; the rest are hidden. "Unreadable" is the one a map with a broken event
+#: header gets *instead of* its objects — it still has a shape, and hiding a
+#: broken map from the person looking for the break is the worst thing this could
+#: do, so it comes up with the parse error where its NPCs would have been.
+ALL = ("Attributes", "NPCs", "Trainers", "Objects", "Warps", "Signposts",
+       "Triggers", "Connections", "Unreadable", "Roof", "Wild")
+
+
+class MapTabs(Vertical):
+    """Every tab of one map, and the row you are standing on.
+
+    **Not `Tabs`.** Textual has a widget of that name, and `ContentTabs` — the strip
+    of tab *labels* along the top of a `TabbedContent` — is a subclass of it. So a
+    type selector `Tabs` in this widget's own stylesheet silently also matches the
+    strip inside it, and `Tabs { height: 100% }` gave the strip the whole panel and
+    left one row for the tables. Which is what an empty tab looks like.
+
+    The height chain below is then load-bearing on its own account: `TabbedContent`
+    and `TabPane` are both `height: auto` by default, and `1fr` of an auto-height
+    parent resolves to nothing. Height has to be handed down explicitly, every step
+    from the pane to the table.
+    """
+
+    DEFAULT_CSS = """
+    MapTabs { height: 100%; }
+    MapTabs TabbedContent { height: 1fr; }
+    MapTabs ContentSwitcher { height: 1fr; }
+    MapTabs TabPane { height: 1fr; }
+    MapTabs .tab-note { height: auto; padding: 0 1; color: $text-disabled; }
+    MapTabs DataTable { height: 1fr; }
+    """
+
+    class Selected(Message):
+        """The highlighted row changed — possibly to nothing at all.
+
+        `move` says whether the *grid* cursor should follow. It should when you
+        walked onto this row inside a table (the map is a mirror of the tables and
+        that is the point), and it should **not** when the row merely came up under
+        a tab you switched to. Switching to the Items tab to reach "Add new…" would
+        otherwise fling the cursor onto the first item and drop your next object on
+        top of it — see the app's `_selected`.
+        """
+
+        def __init__(self, ref: Ref | None, move: bool = False) -> None:
+            super().__init__()
+            self.ref = ref
+            self.move = move
+
+    class Chosen(Message):
+        """Enter, on a row worth acting on."""
+
+        def __init__(self, ref: Ref) -> None:
+            super().__init__()
+            self.ref = ref
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        #: Per tab, the Ref of each row by its position in the table. A parallel
+        #: list rather than a DataTable row key: the table is refilled wholesale
+        #: on every load, and keys would only be a second thing to keep in step.
+        self._refs: dict[str, list[Ref | None]] = {}
+        #: True only while `show()` is rebuilding the tables. Clearing and refilling
+        #: a DataTable fires `RowHighlighted` as the cursor snaps back to the top —
+        #: a spurious "selection moved" that would drag the grid cursor around on
+        #: every map load. `show()` sends one deliberate announcement at the end.
+        self._filling = False
+
+    def compose(self) -> ComposeResult:
+        with TabbedContent(id="tabs"):
+            for name in ALL:
+                with TabPane(name, id=_pane(name)):
+                    yield Static("", id=f"note-{_slug(name)}", classes="tab-note")
+                    yield DataTable(id=f"table-{_slug(name)}", cursor_type="row",
+                                    zebra_stripes=True)
+
+    # -- filling it in --------------------------------------------------------- #
+    def show(self, tabs: list[Tab]) -> None:
+        """Draw a map's tabs. Synchronous, because nothing is mounted.
+
+        The tab you were looking at survives if the new map has it. Arrowing down
+        the map list while watching Warps should not throw you back to Attributes
+        on every map that happens to have none.
+        """
+        panes = self.query_one(TabbedContent)
+        was = panes.active
+        have = {t.name: t for t in tabs}
+
+        self._filling = True
+        try:
+            for name in ALL:
+                tab = have.get(name)
+                if tab is None:
+                    panes.hide_tab(_pane(name))
+                    self._refs[name] = []
+                    continue
+                panes.show_tab(_pane(name))
+                self._fill(tab)
+
+            # The tab you were on may not exist on this map. Fall back to the first
+            # one that does — never to nothing, which would leave the pane blank and
+            # the footer offering keys for a row that isn't there.
+            if was not in {_pane(t.name) for t in tabs}:
+                panes.active = _pane(tabs[0].name) if tabs else ""
+        finally:
+            self._filling = False
+        # One announcement for the footer, and deliberately move=False: the grid
+        # cursor is the app's to place on load (it restores where you were), not
+        # something a table rebuild gets to reset.
+        self._announce()
+
+    def _fill(self, tab: Tab) -> None:
+        cols, rows = tab.table
+        table = self.query_one(f"#table-{_slug(tab.name)}", DataTable)
+        table.clear(columns=True)
+        table.add_columns(*cols)
+
+        refs: list[Ref | None] = []
+        for row in rows:
+            table.add_row(*row.cells)
+            refs.append(row.ref)
+
+        if tab.adds:
+            # A row, not a button: the end of the list is where your hand already
+            # is once you have looked down it and not found the thing you wanted.
+            #
+            # The caret at the left and the words further along, because a cell is
+            # what makes its column wide and `#` is a column of single digits. See
+            # `tables.prompt_column`.
+            cells = [""] * len(cols)
+            cells[0] = Text("▸", style="italic dim")
+            cells[prompt_column(cols)] = Text(f"Add new {tab.adds}…",
+                                              style="italic dim")
+            table.add_row(*cells)
+            refs.append(add_ref(tab.adds))
+
+        self._refs[tab.name] = refs
+        self.query_one(f"#note-{_slug(tab.name)}", Static).update(tab.note)
+        self.query_one(f"#note-{_slug(tab.name)}", Static).display = bool(tab.note)
+
+    # -- what is selected ------------------------------------------------------- #
+    @property
+    def ref(self) -> Ref | None:
+        """The Ref of the highlighted row, or None if there isn't one."""
+        panes = self.query_one(TabbedContent)
+        pane = panes.active_pane
+        if pane is None:
+            return None
+        name = _name(pane.id or "")
+        refs = self._refs.get(name, [])
+        row = pane.query_one(DataTable).cursor_row
+        return refs[row] if 0 <= row < len(refs) else None
+
+    def select(self, ref: Ref) -> bool:
+        """Stand on the row that carries this Ref, wherever it is. False if no row
+        does, which is the normal answer for a Ref that isn't on this map.
+
+        What makes the grid a way to *navigate*: put the cursor on an NPC and the
+        NPCs tab comes up with that NPC highlighted, ready for `e` and `d`. The
+        widget still knows nothing about NPCs — it is handed a Ref it cannot read
+        and finds the row holding an equal one.
+
+        This is an *explicit* selection, so it announces `move=True`: the grid is
+        meant to follow it (the app guards the one case where it must not — the
+        grid-to-tab sync — with `_syncing`). We say so ourselves rather than lean on
+        `move_cursor` firing `RowHighlighted`, because when the row asked for is the
+        row already under the cursor it fires nothing at all, and the selection
+        would then silently fail to reach the grid.
+        """
+        for name, refs in self._refs.items():
+            if ref not in refs:
+                continue
+            panes = self.query_one(TabbedContent)
+            pane = _pane(name)
+            switching = panes.active != pane
+            panes.active = pane
+            table = self.query_one(f"#table-{_slug(name)}", DataTable)
+            table.move_cursor(row=refs.index(ref))
+            if switching:
+                self._repaint_when_shown(table)
+            self._announce(move=True)
+            return True
+        return False
+
+    def _repaint_when_shown(self, table: DataTable) -> None:
+        """Ask a table that is about to be revealed to draw itself again.
+
+        The pane we have just switched to is **still hidden at this moment** — the
+        switch lands a frame later. So the repaint `move_cursor` has just asked for,
+        of the row it left and the row it moved to, goes nowhere; and when the pane
+        is finally shown it is shown from what was last painted, which still has the
+        highlight on whichever row you were standing on the last time this tab was
+        up.
+
+        The result is a table whose state is right and whose picture is a lie: click
+        a warp, click an NPC, click a *different* warp, and the Warps tab comes back
+        with the *first* warp lit up. `e` and `d` would act on the right one, which
+        is the worst possible version of the bug.
+        """
+        self.call_after_refresh(table.refresh)
+
+    @on(DataTable.RowHighlighted)
+    def _row_highlighted(self) -> None:
+        # Walking within a table *is* moving the cursor — the grid follows.
+        if not self._filling:
+            self._announce(move=True)
+
+    @on(TabbedContent.TabActivated)
+    def _tab_activated(self) -> None:
+        # A new tab changes what the footer offers, but not where you are pointing
+        # on the map. The grid stays put; only the selection the keys act on moves.
+        if not self._filling:
+            self._announce(move=False)
+
+    def _announce(self, move: bool = False) -> None:
+        self.post_message(self.Selected(self.ref, move))
+
+    @on(DataTable.RowSelected)
+    def _chose(self, event: DataTable.RowSelected) -> None:
+        # Enter on a row. The DataTable takes the key before the app's bindings
+        # see it, so `enter` arrives here and `e` arrives there — and both have to
+        # end in the same place, because they are the same gesture.
+        event.stop()
+        if (ref := self.ref) is not None:
+            self.post_message(self.Chosen(ref))
+
+
+def _pane(name: str) -> str:
+    return f"pane-{_slug(name)}"
+
+
+def _name(pane_id: str) -> str:
+    return next((n for n in ALL if _pane(n) == pane_id), "")
+
+
+def _slug(name: str) -> str:
+    return name.lower().replace(" ", "-")

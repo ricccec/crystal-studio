@@ -32,10 +32,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from pretkit.shared import paths  # noqa: E402
-from pretkit.contract import mount as m  # noqa: E402
-from pretkit.hacks.vanilla import connections as c  # noqa: E402
-from pretkit.contract import Ref  # noqa: E402
+from pret_toolkit.shared import paths  # noqa: E402
+from crystal_studio_api import mount as m  # noqa: E402
+from crystal_studio.hacks.vanilla import connections as c  # noqa: E402
+from crystal_studio_api import Ref  # noqa: E402
 
 TREES = {
     "vanilla": paths.find_checkout("pokecrystal"),
