@@ -61,18 +61,35 @@ neither reaches the other.
 ## Tests
 
 ```bash
-python scripts/run-tests.py
+pret-test               # the whole suite, against the pinned game trees
+pret-test --worktree    # the same, against your own checkouts, edits and all
 ```
 
 Plain scripts, not pytest: each prints `ok`/`FAIL` lines and exits non-zero.
+`pret-test` ships with `pret-toolkit`, so it is on `$PATH` once this repo is
+installed; run it from anywhere inside the repo.
 
-Many read a **real disassembly** rather than a fixture, because what is being
-checked is whether the reader agrees with an actual tree. Point the suite at
-yours with `POKECRYSTAL_TREE` and `POLISHEDCRYSTAL_TREE`, or check them out
-somewhere conventional (`~/code/<name>`, `~/src/<name>`, or one grouping
-directory below either). Without a tree those checks are reported as skipped
-rather than passed, and the runner counts them, so a green run cannot hide an
-empty one.
+Many read a **real disassembly** rather than a fixture, because what is being checked
+is whether the reader agrees with an actual tree.
+Each tree is pinned to the one commit the tests were written against, in
+`pyproject.toml` under `[tool.pret-test.upstreams]`:
+
+- `pokecrystal` — [pret/pokecrystal](https://github.com/pret/pokecrystal) at `31880ea`
+- `polishedcrystal` — [Rangi42/polishedcrystal](https://github.com/Rangi42/polishedcrystal) at `a79dd2a`
+
+`pret-test` checks out a clean copy of each pinned commit into
+`~/.cache/pretkit/` — taken from your own checkout when it has the commit, from
+the URL otherwise — so neither your edits nor your branch change the result.
+Your checkout is found the way every command here finds one: `$<NAME>_TREE`
+(`$POKECRYSTAL_TREE`, say), or a conventional place such as `~/code/<name>`.
+`pret-test --fetch` fetches them and prints where they are. The copies hold no
+build output, so checks that need a ROM skip until you run `make` in one. A
+skipped check is counted and reported rather than passed, and `--strict` fails
+the run on one.
+
+`--worktree` is for seeing what your own edits do. A test that fails there
+because of an edit in *your* tree is a fact about your checkout: record it in
+`.known-red.json`, which is git-ignored and counts only in `--worktree` runs.
 
 ## Disclaimer
 
